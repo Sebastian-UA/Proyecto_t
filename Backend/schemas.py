@@ -10,6 +10,18 @@ class usuarioData(BaseModel):
     correo: str
     contrasena: str
     rol: str
+
+class UsuarioCreate(usuarioData):
+    pass
+# Esquema para los usuarios que se devuelven
+class usuarioData(BaseModel):
+    usuarioId: int
+    nombre: str
+    correo: str
+    rol: str
+    class Config:
+        orm_mode = True  # Permite la conversión entre objetos de SQLAlchemy y modelos Pydantic
+        
 class usuarioId(usuarioData):
     usuarioId: int
     class Config:
@@ -22,6 +34,8 @@ class PacienteData(BaseModel):
     usuarioId: int
     edad: int
     telefono: int
+class PacienteCreate(PacienteData):
+    pass
 class Paciente(PacienteData):
     pacienteId: int
     class Config:
@@ -33,6 +47,8 @@ class Paciente(PacienteData):
 class ProfesionalData(BaseModel):
     usuarioId: int
     especialidad: str
+class ProfesionalCreate(ProfesionalData):
+    pass
 class Profesional(ProfesionalData):
     profesionalId: int
     class Config:
@@ -47,6 +63,8 @@ class SesionData(BaseModel):
     fecha: date
     hora: time
     notas: Optional[str]
+class SesionCreate(SesionData):
+    pass
 class Sesion(SesionData):
     sesionId: int 
     class Config:
@@ -57,6 +75,8 @@ class Sesion(SesionData):
 # ===========================
 class ArticulacionData(BaseModel):
     especialidad: str
+class ArticulacionCreate(ArticulacionData):
+    pass
 class Articulacion(ArticulacionData):
     articulacionId: int
     class Config:
@@ -71,6 +91,8 @@ class MovimientoData(BaseModel):
     anguloMin: float
     angulaMax: float
     descripcion: Optional[str]
+class MovimientoCreate(MovimientoData):
+    pass
 class Movimiento(MovimientoData):
     movimientoId: int
     class Config:
@@ -82,6 +104,8 @@ class Movimiento(MovimientoData):
 class EjercicioData(BaseModel):
     MovimientoId: int
     nombre: str
+class EjercicioCreate(EjercicioData):
+    pass
 class Ejercicio(EjercicioData):
     ejercicioId: int
     class Config:
@@ -96,6 +120,8 @@ class MedicionData(BaseModel):
     MovimientoId: int
     anguloReal: float
     fecha: date
+class MedicionCreate(MedicionData):
+    pass
 class Medicion(MedicionData):
     medicionId: int
     class Config:

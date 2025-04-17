@@ -27,7 +27,7 @@ class sesion(Base):
     __tablename__ ='sesion'
     sesionId = Column(Integer, primary_key=True, index=True)
     PacienteId = Column(Integer, ForeignKey("paciente.pacienteId"), index=True)
-    ProfecionalId = Column(Integer, ForeignKey("profecional.profecionalId"), index=True)
+    ProfesionalId = Column(Integer, ForeignKey("profesional.profesionalId"), index=True)
     fecha= Column(Date, index=True)
     hora= Column(Time, index=True)
     notas= Column(Text)

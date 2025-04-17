@@ -1,11 +1,11 @@
 from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
-import crud
+import crud, schemas
 from database import engine, localSession
-from schemas import usuarioData, usuarioId
+from schemas import usuarioData  # Asegúrate de que este esquema esté definido correctamente
 from models import Base
 
-# ⚠️ CORRECCIÓN: Es .create_all, no .create.all
+# Crear las tablas en la base de datos
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
@@ -24,6 +24,11 @@ def root():
     return {'message': 'Hola desde el back'}
 
 # Ruta para obtener todos los usuarios
-@app.get('/api/usuarios/', response_model=list[usuarioId])
-def get_usuario(db: Session = Depends(get_db)):
-    return crud.get_usuario(db=db)  # ⚠️ Asegúrate de que la función en crud se llame igual
+@app.get("/usuarios/", response_model=list[usuarioData])
+def read_usuarios(db: Session = Depends(get_db)):
+    return crud.get_usuario(db)
+
+# Ruta para crear un nuevo usuario
+@app.post("/usuarios/", response_model=usuarioData)
+def create_usuario(usuario: schemas.UsuarioCreate, db: Session = Depends(get_db)):
+    return crud.create_usuario(db=db, usuario=usuario)
