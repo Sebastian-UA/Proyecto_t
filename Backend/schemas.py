@@ -126,3 +126,15 @@ class Medicion(MedicionData):
     medicionId: int
     class Config:
         orm_mode = True
+
+
+# ===========================
+# OTRO
+# ===========================
+class PacienteWithUsuario(BaseModel):
+    nombre: str
+    correo: str
+    contrasena: str
+    rol: str
+    edad: int
+    telefono: int
