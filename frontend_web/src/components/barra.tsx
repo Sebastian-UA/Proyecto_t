@@ -7,7 +7,7 @@ const BottomNav = () => {
   const pathname = usePathname();
 
   const navItems = [
-    { name: "Medición", path: "/pages/medicion_p" },  // Ruta para 'medicion_p'
+    { name: "Medición", path: "/pages/paciente" },  // Ruta para 'medicion_p'
     { name: "Reporte", path: "/pages/reporte" },      // Ruta para 'reporte'
     { name: "Historial", path: "/pages/historial" },  // Ruta para 'historial'
   ];
