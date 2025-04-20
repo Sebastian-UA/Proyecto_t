@@ -19,6 +19,8 @@ class usuarioData(BaseModel):
     nombre: str
     correo: str
     rol: str
+    rut: str  # Si es opcional
+
     class Config:
         orm_mode = True  # Permite la conversión entre objetos de SQLAlchemy y modelos Pydantic
         
@@ -138,3 +140,4 @@ class PacienteWithUsuario(BaseModel):
     rol: str
     edad: int
     telefono: int
+    rut :str

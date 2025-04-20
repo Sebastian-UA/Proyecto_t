@@ -6,9 +6,11 @@ class usuario(Base):
     __tablename__ ='usuario'
     usuarioId = Column(Integer, primary_key=True, index=True)
     nombre= Column(String(300), index=True)
-    correo= Column(String(30), index=True, unique=True)
+    correo= Column(String(200), index=True, unique=True)
     contrasena = Column(String(30), index = True)
     rol= Column(String(30), index=True)
+    rut= Column(String(30), index = True, unique=True)
+
 
 class paciente(Base):
     __tablename__ ='paciente'

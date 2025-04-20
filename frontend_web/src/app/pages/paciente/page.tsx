@@ -1,6 +1,7 @@
-"use client"
+"use client";
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { createPaciente } from "@/app/services/paciente.api"; // Importa el servicio
 
 export default function PacientePage() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -10,6 +11,9 @@ export default function PacientePage() {
     telefono: "",
     rut: "",
     edad: "",
+    correo: "",
+    contrasena: "",
+    rol: "",
   });
 
   const pacientes = [
@@ -27,11 +31,18 @@ export default function PacientePage() {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Datos enviados:", form);
-    setIsModalOpen(false); // Cerrar el modal
-    setForm({ nombre: "", telefono: "", rut: "", edad: "" }); // Limpiar form
+    try {
+      // Enviar los datos a la API
+      const response = await createPaciente(form);
+      console.log("Paciente creado:", response);
+
+      setIsModalOpen(false); // Cerrar el modal
+      setForm({ nombre: "", telefono: "", rut: "", edad: "", correo: "", contrasena: "", rol: "" }); // Limpiar el formulario
+    } catch (error) {
+      console.error("Error al crear paciente:", error);
+    }
   };
 
   return (
@@ -132,6 +143,40 @@ export default function PacientePage() {
                   id="telefono"
                   name="telefono"
                   value={form.telefono}
+                  onChange={handleInputChange}
+                  className="border border-gray-300 rounded-md px-4 py-2 w-full"
+                />
+              </div>
+              {/* Nuevos campos */}
+              <div className="space-y-1">
+                <label htmlFor="correo" className="block text-sm font-medium text-gray-700">Correo</label>
+                <input
+                  type="email"
+                  id="correo"
+                  name="correo"
+                  value={form.correo}
+                  onChange={handleInputChange}
+                  className="border border-gray-300 rounded-md px-4 py-2 w-full"
+                />
+              </div>
+              <div className="space-y-1">
+                <label htmlFor="contrasena" className="block text-sm font-medium text-gray-700">Contraseña</label>
+                <input
+                  type="password"
+                  id="contrasena"
+                  name="contrasena"
+                  value={form.contrasena}
+                  onChange={handleInputChange}
+                  className="border border-gray-300 rounded-md px-4 py-2 w-full"
+                />
+              </div>
+              <div className="space-y-1">
+                <label htmlFor="rol" className="block text-sm font-medium text-gray-700">Rol</label>
+                <input
+                  type="text"
+                  id="rol"
+                  name="rol"
+                  value={form.rol}
                   onChange={handleInputChange}
                   className="border border-gray-300 rounded-md px-4 py-2 w-full"
                 />

@@ -20,7 +20,8 @@ def create_usuario(db: Session, usuario: usuarioData):
         nombre=usuario.nombre, 
         correo=usuario.correo, 
         contrasena=fake_password, 
-        rol=usuario.rol
+        rol=usuario.rol,
+        rut=usuario.rut  # <--- NUEVO CAMPO AÑADIDO
     )
     db.add(new_usuario)
     db.commit()  # Realiza la transacción
@@ -53,7 +54,8 @@ def create_paciente_with_usuario(db: Session, data: PacienteWithUsuario):
         nombre=data.nombre,
         correo=data.correo,
         contrasena=data.contrasena + "#fake",  # Ejemplo simple
-        rol=data.rol
+        rol=data.rol,
+        rut=data.rut
     )
     db.add(nuevo_usuario)
     db.commit()

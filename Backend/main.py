@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Depends, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 import crud, schemas
 from database import engine, localSession
@@ -8,7 +9,17 @@ from models import Base
 # Crear las tablas en la base de datos
 Base.metadata.create_all(bind=engine)
 
+# Crear la instancia de FastAPI
 app = FastAPI()
+
+# Configurar CORS para permitir solicitudes desde el frontend
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],  # Permitir solicitudes desde el frontend
+    allow_credentials=True,
+    allow_methods=["*"],  # Permitir todos los métodos (GET, POST, etc.)
+    allow_headers=["*"],  # Permitir todos los encabezados
+)
 
 # Función para obtener una sesión de base de datos
 def get_db():
