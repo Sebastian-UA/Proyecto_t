@@ -1,13 +1,15 @@
-import React from "react";
-import { Link, useLocation } from "react-router-dom";
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 const BottomNav = () => {
-  const location = useLocation();
+  const pathname = usePathname();
 
   const navItems = [
-    { name: "Medición", path: "/medicion" },
-    { name: "Reporte", path: "/reporte" },
-    { name: "Historial", path: "/historial" },
+    { name: "Medición", path: "/pages/medicion_p" },  // Ruta para 'medicion_p'
+    { name: "Reporte", path: "/pages/reporte" },      // Ruta para 'reporte'
+    { name: "Historial", path: "/pages/historial" },  // Ruta para 'historial'
   ];
 
   return (
@@ -27,11 +29,11 @@ const BottomNav = () => {
       {navItems.map((item) => (
         <Link
           key={item.path}
-          to={item.path}
+          href={item.path} // Aquí usamos las rutas absolutas correctas
           style={{
             textDecoration: "none",
-            color: location.pathname === item.path ? "#007bff" : "#333",
-            fontWeight: location.pathname === item.path ? "bold" : "normal",
+            color: pathname === item.path ? "#007bff" : "#333",
+            fontWeight: pathname === item.path ? "bold" : "normal",
           }}
         >
           {item.name}
