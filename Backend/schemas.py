@@ -141,3 +141,12 @@ class PacienteWithUsuario(BaseModel):
     edad: int
     telefono: int
     rut :str
+
+class PacienteUsuarioOut(BaseModel):
+    nombre: str
+    rut: str
+    edad: int
+    telefono: int
+
+    class Config:
+        orm_mode = True

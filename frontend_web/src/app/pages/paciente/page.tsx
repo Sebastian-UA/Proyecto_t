@@ -1,11 +1,17 @@
 "use client";
-import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { createPaciente } from "@/app/services/paciente.api"; // importar el servicio
+import { useState, useEffect } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { createPaciente, getPacientesInfo } from "@/app/services/paciente.api"; // 🆕 importar getPacientesInfo
 
 export default function PacientePage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [pacientes, setPacientes] = useState<any[]>([]); // 🆕 pacientes reales
   const [form, setForm] = useState({
     nombre: "",
     telefono: "",
@@ -16,10 +22,18 @@ export default function PacientePage() {
     rol: "",
   });
 
-  const pacientes = [
-    { nombre: "Juan Pérez", rut: "12.345.678-9", edad: 30, telefono: "123456789" },
-    { nombre: "María Gómez", rut: "98.765.432-1", edad: 45, telefono: "987654321" },
-  ];
+  // 🆕 cargar pacientes desde el backend
+  useEffect(() => {
+    const fetchPacientes = async () => {
+      try {
+        const data = await getPacientesInfo();
+        setPacientes(data);
+      } catch (error) {
+        console.error("Error al cargar pacientes:", error);
+      }
+    };
+    fetchPacientes();
+  }, []);
 
   const filteredPacientes = pacientes.filter((p) =>
     p.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -33,12 +47,23 @@ export default function PacientePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      // enviar los datos a la API
       const response = await createPaciente(form);
       console.log("Paciente creado:", response);
 
-      setIsModalOpen(false); // cerrar el modal
-      setForm({ nombre: "", telefono: "", rut: "", edad: "", correo: "", contrasena: "", rol: "" }); // limpiar el formulario
+      // 🆕 volver a cargar la lista
+      const data = await getPacientesInfo();
+      setPacientes(data);
+
+      setIsModalOpen(false);
+      setForm({
+        nombre: "",
+        telefono: "",
+        rut: "",
+        edad: "",
+        correo: "",
+        contrasena: "",
+        rol: "",
+      });
     } catch (error) {
       console.error("Error al crear paciente:", error);
     }

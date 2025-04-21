@@ -55,6 +55,10 @@ def crear_paciente(paciente: schemas.PacienteCreate, db: Session = Depends(get_d
 def listar_pacientes(db: Session = Depends(get_db)):
     return crud.get_pacientes(db)
 
+@app.get("/pacientes/detalle", response_model=list[schemas.PacienteUsuarioOut])
+def obtener_detalle_pacientes(db: Session = Depends(get_db)):
+    return crud.get_pacientes_con_datos_usuario(db)
+
 @app.get("/pacientes/{id}", response_model=schemas.Paciente)
 def obtener_paciente(id: int, db: Session = Depends(get_db)):
     paciente = crud.get_paciente_id(db, id)
@@ -65,3 +69,5 @@ def obtener_paciente(id: int, db: Session = Depends(get_db)):
 @app.post("/paciente_con_usuario/")
 def create_paciente_con_usuario(data: schemas.PacienteWithUsuario, db: Session = Depends(get_db)):
     return crud.create_paciente_with_usuario(db=db, data=data)
+
+

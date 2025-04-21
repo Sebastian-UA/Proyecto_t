@@ -21,3 +21,24 @@ export const createPaciente = async (data: any) => {
     throw error;
   }
 };
+
+export const getPacientesInfo = async () => {
+  try {
+    const response = await fetch(`${API_URL}/pacientes/detalle`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error("Error al obtener los pacientes");
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error al obtener pacientes:", error);
+    throw error;
+  }
+};

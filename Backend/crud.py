@@ -75,3 +75,16 @@ def create_paciente_with_usuario(db: Session, data: PacienteWithUsuario):
         "usuario": nuevo_usuario,
         "paciente": nuevo_paciente
     }
+
+def get_pacientes_con_datos_usuario(db: Session):
+    return (
+        db.query(
+            models.usuario.nombre,
+            models.usuario.rut,
+            models.paciente.edad,
+            models.paciente.telefono
+        )
+        .join(models.paciente, models.usuario.usuarioId == models.paciente.usuarioId)
+        .filter(models.usuario.rol == "paciente")
+        .all()
+    )
