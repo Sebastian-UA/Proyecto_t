@@ -1,4 +1,4 @@
-const API_URL = "http://localhost:8000"; // Cambia según la URL de tu backend
+const API_URL = "http://localhost:8000";
 
 export const createPaciente = async (data: any) => {
   try {

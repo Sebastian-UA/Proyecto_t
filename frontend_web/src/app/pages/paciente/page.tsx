@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { createPaciente } from "@/app/services/paciente.api"; // Importa el servicio
+import { createPaciente } from "@/app/services/paciente.api"; // importar el servicio
 
 export default function PacientePage() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -19,7 +19,6 @@ export default function PacientePage() {
   const pacientes = [
     { nombre: "Juan Pérez", rut: "12.345.678-9", edad: 30, telefono: "123456789" },
     { nombre: "María Gómez", rut: "98.765.432-1", edad: 45, telefono: "987654321" },
-    // Más pacientes aquí
   ];
 
   const filteredPacientes = pacientes.filter((p) =>
@@ -34,12 +33,12 @@ export default function PacientePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      // Enviar los datos a la API
+      // enviar los datos a la API
       const response = await createPaciente(form);
       console.log("Paciente creado:", response);
 
-      setIsModalOpen(false); // Cerrar el modal
-      setForm({ nombre: "", telefono: "", rut: "", edad: "", correo: "", contrasena: "", rol: "" }); // Limpiar el formulario
+      setIsModalOpen(false); // cerrar el modal
+      setForm({ nombre: "", telefono: "", rut: "", edad: "", correo: "", contrasena: "", rol: "" }); // limpiar el formulario
     } catch (error) {
       console.error("Error al crear paciente:", error);
     }
@@ -49,7 +48,7 @@ export default function PacientePage() {
     <div className="p-8">
       <h1 className="text-3xl font-bold mb-6">Paciente</h1>
 
-      {/* Filtro */}
+      {/* filtro */}
       <input
         type="text"
         placeholder="Buscar por nombre o RUT"
@@ -147,7 +146,6 @@ export default function PacientePage() {
                   className="border border-gray-300 rounded-md px-4 py-2 w-full"
                 />
               </div>
-              {/* Nuevos campos */}
               <div className="space-y-1">
                 <label htmlFor="correo" className="block text-sm font-medium text-gray-700">Correo</label>
                 <input
