@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 import crud, schemas
 from database import engine, localSession
-from schemas import usuarioData, UsuarioCreate, PacienteCreate, Paciente  # Asegúrate de que este esquema esté definido correctamente
+from schemas import usuarioData, UsuarioCreate, PacienteCreate, Paciente,ArticulacionCreate, Articulacion  # Asegúrate de que este esquema esté definido correctamente
 from models import Base
 
 # Crear las tablas en la base de datos
@@ -70,4 +70,14 @@ def obtener_paciente(id: int, db: Session = Depends(get_db)):
 def create_paciente_con_usuario(data: schemas.PacienteWithUsuario, db: Session = Depends(get_db)):
     return crud.create_paciente_with_usuario(db=db, data=data)
 
+# ===========================
+# ARTICULACION
+# ===========================
 
+@app.post("/articulaciones/", response_model=Articulacion)
+def crear_articulacion(articulacion: ArticulacionCreate, db: Session = Depends(get_db)):
+    return crud.create_articulacion(db, articulacion)
+
+@app.get("/articulaciones/", response_model=list[Articulacion])
+def listar_articulaciones(db: Session = Depends(get_db)):
+    return crud.get_articulaciones(db)

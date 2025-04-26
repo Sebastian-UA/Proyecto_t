@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from models import usuario as UsuarioDB  # Asegúrate de que el modelo se llame correctamente
 from models import paciente as PacienteDB  # Ajusta el nombre si lo tienes diferente
-from schemas import usuarioData,PacienteCreate ,PacienteWithUsuario # Este sigue siendo el esquema de Pydantic para la validación
+from schemas import usuarioData, PacienteCreate, PacienteWithUsuario, ArticulacionCreate # Este sigue siendo el esquema de Pydantic para la validación
 import models
 
 # ===========================
@@ -88,3 +88,20 @@ def get_pacientes_con_datos_usuario(db: Session):
         .filter(models.usuario.rol == "paciente")
         .all()
     )
+
+# ===========================
+# ARTICULACION
+# ===========================
+
+def create_articulacion(db: Session, articulacion: ArticulacionCreate):
+    db_articulacion = models.articulacion(
+        nombre=articulacion.nombre,
+        imagen_path=articulacion.imagen_path
+    )
+    db.add(db_articulacion)
+    db.commit()
+    db.refresh(db_articulacion)
+    return db_articulacion
+
+def get_articulaciones(db: Session):
+    return db.query(models.articulacion).all()

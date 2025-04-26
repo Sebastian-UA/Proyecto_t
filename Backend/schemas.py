@@ -76,7 +76,8 @@ class Sesion(SesionData):
 # ARTICULACION
 # ===========================
 class ArticulacionData(BaseModel):
-    especialidad: str
+    nombre: str
+    imagen_path: Optional[str] = None 
 class ArticulacionCreate(ArticulacionData):
     pass
 class Articulacion(ArticulacionData):

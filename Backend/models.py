@@ -37,7 +37,9 @@ class sesion(Base):
 class articulacion(Base):
     __tablename__ ='articulacion'
     articulacionId = Column(Integer, primary_key=True, index=True)
-    especialidad= Column(String(30), index=True)
+    nombre= Column(String(30), index=True)
+    imagen_path = Column(String(255), nullable=True) 
+
 
 class movimiento(Base):
     __tablename__ ='movimiento'
