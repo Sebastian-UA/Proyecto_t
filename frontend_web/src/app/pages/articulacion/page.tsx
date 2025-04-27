@@ -41,14 +41,14 @@ export default function ArticulacionPage() {
                 {articulaciones.map((articulacion) => (
                     <div
                         key={articulacion.articulacionId}
-                        className="bg-white rounded-2xl shadow-lg hover:shadow-2xl cursor-pointer overflow-hidden transform hover:scale-105 transition-all"
+                        className="bg-white w-80 h-80 rounded-full shadow-lg hover:shadow-2xl cursor-pointer overflow-hidden transform hover:scale-105 transition-all flex flex-col items-center justify-center p-6"
                         onClick={() => handleSelectArticulacion(articulacion)}
                     >
                         {articulacion.imagen_path && (
                             <img
                                 src={`http://localhost:8000${articulacion.imagen_path}`}
                                 alt={articulacion.nombre}
-                                className="w-full h-48 object-contain scale-140 mx-auto mb-4 rounded-lg"
+                                className="w-45 h-45 object-contain scale-140 mx-auto mb-4 rounded-full"
                             />
                         )}
                         <div className="p-4 text-center">
