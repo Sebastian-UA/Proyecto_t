@@ -5,12 +5,18 @@ import crud, schemas
 from database import engine, localSession
 from schemas import usuarioData, UsuarioCreate, PacienteCreate, Paciente,ArticulacionCreate, Articulacion  # Asegúrate de que este esquema esté definido correctamente
 from models import Base
+from fastapi.staticfiles import StaticFiles
+import os
+
 
 # Crear las tablas en la base de datos
 Base.metadata.create_all(bind=engine)
 
 # Crear la instancia de FastAPI
 app = FastAPI()
+
+# 🚀 Montar carpeta 'img' para servir imágenes estáticas
+app.mount("/img", StaticFiles(directory=os.path.join(os.getcwd(), "img")), name="img")
 
 # Configurar CORS para permitir solicitudes desde el frontend
 app.add_middleware(
