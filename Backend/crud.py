@@ -76,9 +76,20 @@ def create_paciente_with_usuario(db: Session, data: PacienteWithUsuario):
         "paciente": nuevo_paciente
     }
 
+def delete_articulacion(db: Session, articulacion_id: int):
+    articulacion = db.query(models.articulacion).filter(models.articulacion.articulacionId == articulacion_id).first()
+    if articulacion:
+        db.delete(articulacion)
+        db.commit()
+        return {"message": "Articulación eliminada exitosamente"}
+    else:
+        return {"error": "Articulación no encontrada"}
+
+
 def get_pacientes_con_datos_usuario(db: Session):
     return (
         db.query(
+            models.paciente.pacienteId,
             models.usuario.nombre,
             models.usuario.rut,
             models.paciente.edad,

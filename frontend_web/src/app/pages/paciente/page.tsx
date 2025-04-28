@@ -1,17 +1,22 @@
-"use client";
+"use client"; // Asegura que este archivo sea un componente cliente
+
 import { useState, useEffect } from "react";
+// Importa el contexto de paciente
+import { usePatient } from "@/app/context/paciente";
+import { useRouter } from "next/navigation";  // Asegúrate de usar `next/navigation` para usar enrutador de Next.js
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { createPaciente, getPacientesInfo } from "@/app/services/paciente.api"; // 🆕 importar getPacientesInfo
+import { createPaciente, getPacientesInfo } from "@/app/services/paciente.api";
 
 export default function PacientePage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [pacientes, setPacientes] = useState<any[]>([]); // 🆕 pacientes reales
+  const [pacientes, setPacientes] = useState<any[]>([]);
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null); // Nuevo estado para la fila seleccionada
   const [form, setForm] = useState({
     nombre: "",
     telefono: "",
@@ -22,7 +27,8 @@ export default function PacientePage() {
     rol: "",
   });
 
-  // 🆕 cargar pacientes desde el backend
+  const router = useRouter();  // Aquí se usa useRouter dentro de un componente cliente
+
   useEffect(() => {
     const fetchPacientes = async () => {
       try {
@@ -50,7 +56,6 @@ export default function PacientePage() {
       const response = await createPaciente(form);
       console.log("Paciente creado:", response);
 
-      // 🆕 volver a cargar la lista
       const data = await getPacientesInfo();
       setPacientes(data);
 
@@ -69,11 +74,37 @@ export default function PacientePage() {
     }
   };
 
+  const { setPatient } = usePatient();  // Desestructurar setPatient desde el contexto
+
+  const handleRowClick = (index: number) => {
+    setSelectedIndex(index === selectedIndex ? null : index);  // Cambiar la selección de fila
+
+    if (index !== null && pacientes[index]) {
+      const pacienteSeleccionado = pacientes[index];
+      console.log(`Paciente ID: ${pacienteSeleccionado.pacienteId}`);
+      console.log("Paciente seleccionado:", pacienteSeleccionado.nombre);
+      setPatient(pacienteSeleccionado);  // Almacenar el paciente en el contexto
+    }
+  };
+
+
+  const handleContinuarClick = () => {
+    if (selectedIndex !== null && pacientes[selectedIndex]) {
+      const pacienteSeleccionado = pacientes[selectedIndex];
+      setPatient(pacienteSeleccionado);  // Almacenar el paciente en el contexto global
+      // Aquí agregamos el pacienteId en la URL
+      router.push(`/pages/articulacion/${pacienteSeleccionado.pacienteId}`);  // Asumiendo que el paciente tiene un campo 'id'
+    } else {
+      console.log("Por favor, selecciona un paciente");
+    }
+  };
+  
+
+
   return (
     <div className="p-8">
       <h1 className="text-3xl font-bold mb-6">Paciente</h1>
 
-      {/* filtro */}
       <input
         type="text"
         placeholder="Buscar por nombre o RUT"
@@ -82,7 +113,6 @@ export default function PacientePage() {
         onChange={(e) => setSearchTerm(e.target.value)}
       />
 
-      {/* Tabla */}
       <div className="overflow-x-auto">
         <table className="min-w-full bg-white border border-gray-300 rounded-md">
           <thead>
@@ -95,7 +125,11 @@ export default function PacientePage() {
           </thead>
           <tbody>
             {filteredPacientes.map((paciente, index) => (
-              <tr key={index} className="hover:bg-gray-50">
+              <tr
+                key={index}
+                className={`hover:bg-gray-50 ${selectedIndex === index ? "bg-blue-100" : ""}`}
+                onClick={() => handleRowClick(index)}
+              >
                 <td className="px-6 py-4 border-b">{paciente.nombre}</td>
                 <td className="px-6 py-4 border-b">{paciente.rut}</td>
                 <td className="px-6 py-4 border-b">{paciente.edad}</td>
@@ -106,7 +140,6 @@ export default function PacientePage() {
         </table>
       </div>
 
-      {/* Botones */}
       <div className="mt-6 flex justify-between">
         <button
           className="px-6 py-2 bg-gray-200 hover:bg-gray-300 rounded-md"
@@ -114,12 +147,14 @@ export default function PacientePage() {
         >
           Registrar
         </button>
-        <button className="px-6 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-md">
+        <button
+          className="px-6 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-md"
+          onClick={handleContinuarClick}
+        >
           Continuar
         </button>
       </div>
 
-      {/* Modal */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent className="max-w-md w-full">
           <DialogHeader>

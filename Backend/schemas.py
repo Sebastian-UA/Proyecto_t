@@ -144,6 +144,7 @@ class PacienteWithUsuario(BaseModel):
     rut :str
 
 class PacienteUsuarioOut(BaseModel):
+    pacienteId: int
     nombre: str
     rut: str
     edad: int

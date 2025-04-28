@@ -87,3 +87,7 @@ def crear_articulacion(articulacion: ArticulacionCreate, db: Session = Depends(g
 @app.get("/articulaciones/", response_model=list[Articulacion])
 def listar_articulaciones(db: Session = Depends(get_db)):
     return crud.get_articulaciones(db)
+
+@app.delete("/articulaciones/{articulacion_id}", response_model=dict)
+def eliminar_articulacion(articulacion_id: int, db: Session = Depends(get_db)):
+    return crud.delete_articulacion(db, articulacion_id)
