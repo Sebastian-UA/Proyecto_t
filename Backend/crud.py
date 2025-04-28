@@ -141,3 +141,11 @@ def create_movimiento(db: Session, movimiento: MovimientoCreate):
     db.commit()
     db.refresh(db_movimiento)
     return db_movimiento
+
+def delete_movimiento(db: Session, movimiento_id: int):
+    db_movimiento = db.query(models.movimiento).filter(models.movimiento.movimientoId == movimiento_id).first()
+    if db_movimiento:
+        db.delete(db_movimiento)
+        db.commit()
+        return db_movimiento
+    return None

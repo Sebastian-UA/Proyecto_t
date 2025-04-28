@@ -114,4 +114,10 @@ def obtener_movimientos_por_articulacion(articulacion_id: int, db: Session = Dep
         raise HTTPException(status_code=404, detail="Movimientos no encontrados para esta articulación")
     return movimientos
 
+@app.delete("/movimientos/{movimiento_id}", response_model=schemas.Movimiento)
+def eliminar_movimiento(movimiento_id: int, db: Session = Depends(get_db)):
+    db_movimiento = crud.delete_movimiento(db=db, movimiento_id=movimiento_id)
+    if not db_movimiento:
+        raise HTTPException(status_code=404, detail="Movimiento no encontrado")
+    return db_movimiento
 

@@ -42,25 +42,28 @@ export default function MovimientoPage() {
     <div className="p-8">
       <h1 className="text-3xl font-bold mb-6 text-center">Movimientos de la Articulación</h1>
 
-      {/* Mostrar el ID del paciente desde el contexto */}
+      {/* Mostrar el ID del paciente desde el contexto 
       <div className="text-center mb-6">
         <p className="text-lg">Paciente ID desde Contexto: {patient?.pacienteId ?? "No disponible"}</p>
       </div>
+      */}
+      
 
       {/* Mostrar la lista de movimientos */}
       <div className="space-y-6">
         {movimientos.map((movimiento) => (
-          <div key={movimiento.id} className="bg-white shadow-lg rounded-lg p-6 max-w-3xl mx-auto">
+          <div key={movimiento.id} 
+          className="bbg-white w-80 h-80 rounded-full shadow-lg hover:shadow-2xl cursor-pointer overflow-hidden transform hover:scale-105 transition-all flex flex-col items-center justify-center p-6">
             {movimiento.imagen_path && (
               <img
                 src={`http://localhost:8000${movimiento.imagen_path}`} // Si tiene una imagen
                 alt={movimiento.nombre}
-                className="w-full h-60 object-cover rounded-lg mb-6"
+                className="w-45 h-45 object-contain scale-140 mx-auto mb-4 rounded-full"
               />
             )}
+            <div className="p-4 text-center">
             <h2 className="text-2xl font-semibold mb-4">{movimiento.nombre}</h2>
-            <p className="text-lg mb-4">{movimiento.descripcion}</p>
-            <p className="text-sm text-gray-600">{movimiento.detalles}</p>
+            </div>
           </div>
         ))}
       </div>
