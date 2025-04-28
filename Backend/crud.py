@@ -1,7 +1,8 @@
 from sqlalchemy.orm import Session
 from models import usuario as UsuarioDB  # Asegúrate de que el modelo se llame correctamente
 from models import paciente as PacienteDB  # Ajusta el nombre si lo tienes diferente
-from schemas import usuarioData, PacienteCreate, PacienteWithUsuario, ArticulacionCreate # Este sigue siendo el esquema de Pydantic para la validación
+from models import movimiento as MovimientoDB  # Asegúrate de que el modelo esté correctamente importado
+from schemas import usuarioData, PacienteCreate, PacienteWithUsuario, ArticulacionCreate,MovimientoCreate, Movimiento # Este sigue siendo el esquema de Pydantic para la validación
 import models
 
 # ===========================
@@ -116,3 +117,27 @@ def create_articulacion(db: Session, articulacion: ArticulacionCreate):
 
 def get_articulaciones(db: Session):
     return db.query(models.articulacion).all()
+
+# ===========================
+# MOVIMIENTOS
+# ===========================
+
+def get_movimientos(db: Session):
+    return db.query(MovimientoDB).all()
+
+def get_movimiento_id(db: Session, id: int):
+    return db.query(MovimientoDB).filter(MovimientoDB.movimientoId == id).first()
+
+def create_movimiento(db: Session, movimiento: MovimientoCreate):
+    db_movimiento = MovimientoDB(
+    ArticulacionId=movimiento.ArticulacionId,  # Asegúrate de usar el nombre correcto
+    nombre=movimiento.nombre,
+    anguloMinReal=movimiento.anguloMinReal,
+    angulaMaxReal=movimiento.angulaMaxReal,
+    imagen_path=movimiento.imagen_path,
+    descripcion=movimiento.descripcion
+    )
+    db.add(db_movimiento)
+    db.commit()
+    db.refresh(db_movimiento)
+    return db_movimiento

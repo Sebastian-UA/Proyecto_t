@@ -3,7 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 import crud, schemas
 from database import engine, localSession
-from schemas import usuarioData, UsuarioCreate, PacienteCreate, Paciente,ArticulacionCreate, Articulacion  # Asegúrate de que este esquema esté definido correctamente
+from schemas import usuarioData, UsuarioCreate, PacienteCreate, Paciente,ArticulacionCreate, Articulacion,MovimientoCreate
+
 from models import Base
 from fastapi.staticfiles import StaticFiles
 import os
@@ -91,3 +92,17 @@ def listar_articulaciones(db: Session = Depends(get_db)):
 @app.delete("/articulaciones/{articulacion_id}", response_model=dict)
 def eliminar_articulacion(articulacion_id: int, db: Session = Depends(get_db)):
     return crud.delete_articulacion(db, articulacion_id)
+
+# ===========================
+# MOVIMIENTO
+# ===========================
+
+@app.post("/movimientos/", response_model=schemas.Movimiento)
+def crear_movimiento(movimiento: schemas.MovimientoCreate, db: Session = Depends(get_db)):
+    return crud.create_movimiento(db=db, movimiento=movimiento)
+
+# Ruta para obtener todos los movimientos
+@app.get("/movimientos/", response_model=list[schemas.Movimiento])
+def listar_movimientos(db: Session = Depends(get_db)):
+    return crud.get_movimientos(db)
+

@@ -46,9 +46,11 @@ class movimiento(Base):
     movimientoId = Column(Integer, primary_key=True, index=True)
     ArticulacionId = Column(Integer, ForeignKey("articulacion.articulacionId"), index=True)
     nombre= Column(String(100), index=True)
-    anguloMin= Column(Float, index=True)
-    angulaMax= Column(Float, index=True)
+    anguloMinReal= Column(Float, index=True)
+    angulaMaxReal= Column(Float, index=True)
     descripcion= Column(Text)
+    imagen_path = Column(String(255), nullable=True) 
+
 
 class ejercicio(Base):
     __tablename__ ='ejercicio'
@@ -62,5 +64,6 @@ class medicion(Base):
     SesionId = Column(Integer, ForeignKey("sesion.sesionId"), index=True)
     EjercicioId = Column(Integer, ForeignKey("ejercicio.ejercicioId"), index=True)
     MovimientoId = Column(Integer, ForeignKey("movimiento.movimientoId"), index=True)
-    anguloReal= Column(Float, index=True)
+    anguloMin= Column(Float, index=True)
+    angulaMax= Column(Float, index=True)
     fecha= Column(Date, index=True)

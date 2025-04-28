@@ -88,15 +88,15 @@ class Articulacion(ArticulacionData):
 # ===========================
 # MOVIMIENTO
 # ===========================
-class MovimientoData(BaseModel):
+class MovimientoCreate(BaseModel):
     ArticulacionId: int
     nombre: str
-    anguloMin: float
-    angulaMax: float
+    anguloMinReal: float
+    angulaMaxReal: float
+    imagen_path: Optional[str] = None 
     descripcion: Optional[str]
-class MovimientoCreate(MovimientoData):
-    pass
-class Movimiento(MovimientoData):
+
+class Movimiento(MovimientoCreate):
     movimientoId: int
     class Config:
         orm_mode = True
@@ -121,7 +121,8 @@ class MedicionData(BaseModel):
     SesionId: int
     EjercicioId: int
     MovimientoId: int
-    anguloReal: float
+    anguloMin: float
+    angulaMax: float
     fecha: date
 class MedicionCreate(MedicionData):
     pass
