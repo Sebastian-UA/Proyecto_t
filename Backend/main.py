@@ -106,3 +106,12 @@ def crear_movimiento(movimiento: schemas.MovimientoCreate, db: Session = Depends
 def listar_movimientos(db: Session = Depends(get_db)):
     return crud.get_movimientos(db)
 
+# Ruta para obtener movimientos por ArticulacionId
+@app.get("/movimientos/articulacion/{articulacion_id}", response_model=list[schemas.Movimiento])
+def obtener_movimientos_por_articulacion(articulacion_id: int, db: Session = Depends(get_db)):
+    movimientos = crud.get_movimientos_by_articulacion(db, articulacion_id)
+    if not movimientos:
+        raise HTTPException(status_code=404, detail="Movimientos no encontrados para esta articulación")
+    return movimientos
+
+

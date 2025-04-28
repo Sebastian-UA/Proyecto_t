@@ -1,0 +1,69 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter, useParams } from "next/navigation";
+import { getMovimientosByArticulacion } from "@/app/services/movimiento.api"; // Importa la función para obtener los movimientos por articulación
+import { usePatient } from "@/app/context/paciente"; // Si necesitas obtener datos del paciente desde un contexto
+
+interface Movimiento {
+  id: number;
+  nombre: string;
+  descripcion: string;
+  imagen_path?: string; // Si es que los movimientos tienen imágenes
+  detalles: string; // Puedes agregar otros detalles si es necesario
+}
+
+export default function MovimientoPage() {
+  const [movimientos, setMovimientos] = useState<Movimiento[]>([]); // Cambié el estado a una lista de movimientos
+  const { articulacionId } = useParams(); // Obtienes el articulacionId desde la URL
+  const { patient } = usePatient(); // Si usas el contexto de paciente
+  const router = useRouter();
+
+  useEffect(() => {
+    const fetchMovimientos = async () => {
+      try {
+        if (articulacionId) {
+          const data = await getMovimientosByArticulacion(Number(articulacionId)); // Cambié para usar el ID de articulación
+          setMovimientos(data); // Guarda los movimientos en el estado
+        }
+      } catch (error) {
+        console.error("Error al cargar los movimientos:", error);
+      }
+    };
+
+    fetchMovimientos();
+  }, [articulacionId]);
+
+  if (movimientos.length === 0) {
+    return <div className="text-center">Cargando movimientos...</div>;
+  }
+
+  return (
+    <div className="p-8">
+      <h1 className="text-3xl font-bold mb-6 text-center">Movimientos de la Articulación</h1>
+
+      {/* Mostrar el ID del paciente desde el contexto */}
+      <div className="text-center mb-6">
+        <p className="text-lg">Paciente ID desde Contexto: {patient?.pacienteId ?? "No disponible"}</p>
+      </div>
+
+      {/* Mostrar la lista de movimientos */}
+      <div className="space-y-6">
+        {movimientos.map((movimiento) => (
+          <div key={movimiento.id} className="bg-white shadow-lg rounded-lg p-6 max-w-3xl mx-auto">
+            {movimiento.imagen_path && (
+              <img
+                src={`http://localhost:8000${movimiento.imagen_path}`} // Si tiene una imagen
+                alt={movimiento.nombre}
+                className="w-full h-60 object-cover rounded-lg mb-6"
+              />
+            )}
+            <h2 className="text-2xl font-semibold mb-4">{movimiento.nombre}</h2>
+            <p className="text-lg mb-4">{movimiento.descripcion}</p>
+            <p className="text-sm text-gray-600">{movimiento.detalles}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}

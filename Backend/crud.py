@@ -125,8 +125,8 @@ def get_articulaciones(db: Session):
 def get_movimientos(db: Session):
     return db.query(MovimientoDB).all()
 
-def get_movimiento_id(db: Session, id: int):
-    return db.query(MovimientoDB).filter(MovimientoDB.movimientoId == id).first()
+def get_movimientos_by_articulacion(db: Session, articulacion_id: int):
+    return db.query(models.movimiento).filter(models.movimiento.ArticulacionId == articulacion_id).all()
 
 def create_movimiento(db: Session, movimiento: MovimientoCreate):
     db_movimiento = MovimientoDB(
