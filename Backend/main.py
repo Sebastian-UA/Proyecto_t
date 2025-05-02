@@ -4,7 +4,14 @@ from sqlalchemy.orm import Session
 import crud, schemas
 from database import engine, localSession
 from schemas import usuarioData, UsuarioCreate, PacienteCreate, Paciente,ArticulacionCreate, Articulacion,MovimientoCreate
+from procesar_video import procesar_video
+import shutil
+import uuid
+import cv2
+import uuid
 
+
+from fastapi import UploadFile, File
 from models import Base
 from fastapi.staticfiles import StaticFiles
 import os
@@ -27,6 +34,52 @@ app.add_middleware(
     allow_methods=["*"],  # Permitir todos los métodos (GET, POST, etc.)
     allow_headers=["*"],  # Permitir todos los encabezados
 )
+
+@app.post("/analizar_video/")
+async def analizar_video(file: UploadFile = File(...)):
+    # Guardar el video temporal
+    original_path = f"videos/{file.filename}"
+    with open(original_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+
+    # Convertir a mp4 si no es mp4 (usando OpenCV)
+    ext = os.path.splitext(original_path)[1].lower()
+    if ext != ".mp4":
+        mp4_path = f"videos/{uuid.uuid4()}.mp4"
+        
+        # Abrir el video con OpenCV
+        cap = cv2.VideoCapture(original_path)
+        if not cap.isOpened():
+            raise HTTPException(status_code=400, detail="No se pudo abrir el video.")
+        
+        # Obtener propiedades del video
+        fps = cap.get(cv2.CAP_PROP_FPS)
+        width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+        # Crear el objeto VideoWriter para el archivo de salida
+        fourcc = cv2.VideoWriter_fourcc(*'mp4v')  # Códec mp4v
+        out = cv2.VideoWriter(mp4_path, fourcc, fps, (width, height))
+
+        # Leer y escribir los frames del video
+        while True:
+            ret, frame = cap.read()
+            if not ret:
+                break
+            out.write(frame)
+
+        # Liberar recursos
+        cap.release()
+        out.release()
+
+        os.remove(original_path)
+    else:
+        mp4_path = original_path
+
+    resultado = procesar_video(mp4_path)
+    os.remove(mp4_path)
+    return resultado
+
 
 # Función para obtener una sesión de base de datos
 def get_db():

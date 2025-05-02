@@ -9,6 +9,8 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@ffmpeg/core": "^0.12.10",
+    "@ffmpeg/ffmpeg": "^0.10.1",
     "@radix-ui/react-dialog": "^1.1.10",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
