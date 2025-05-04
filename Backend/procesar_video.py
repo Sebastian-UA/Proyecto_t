@@ -19,7 +19,7 @@ def calculate_angle(a, b, c):
     angle = np.arccos(np.clip(cosine_angle, -1.0, 1.0))
     return np.degrees(angle)
 
-# ✅ Función que SÍ puedes importar
+# Función que SÍ puedes importar
 def procesar_video(path: str):
     cap = cv2.VideoCapture(path)
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
@@ -27,6 +27,9 @@ def procesar_video(path: str):
     size = (int(cap.get(3)), int(cap.get(4)))
     output_filename = f"{OUTPUT_DIR}/{uuid.uuid4()}_output.mp4"
     out = cv2.VideoWriter(output_filename, fourcc, fps, size)
+
+    max_angle = 0
+    min_angle = 180
 
     with mp_pose.Pose(static_image_mode=False, min_detection_confidence=0.5) as pose:
         while cap.isOpened():
@@ -44,6 +47,12 @@ def procesar_video(path: str):
                 wrist = [landmarks[mp_pose.PoseLandmark.RIGHT_WRIST.value].x,
                          landmarks[mp_pose.PoseLandmark.RIGHT_WRIST.value].y]
                 angle = calculate_angle(shoulder, elbow, wrist)
+
+                # Actualizar máximos y mínimos
+                max_angle = max(max_angle, angle)
+                min_angle = min(min_angle, angle)
+
+                # Visualización
                 mp.solutions.drawing_utils.draw_landmarks(
                     frame, results.pose_landmarks, mp_pose.POSE_CONNECTIONS)
                 h, w, _ = frame.shape
@@ -53,5 +62,15 @@ def procesar_video(path: str):
             out.write(frame)
     cap.release()
     out.release()
-    print(f"✅ Video procesado guardado en: {output_filename}")
-    return {"message": "Video procesado y guardado correctamente.", "output": output_filename}
+
+    # Imprimir ángulos en consola
+    print(f" Video procesado guardado en: {output_filename}")
+    print(f" Ángulo máximo: {max_angle:.2f} grados")
+    print(f" Ángulo mínimo: {min_angle:.2f} grados")
+
+    return {
+        "message": "Video procesado y guardado correctamente.",
+        "output": output_filename,
+        "max_angle": max_angle,
+        "min_angle": min_angle
+    }
