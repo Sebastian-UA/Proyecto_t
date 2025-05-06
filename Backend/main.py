@@ -10,7 +10,6 @@ import uuid
 import cv2
 import uuid
 
-
 from fastapi import UploadFile, File
 from models import Base
 from fastapi.staticfiles import StaticFiles
@@ -23,7 +22,7 @@ Base.metadata.create_all(bind=engine)
 # Crear la instancia de FastAPI
 app = FastAPI()
 
-# 🚀 Montar carpeta 'img' para servir imágenes estáticas
+# Montar carpeta 'img' para servir imágenes estáticas
 app.mount("/img", StaticFiles(directory=os.path.join(os.getcwd(), "img")), name="img")
 
 # Configurar CORS para permitir solicitudes desde el frontend

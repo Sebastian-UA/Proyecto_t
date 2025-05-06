@@ -6,7 +6,7 @@ import { getMovimientosByArticulacion } from "@/app/services/movimiento.api"; //
 import { usePatient } from "@/app/context/paciente"; // Si necesitas obtener datos del paciente desde un contexto
 
 interface Movimiento {
-  id: number;
+  movimientoId: number;
   nombre: string;
   descripcion: string;
   imagen_path?: string; // Si es que los movimientos tienen imágenes
@@ -40,7 +40,7 @@ export default function MovimientoPage() {
 
   return (
     <div className="p-8">
-      <h1 className="text-3xl font-bold mb-6 text-center">Movimientos de la Articulación</h1>
+      <h1 className="text-3xl font-bold mb-6 text-center">Seleccione un Movimiento</h1>
 
       {/* Mostrar el ID del paciente desde el contexto 
       <div className="text-center mb-6">
@@ -52,7 +52,7 @@ export default function MovimientoPage() {
       {/* Mostrar la lista de movimientos */}
       <div className="space-y-6">
         {movimientos.map((movimiento) => (
-          <div key={movimiento.id} 
+          <div key={movimiento.movimientoId} 
           className="bbg-white w-80 h-80 rounded-full shadow-lg hover:shadow-2xl cursor-pointer overflow-hidden transform hover:scale-105 transition-all flex flex-col items-center justify-center p-6">
             {movimiento.imagen_path && (
               <img

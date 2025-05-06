@@ -47,7 +47,7 @@ class movimiento(Base):
     ArticulacionId = Column(Integer, ForeignKey("articulacion.articulacionId"), index=True)
     nombre= Column(String(100), index=True)
     anguloMinReal= Column(Float, index=True)
-    angulaMaxReal= Column(Float, index=True)
+    anguloMaxReal = Column(Float, index=True) 
     descripcion= Column(Text)
     imagen_path = Column(String(255), nullable=True) 
 
@@ -65,5 +65,5 @@ class medicion(Base):
     EjercicioId = Column(Integer, ForeignKey("ejercicio.ejercicioId"), index=True)
     MovimientoId = Column(Integer, ForeignKey("movimiento.movimientoId"), index=True)
     anguloMin= Column(Float, index=True)
-    angulaMax= Column(Float, index=True)
+    anguloMax= Column(Float, index=True)
     fecha= Column(Date, index=True)

@@ -133,7 +133,7 @@ def create_movimiento(db: Session, movimiento: MovimientoCreate):
     ArticulacionId=movimiento.ArticulacionId,  # Asegúrate de usar el nombre correcto
     nombre=movimiento.nombre,
     anguloMinReal=movimiento.anguloMinReal,
-    angulaMaxReal=movimiento.angulaMaxReal,
+    anguloMaxReal=movimiento.anguloMaxReal,
     imagen_path=movimiento.imagen_path,
     descripcion=movimiento.descripcion
     )

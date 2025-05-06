@@ -92,7 +92,7 @@ class MovimientoCreate(BaseModel):
     ArticulacionId: int
     nombre: str
     anguloMinReal: float
-    angulaMaxReal: float
+    anguloMaxReal: float
     imagen_path: Optional[str] = None 
     descripcion: Optional[str]
 
@@ -122,7 +122,7 @@ class MedicionData(BaseModel):
     EjercicioId: int
     MovimientoId: int
     anguloMin: float
-    angulaMax: float
+    anguloMax: float
     fecha: date
 class MedicionCreate(MedicionData):
     pass

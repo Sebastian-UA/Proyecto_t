@@ -33,6 +33,7 @@ export default function ArticulacionPage() {
     const handleSelectArticulacion = (articulacion: Articulacion) => {
         console.log(`Paciente ID desde Contexto: ${patient?.pacienteId}`);
         console.log(`Articulación seleccionada: ${articulacion.nombre}`);
+        router.push(`/pages/movimientos/articulacion/${articulacion.articulacionId}`);
     };
 
     return (
