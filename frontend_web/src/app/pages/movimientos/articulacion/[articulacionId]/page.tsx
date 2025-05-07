@@ -40,33 +40,29 @@ export default function MovimientoPage() {
 
   return (
     <div className="p-8">
-      <h1 className="text-3xl font-bold mb-6 text-center">Seleccione un Movimiento</h1>
+  <h1 className="text-3xl font-bold mb-6 text-center">Seleccione un Movimiento</h1>
 
-      {/* Mostrar el ID del paciente desde el contexto 
-      <div className="text-center mb-6">
-        <p className="text-lg">Paciente ID desde Contexto: {patient?.pacienteId ?? "No disponible"}</p>
+  {/* Mostrar la lista de movimientos */}
+  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+    {movimientos.map((movimiento) => (
+      <div
+        key={movimiento.movimientoId}
+        className="bg-white w-80 h-80 rounded-full shadow-lg hover:shadow-2xl cursor-pointer overflow-hidden transform hover:scale-105 transition-all flex flex-col items-center justify-center p-6"
+      >
+        {movimiento.imagen_path && (
+          <img
+            src={`http://localhost:8000${movimiento.imagen_path}`} // Si tiene una imagen
+            alt={movimiento.nombre}
+            className="w-45 h-45 object-contain scale-140 mx-auto mb-4 rounded-full"
+          />
+        )}
+        <div className="p-4 text-center">
+          <h2 className="text-2xl font-semibold mb-4">{movimiento.nombre}</h2>
+        </div>
       </div>
-      */}
-      
+    ))}
+  </div>
+</div>
 
-      {/* Mostrar la lista de movimientos */}
-      <div className="space-y-6">
-        {movimientos.map((movimiento) => (
-          <div key={movimiento.movimientoId} 
-          className="bbg-white w-80 h-80 rounded-full shadow-lg hover:shadow-2xl cursor-pointer overflow-hidden transform hover:scale-105 transition-all flex flex-col items-center justify-center p-6">
-            {movimiento.imagen_path && (
-              <img
-                src={`http://localhost:8000${movimiento.imagen_path}`} // Si tiene una imagen
-                alt={movimiento.nombre}
-                className="w-45 h-45 object-contain scale-140 mx-auto mb-4 rounded-full"
-              />
-            )}
-            <div className="p-4 text-center">
-            <h2 className="text-2xl font-semibold mb-4">{movimiento.nombre}</h2>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
   );
 }

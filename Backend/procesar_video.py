@@ -6,6 +6,8 @@ import uuid
 import os
 
 mp_pose = mp.solutions.pose
+mp_drawing = mp.solutions.drawing_utils
+
 OUTPUT_DIR = "videos"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
@@ -19,7 +21,6 @@ def calculate_angle(a, b, c):
     angle = np.arccos(np.clip(cosine_angle, -1.0, 1.0))
     return np.degrees(angle)
 
-# Función que SÍ puedes importar
 def procesar_video(path: str):
     cap = cv2.VideoCapture(path)
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
@@ -28,8 +29,10 @@ def procesar_video(path: str):
     output_filename = f"{OUTPUT_DIR}/{uuid.uuid4()}_output.mp4"
     out = cv2.VideoWriter(output_filename, fourcc, fps, size)
 
-    max_angle = 0
-    min_angle = 180
+    max_angle_right = 0
+    min_angle_right = 180
+    max_angle_left = 0
+    min_angle_left = 180
 
     with mp_pose.Pose(static_image_mode=False, min_detection_confidence=0.5) as pose:
         while cap.isOpened():
@@ -40,37 +43,59 @@ def procesar_video(path: str):
             results = pose.process(image_rgb)
             if results.pose_landmarks:
                 landmarks = results.pose_landmarks.landmark
-                shoulder = [landmarks[mp_pose.PoseLandmark.RIGHT_SHOULDER.value].x,
-                            landmarks[mp_pose.PoseLandmark.RIGHT_SHOULDER.value].y]
-                elbow = [landmarks[mp_pose.PoseLandmark.RIGHT_ELBOW.value].x,
-                         landmarks[mp_pose.PoseLandmark.RIGHT_ELBOW.value].y]
-                wrist = [landmarks[mp_pose.PoseLandmark.RIGHT_WRIST.value].x,
-                         landmarks[mp_pose.PoseLandmark.RIGHT_WRIST.value].y]
-                angle = calculate_angle(shoulder, elbow, wrist)
+                height, width, _ = frame.shape
 
-                # Actualizar máximos y mínimos
-                max_angle = max(max_angle, angle)
-                min_angle = min(min_angle, angle)
+                # ========== Brazo derecho ==========
+                right_shoulder = [landmarks[mp_pose.PoseLandmark.RIGHT_SHOULDER.value].x,
+                                  landmarks[mp_pose.PoseLandmark.RIGHT_SHOULDER.value].y]
+                right_elbow = [landmarks[mp_pose.PoseLandmark.RIGHT_ELBOW.value].x,
+                               landmarks[mp_pose.PoseLandmark.RIGHT_ELBOW.value].y]
+                right_wrist = [landmarks[mp_pose.PoseLandmark.RIGHT_WRIST.value].x,
+                               landmarks[mp_pose.PoseLandmark.RIGHT_WRIST.value].y]
+                angle_right = calculate_angle(right_shoulder, right_elbow, right_wrist)
+                max_angle_right = max(max_angle_right, angle_right)
+                min_angle_right = min(min_angle_right, angle_right)
 
-                # Visualización
-                mp.solutions.drawing_utils.draw_landmarks(
-                    frame, results.pose_landmarks, mp_pose.POSE_CONNECTIONS)
-                h, w, _ = frame.shape
-                cx, cy = int(elbow[0] * w), int(elbow[1] * h)
-                cv2.putText(frame, str(int(angle)), (cx, cy),
+                # Mostrar ángulo en el frame
+                cx_r, cy_r = int(right_elbow[0] * width), int(right_elbow[1] * height)
+                cv2.putText(frame, f'R: {int(angle_right)}', (cx_r, cy_r),
                             cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+
+                # ========== Brazo izquierdo ==========
+                left_shoulder = [landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER.value].x,
+                                 landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER.value].y]
+                left_elbow = [landmarks[mp_pose.PoseLandmark.LEFT_ELBOW.value].x,
+                              landmarks[mp_pose.PoseLandmark.LEFT_ELBOW.value].y]
+                left_wrist = [landmarks[mp_pose.PoseLandmark.LEFT_WRIST.value].x,
+                              landmarks[mp_pose.PoseLandmark.LEFT_WRIST.value].y]
+                angle_left = calculate_angle(left_shoulder, left_elbow, left_wrist)
+                max_angle_left = max(max_angle_left, angle_left)
+                min_angle_left = min(min_angle_left, angle_left)
+
+                # Mostrar ángulo en el frame
+                cx_l, cy_l = int(left_elbow[0] * width), int(left_elbow[1] * height)
+                cv2.putText(frame, f'L: {int(angle_left)}', (cx_l, cy_l),
+                            cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
+
+                # Dibuja pose completa
+                mp_drawing.draw_landmarks(
+                    frame, results.pose_landmarks, mp_pose.POSE_CONNECTIONS)
+
             out.write(frame)
+
     cap.release()
     out.release()
 
-    # Imprimir ángulos en consola
+    # Imprimir resultados
     print(f" Video procesado guardado en: {output_filename}")
-    print(f" Ángulo máximo: {max_angle:.2f} grados")
-    print(f" Ángulo mínimo: {min_angle:.2f} grados")
+    print(f" Ángulo derecho - Máximo: {max_angle_right:.2f}, Mínimo: {min_angle_right:.2f}")
+    print(f" Ángulo izquierdo - Máximo: {max_angle_left:.2f}, Mínimo: {min_angle_left:.2f}")
 
     return {
         "message": "Video procesado y guardado correctamente.",
         "output": output_filename,
-        "max_angle": max_angle,
-        "min_angle": min_angle
+        "max_angle_right": max_angle_right,
+        "min_angle_right": min_angle_right,
+        "max_angle_left": max_angle_left,
+        "min_angle_left": min_angle_left
     }
