@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 import crud, schemas
 from database import engine, localSession
 from schemas import usuarioData, UsuarioCreate, PacienteCreate, Paciente,ArticulacionCreate, Articulacion,MovimientoCreate
-from procesar_video import procesar_video
+from abduccion_video import abduccion_video
 import shutil
 import uuid
 import cv2
@@ -75,7 +75,7 @@ async def analizar_video(file: UploadFile = File(...)):
     else:
         mp4_path = original_path
 
-    resultado = procesar_video(mp4_path)
+    resultado = abduccion_video(mp4_path)
     os.remove(mp4_path)
     return resultado
 
