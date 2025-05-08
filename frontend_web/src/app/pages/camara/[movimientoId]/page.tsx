@@ -1,14 +1,31 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { useParams } from 'next/navigation'
+import { getMovimientoById } from '@/app/services/movimiento.api'; // Asegúrate de importar correctamente tu función
 
 export default function CameraRecorder() {
+  const { movimientoId } = useParams() // Obtener el ID del movimiento de la URL
+  const [movimiento, setMovimiento] = useState<string>('') // Estado para almacenar el nombre del movimiento
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const [stream, setStream] = useState<MediaStream | null>(null)
   const [recording, setRecording] = useState(false)
   const [countdown, setCountdown] = useState<number | null>(null)
   const [recordedVideoURL, setRecordedVideoURL] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (movimientoId) {
+      // Llamar a la API para obtener el movimiento por ID
+      getMovimientoById(Number(movimientoId))
+        .then((data) => {
+          setMovimiento(data.nombre); // Asumiendo que `data.nombre` es el nombre del movimiento
+        })
+        .catch((error) => {
+          console.error('Error al obtener el movimiento:', error);
+        });
+    }
+  }, [movimientoId]);
 
   // Activar cámara
   const handleStartCamera = async () => {
@@ -47,6 +64,7 @@ export default function CameraRecorder() {
 
       const formData = new FormData()
       formData.append('file', blob, 'grabacion.webm')
+      formData.append('nombre_movimiento', movimiento)
 
       try {
         const response = await fetch('http://localhost:8000/analizar_video', {
@@ -96,6 +114,12 @@ export default function CameraRecorder() {
         muted
         className="w-full max-w-md rounded shadow mb-4"
       />
+
+      <div className="mb-4">
+        <p className="text-xl font-semibold">
+          Movimiento: {movimiento || 'Cargando...'}
+        </p>
+      </div>
 
       <div className="flex gap-4 mb-4">
         <button

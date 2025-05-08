@@ -5,11 +5,14 @@ import crud, schemas
 from database import engine, localSession
 from schemas import usuarioData, UsuarioCreate, PacienteCreate, Paciente,ArticulacionCreate, Articulacion,MovimientoCreate
 from abduccion_video import abduccion_video
+from pys_video import pys_video
+from flexion_video import flexion_video
 import shutil
 import uuid
 import cv2
 import uuid
 
+from fastapi import Form
 from fastapi import UploadFile, File
 from models import Base
 from fastapi.staticfiles import StaticFiles
@@ -35,50 +38,51 @@ app.add_middleware(
 )
 
 @app.post("/analizar_video/")
-async def analizar_video(file: UploadFile = File(...)):
+async def analizar_video(
+    file: UploadFile = File(...),
+    movimiento: str = Form(...)
+):
     # Guardar el video temporal
     original_path = f"videos/{file.filename}"
     with open(original_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
 
-    # Convertir a mp4 si no es mp4 (usando OpenCV)
+    # Convertir a mp4 si no es mp4
     ext = os.path.splitext(original_path)[1].lower()
     if ext != ".mp4":
         mp4_path = f"videos/{uuid.uuid4()}.mp4"
-        
-        # Abrir el video con OpenCV
         cap = cv2.VideoCapture(original_path)
         if not cap.isOpened():
             raise HTTPException(status_code=400, detail="No se pudo abrir el video.")
-        
-        # Obtener propiedades del video
         fps = cap.get(cv2.CAP_PROP_FPS)
         width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-
-        # Crear el objeto VideoWriter para el archivo de salida
-        fourcc = cv2.VideoWriter_fourcc(*'mp4v')  # Códec mp4v
+        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
         out = cv2.VideoWriter(mp4_path, fourcc, fps, (width, height))
-
-        # Leer y escribir los frames del video
         while True:
             ret, frame = cap.read()
             if not ret:
                 break
             out.write(frame)
-
-        # Liberar recursos
         cap.release()
         out.release()
-
         os.remove(original_path)
     else:
         mp4_path = original_path
 
-    resultado = abduccion_video(mp4_path)
+    # Elegir el modelo según el tipo de movimiento
+    if movimiento.lower() == "Abducción":
+        resultado = abduccion_video(mp4_path)
+    elif movimiento.lower() == "Pronación y Supinación":
+        resultado = pys_video(mp4_path)
+    elif movimiento.lower() == "Flexión":
+        resultado = flexion_video(mp4_path)
+    else:
+        os.remove(mp4_path)
+        raise HTTPException(status_code=400, detail="Movimiento no reconocido")
+
     os.remove(mp4_path)
     return resultado
-
 
 # Función para obtener una sesión de base de datos
 def get_db():
@@ -157,6 +161,14 @@ def crear_movimiento(movimiento: schemas.MovimientoCreate, db: Session = Depends
 @app.get("/movimientos/", response_model=list[schemas.Movimiento])
 def listar_movimientos(db: Session = Depends(get_db)):
     return crud.get_movimientos(db)
+
+@app.get("/movimientos/{movimiento_id}", response_model=schemas.Movimiento)
+def obtener_movimiento(movimiento_id: int, db: Session = Depends(get_db)):
+    db_movimiento = crud.get_movimiento_by_id(db, movimiento_id)
+    if not db_movimiento:
+        raise HTTPException(status_code=404, detail="Movimiento no encontrado")
+    return db_movimiento
+
 
 # Ruta para obtener movimientos por ArticulacionId
 @app.get("/movimientos/articulacion/{articulacion_id}", response_model=list[schemas.Movimiento])

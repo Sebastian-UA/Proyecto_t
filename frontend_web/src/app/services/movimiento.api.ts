@@ -22,6 +22,29 @@ export const getMovimientos = async () => {
   }
 };
 
+// Obtener un movimiento por su id
+export const getMovimientoById = async (movimientoId: number) => {
+  try {
+    const response = await fetch(`${API_URL}/movimientos/${movimientoId}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Error al obtener el movimiento con ID ${movimientoId}`);
+    }
+
+    const movimiento = await response.json();
+    return movimiento;
+  } catch (error) {
+    console.error(`Error al traer el movimiento con ID ${movimientoId}:`, error);
+    throw error;
+  }
+};
+
+
 // Obtener movimientos por articulación
 export const getMovimientosByArticulacion = async (articulacionId: number) => {
     try {

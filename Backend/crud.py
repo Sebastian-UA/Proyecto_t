@@ -142,6 +142,10 @@ def create_movimiento(db: Session, movimiento: MovimientoCreate):
     db.refresh(db_movimiento)
     return db_movimiento
 
+def get_movimiento_by_id(db: Session, movimiento_id: int):
+    return db.query(MovimientoDB).filter(MovimientoDB.movimientoId == movimiento_id).first()
+
+
 def delete_movimiento(db: Session, movimiento_id: int):
     db_movimiento = db.query(models.movimiento).filter(models.movimiento.movimientoId == movimiento_id).first()
     if db_movimiento:

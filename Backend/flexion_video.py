@@ -27,7 +27,7 @@ def calculate_angle(a, b, c):
     return np.degrees(angle)  # Convertir a grados
 
 # Función principal para procesar el video
-def procesar_video(path: str):
+def flexion_video(path: str):
     # Inicializar la captura de video y configuración de salida
     cap = cv2.VideoCapture(path)
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
