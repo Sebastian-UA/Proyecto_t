@@ -45,7 +45,9 @@ export default function CameraRecorder() {
     if (!stream) return
 
     const chunks: BlobPart[] = []
-    const mediaRecorder = new MediaRecorder(stream)
+    const mediaRecorder = new MediaRecorder(stream, {
+      mimeType: 'video/webm; codecs=vp8'
+    })
 
     mediaRecorderRef.current = mediaRecorder
     setRecording(true)
@@ -64,7 +66,11 @@ export default function CameraRecorder() {
 
       const formData = new FormData()
       formData.append('file', blob, 'grabacion.webm')
-      formData.append('nombre_movimiento', movimiento)
+      formData.append('movimiento', movimiento)
+
+      formData.forEach((value, key) => {
+        console.log(`${key}:`, value)
+      })
 
       try {
         const response = await fetch('http://localhost:8000/analizar_video', {
@@ -132,9 +138,8 @@ export default function CameraRecorder() {
         <button
           onClick={handleStartRecording}
           disabled={!stream || recording}
-          className={`${
-            recording ? 'bg-gray-400' : 'bg-green-500 hover:bg-green-600'
-          } text-white font-bold py-2 px-4 rounded`}
+          className={`${recording ? 'bg-gray-400' : 'bg-green-500 hover:bg-green-600'
+            } text-white font-bold py-2 px-4 rounded`}
         >
           Grabar 10s
         </button>

@@ -11,12 +11,13 @@ import shutil
 import uuid
 import cv2
 import uuid
+import subprocess
+import os
 
 from fastapi import Form
 from fastapi import UploadFile, File
 from models import Base
 from fastapi.staticfiles import StaticFiles
-import os
 
 
 # Crear las tablas en la base de datos
@@ -40,42 +41,44 @@ app.add_middleware(
 @app.post("/analizar_video/")
 async def analizar_video(
     file: UploadFile = File(...),
-    movimiento: str = Form(...)
+    movimiento: str = Form(...),
 ):
+    #print(f"Recibido archivo: {file.filename}, Tamaño: {len(await file.read())} bytes")
+    print(f"Movimiento: {movimiento}")
+    
     # Guardar el video temporal
     original_path = f"videos/{file.filename}"
     with open(original_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
 
-    # Convertir a mp4 si no es mp4
+    # Convertir a mp4 si no es mp4 usando ffmpeg
     ext = os.path.splitext(original_path)[1].lower()
     if ext != ".mp4":
         mp4_path = f"videos/{uuid.uuid4()}.mp4"
-        cap = cv2.VideoCapture(original_path)
-        if not cap.isOpened():
-            raise HTTPException(status_code=400, detail="No se pudo abrir el video.")
-        fps = cap.get(cv2.CAP_PROP_FPS)
-        width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-        height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-        out = cv2.VideoWriter(mp4_path, fourcc, fps, (width, height))
-        while True:
-            ret, frame = cap.read()
-            if not ret:
-                break
-            out.write(frame)
-        cap.release()
-        out.release()
-        os.remove(original_path)
+        
+        try:
+            # Usar ffmpeg para convertir el video a mp4
+            subprocess.run(
+                f'ffmpeg -i "{original_path}" -vcodec libx264 -acodec aac "{mp4_path}"',
+                shell=True,
+                check=True,
+            )
+
+            os.remove(original_path)  # Eliminar el archivo original después de la conversión
+        except subprocess.CalledProcessError:
+            raise HTTPException(status_code=400, detail="Error al convertir el video.")
     else:
         mp4_path = original_path
 
     # Elegir el modelo según el tipo de movimiento
-    if movimiento.lower() == "Abducción":
+    if movimiento.lower() == "abducción":
+        print("Ejecutando modelo de Abducción")
         resultado = abduccion_video(mp4_path)
-    elif movimiento.lower() == "Pronación y Supinación":
+    elif movimiento.lower() == "pronación y supinación":
+        print("Ejecutando modelo de p y s")
         resultado = pys_video(mp4_path)
-    elif movimiento.lower() == "Flexión":
+    elif movimiento.lower() == "flexión":
+        print("Ejecutando modelo de flexion")
         resultado = flexion_video(mp4_path)
     else:
         os.remove(mp4_path)
