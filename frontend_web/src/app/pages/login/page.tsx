@@ -61,14 +61,14 @@ const LoginPage = () => {
 
             // ✅ Guardar en el contexto
             setProfessional({
-                profesionalId: data.profesionalId,
+                profesionalId: data.id,
                 nombre: data.nombre,
                 correo: data.correo,
                 rut: data.rut,
                 rol: data.rol,
             });
             localStorage.setItem("profesional", JSON.stringify({
-                profesionalId: data.profesionalId,
+                profesionalId: data.id,
                 nombre: data.nombre,
                 correo: data.correo,
                 rut: data.rut,
