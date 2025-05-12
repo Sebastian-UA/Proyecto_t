@@ -119,7 +119,7 @@ class Ejercicio(EjercicioData):
 # ===========================
 class MedicionData(BaseModel):
     SesionId: int
-    EjercicioId: int
+    EjercicioId: Optional[int] = None 
     MovimientoId: int
     anguloMin: float
     anguloMax: float
@@ -153,3 +153,29 @@ class PacienteUsuarioOut(BaseModel):
 
     class Config:
         orm_mode = True
+
+class ProfesionalWithUsuario(BaseModel):
+    nombre: str
+    correo: str
+    contrasena: str
+    rol: str
+    especialidad: str
+    rut :str
+
+
+    class Config:
+        orm_mode = True
+
+class ProfesionalUsuarioOut(BaseModel):
+    profesionalId: int
+    nombre: str
+    correo: str
+    rol: str
+    especialidad: str
+
+    class Config:
+        orm_mode = True
+
+class LoginRequest(BaseModel):
+    correo: str
+    contrasena: str

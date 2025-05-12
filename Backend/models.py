@@ -62,7 +62,7 @@ class medicion(Base):
     __tablename__ ='medicion'
     medicionId = Column(Integer, primary_key=True, index=True)
     SesionId = Column(Integer, ForeignKey("sesion.sesionId"), index=True)
-    EjercicioId = Column(Integer, ForeignKey("ejercicio.ejercicioId"), index=True)
+    EjercicioId = Column(Integer, ForeignKey("ejercicio.ejercicioId"), index=True, nullable=True)
     MovimientoId = Column(Integer, ForeignKey("movimiento.movimientoId"), index=True)
     anguloMin= Column(Float, index=True)
     anguloMax= Column(Float, index=True)

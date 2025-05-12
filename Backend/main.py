@@ -2,8 +2,11 @@ from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 import crud, schemas
+from schemas import LoginRequest
+from crud import verificar_login
 from database import engine, localSession
-from schemas import usuarioData, UsuarioCreate, PacienteCreate, Paciente,ArticulacionCreate, Articulacion,MovimientoCreate
+from schemas import usuarioData, UsuarioCreate, PacienteCreate, Paciente,ArticulacionCreate, Articulacion,MovimientoCreate,MedicionCreate, Medicion,SesionCreate, Sesion
+from schemas import ProfesionalCreate, Profesional,ProfesionalWithUsuario  
 from abduccion_video import abduccion_video
 from pys_video import pys_video
 from flexion_video import flexion_video
@@ -110,6 +113,21 @@ def read_usuarios(db: Session = Depends(get_db)):
 def create_usuario(usuario: schemas.UsuarioCreate, db: Session = Depends(get_db)):
     return crud.create_usuario(db=db, usuario=usuario)
 
+@app.post("/login")
+def login(request: LoginRequest, db: Session = Depends(get_db)):
+    # Verificar las credenciales del usuario
+    usuario = verificar_login(request.correo, request.contrasena, db)
+    
+    if not usuario:
+        raise HTTPException(status_code=401, detail="Correo o contraseña incorrectos")
+    
+    return {
+        "id": usuario.usuarioId,
+        "nombre": usuario.nombre,
+        "correo": usuario.correo,
+        "rol": usuario.rol,
+        "rut": usuario.rut  # Si necesitas el RUT
+    }
 # ===========================
 # PACIENTE
 # ===========================
@@ -136,6 +154,34 @@ def obtener_paciente(id: int, db: Session = Depends(get_db)):
 def create_paciente_con_usuario(data: schemas.PacienteWithUsuario, db: Session = Depends(get_db)):
     return crud.create_paciente_with_usuario(db=db, data=data)
 
+# ===========================
+# PROFESIONAL
+# ===========================
+@app.post("/profesional_con_usuario/")
+def create_profesional_con_usuario(data: ProfesionalWithUsuario, db: Session = Depends(get_db)):
+    return crud.create_profesional_with_usuario(db=db, data=data)
+
+@app.post("/profesionales/", response_model=Profesional)
+def crear_profesional(profesional: ProfesionalCreate, db: Session = Depends(get_db)):
+    return crud.create_profesional(db=db, profesional=profesional)
+
+@app.get("/profesionales/", response_model=list[Profesional])
+def listar_profesionales(db: Session = Depends(get_db)):
+    return crud.get_profesionales(db)
+
+@app.get("/profesionales/{profesional_id}", response_model=Profesional)
+def obtener_profesional(profesional_id: int, db: Session = Depends(get_db)):
+    profesional = crud.get_profesional_by_id(db, profesional_id)
+    if not profesional:
+        raise HTTPException(status_code=404, detail="Profesional no encontrado")
+    return profesional
+
+@app.delete("/profesionales/{profesional_id}", response_model=Profesional)
+def eliminar_profesional(profesional_id: int, db: Session = Depends(get_db)):
+    profesional = crud.delete_profesional(db, profesional_id)
+    if not profesional:
+        raise HTTPException(status_code=404, detail="Profesional no encontrado")
+    return profesional
 # ===========================
 # ARTICULACION
 # ===========================
@@ -188,3 +234,47 @@ def eliminar_movimiento(movimiento_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Movimiento no encontrado")
     return db_movimiento
 
+# ===========================
+# SESIONES
+# ===========================
+
+@app.post("/sesiones/", response_model=Sesion)
+def crear_sesion(sesion: SesionCreate, db: Session = Depends(get_db)):
+    return crud.create_sesion(db=db, sesion=sesion)
+
+@app.get("/sesiones/", response_model=list[Sesion])
+def listar_sesiones(db: Session = Depends(get_db)):
+    return crud.get_sesiones(db)
+
+@app.get("/sesiones/{sesion_id}", response_model=Sesion)
+def obtener_sesion(sesion_id: int, db: Session = Depends(get_db)):
+    sesion = crud.get_sesion_by_id(db, sesion_id)
+    if not sesion:
+        raise HTTPException(status_code=404, detail="Sesión no encontrada")
+    return sesion
+
+@app.delete("/sesiones/{sesion_id}", response_model=Sesion)
+def eliminar_sesion(sesion_id: int, db: Session = Depends(get_db)):
+    sesion = crud.delete_sesion(db, sesion_id)
+    if not sesion:
+        raise HTTPException(status_code=404, detail="Sesión no encontrada")
+    return sesion
+
+# ===========================
+# MEDICIONES
+# ===========================
+
+@app.post("/mediciones/", response_model=Medicion)
+def crear_medicion(medicion: MedicionCreate, db: Session = Depends(get_db)):
+    return crud.create_medicion(db=db, medicion=medicion)
+
+@app.get("/mediciones/", response_model=list[Medicion])
+def listar_mediciones(db: Session = Depends(get_db)):
+    return crud.get_mediciones(db)
+
+@app.get("/mediciones/{medicion_id}", response_model=Medicion)
+def obtener_medicion(medicion_id: int, db: Session = Depends(get_db)):
+    medicion = crud.get_medicion_by_id(db, medicion_id)
+    if not medicion:
+        raise HTTPException(status_code=404, detail="Medición no encontrada")
+    return medicion
