@@ -1,9 +1,9 @@
-"use client"; // Asegura que este archivo sea un componente cliente
+"use client";
 
 import { useState, useEffect } from "react";
-// Importa el contexto de paciente
 import { usePatient } from "@/app/context/paciente";
-import { useRouter } from "next/navigation";  // Asegúrate de usar `next/navigation` para usar enrutador de Next.js
+import { useProfessional } from "@/app/context/profesional";
+import { useRouter } from "next/navigation";
 import {
   Dialog,
   DialogContent,
@@ -75,7 +75,15 @@ export default function PacientePage() {
   };
 
   const { setPatient } = usePatient();  // Desestructurar setPatient desde el contexto
+  const { professional } = useProfessional();
+  useEffect(() => {
+    console.log("Professional context:", professional);
+  }, [professional]);
 
+  if (!professional) {
+    return <div>Cargando datos del profesional...</div>;
+  }
+  
   const handleRowClick = (index: number) => {
     setSelectedIndex(index === selectedIndex ? null : index);  // Cambiar la selección de fila
 
@@ -92,13 +100,19 @@ export default function PacientePage() {
     if (selectedIndex !== null && pacientes[selectedIndex]) {
       const pacienteSeleccionado = pacientes[selectedIndex];
       setPatient(pacienteSeleccionado);  // Almacenar el paciente en el contexto global
-      // Aquí agregamos el pacienteId en la URL
-      router.push(`/pages/articulacion/${pacienteSeleccionado.pacienteId}`);  // Asumiendo que el paciente tiene un campo 'id'
+      console.log("Paciente ID:", pacienteSeleccionado.pacienteId);
+
+      if (professional) {  // Verifica si professional está disponible
+        console.log("Profesional ID:", professional.profesionalId);  // Debería mostrar el ID correctamente
+        router.push(`/pages/articulacion/${pacienteSeleccionado.pacienteId}`);  // Navegar solo si professional existe
+      } else {
+        console.error("El contexto del profesional no está disponible. No se puede continuar.");
+        // Mostrar un mensaje de error o manejar el flujo de manera diferente
+      }
     } else {
       console.log("Por favor, selecciona un paciente");
     }
   };
-  
 
 
   return (

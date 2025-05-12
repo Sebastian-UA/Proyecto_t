@@ -5,6 +5,7 @@ import { useRouter, useParams } from "next/navigation";
 import { getArticulaciones } from "@/app/services/articulacion.api";
 import { usePatient } from "@/app/context/paciente"; // importa el contexto
 
+
 interface Articulacion {
     articulacionId: number;
     nombre: string;

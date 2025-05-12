@@ -9,8 +9,11 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 import { createProfesionalConUsuario } from '@/app/services/profesional.api';
+import { useProfessional } from "@/app/context/profesional";
+
 
 const LoginPage = () => {
+    const { setProfessional } = useProfessional();
     const [correo, setCorreo] = useState('');
     const [contrasena, setContrasena] = useState('');
     const [error, setError] = useState('');
@@ -56,13 +59,31 @@ const LoginPage = () => {
             const data = await response.json();
             console.log('Usuario autenticado:', data);
 
-            // Aquí, usamos `router.push` para navegar en lugar de `navigate`
-            router.push('/dashboard');  // Cambio de ruta cuando la autenticación sea exitosa
+            // ✅ Guardar en el contexto
+            setProfessional({
+                profesionalId: data.profesionalId,
+                nombre: data.nombre,
+                correo: data.correo,
+                rut: data.rut,
+                rol: data.rol,
+            });
+            localStorage.setItem("profesional", JSON.stringify({
+                profesionalId: data.profesionalId,
+                nombre: data.nombre,
+                correo: data.correo,
+                rut: data.rut,
+                rol: data.rol,
+            }));
+
+
+            // ✅ Redirigir
+            router.push('/pages/paciente');
         } catch (err) {
             setError('Error de autenticación, intenta de nuevo');
             console.error(err);
         }
     };
+
 
     const handleRegistroSubmit = async (event: React.FormEvent) => {
         event.preventDefault();
