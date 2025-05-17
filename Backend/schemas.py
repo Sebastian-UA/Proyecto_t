@@ -123,6 +123,7 @@ class MedicionData(BaseModel):
     MovimientoId: int
     anguloMin: float
     anguloMax: float
+    lado:str
     fecha: date
 class MedicionCreate(MedicionData):
     pass

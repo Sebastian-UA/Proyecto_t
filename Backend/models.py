@@ -66,4 +66,5 @@ class medicion(Base):
     MovimientoId = Column(Integer, ForeignKey("movimiento.movimientoId"), index=True)
     anguloMin= Column(Float, index=True)
     anguloMax= Column(Float, index=True)
+    lado= Column(String(100), index=True)
     fecha= Column(Date, index=True)
