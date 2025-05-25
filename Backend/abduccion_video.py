@@ -21,7 +21,7 @@ def calculate_angle(a, b, c):
     angle = np.arccos(np.clip(cosine_angle, -1.0, 1.0))
     return np.degrees(angle)
 
-def abduccion_video(path: str):
+def abduccion_video(path: str, lado: str):
     cap = cv2.VideoCapture(path)
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
     fps = cap.get(cv2.CAP_PROP_FPS)
@@ -29,10 +29,8 @@ def abduccion_video(path: str):
     output_filename = f"{OUTPUT_DIR}/{uuid.uuid4()}_output.mp4"
     out = cv2.VideoWriter(output_filename, fourcc, fps, size)
 
-    max_angle_right = 0
-    min_angle_right = 180
-    max_angle_left = 0
-    min_angle_left = 180
+    max_angle = 0
+    min_angle = 180
 
     with mp_pose.Pose(static_image_mode=False, min_detection_confidence=0.5) as pose:
         while cap.isOpened():
@@ -41,43 +39,45 @@ def abduccion_video(path: str):
                 break
             image_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             results = pose.process(image_rgb)
+
             if results.pose_landmarks:
                 landmarks = results.pose_landmarks.landmark
                 height, width, _ = frame.shape
 
-                # ========== Brazo derecho: Cadera – Hombro – Codo ==========
-                right_hip = [landmarks[mp_pose.PoseLandmark.RIGHT_HIP.value].x,
-                             landmarks[mp_pose.PoseLandmark.RIGHT_HIP.value].y]
-                right_shoulder = [landmarks[mp_pose.PoseLandmark.RIGHT_SHOULDER.value].x,
-                                  landmarks[mp_pose.PoseLandmark.RIGHT_SHOULDER.value].y]
-                right_elbow = [landmarks[mp_pose.PoseLandmark.RIGHT_ELBOW.value].x,
-                               landmarks[mp_pose.PoseLandmark.RIGHT_ELBOW.value].y]
+                if lado == "derecha":
+                    hip = [landmarks[mp_pose.PoseLandmark.RIGHT_HIP.value].x,
+                           landmarks[mp_pose.PoseLandmark.RIGHT_HIP.value].y]
+                    shoulder = [landmarks[mp_pose.PoseLandmark.RIGHT_SHOULDER.value].x,
+                                landmarks[mp_pose.PoseLandmark.RIGHT_SHOULDER.value].y]
+                    elbow = [landmarks[mp_pose.PoseLandmark.RIGHT_ELBOW.value].x,
+                             landmarks[mp_pose.PoseLandmark.RIGHT_ELBOW.value].y]
+                    color = (0, 255, 0)
+                    label = 'R'
+                    cx, cy = int(shoulder[0] * width), int(shoulder[1] * height)
 
-                angle_right = calculate_angle(right_hip, right_shoulder, right_elbow)
-                max_angle_right = max(max_angle_right, angle_right)
-                min_angle_right = min(min_angle_right, angle_right)
+                elif lado == "izquierda":
+                    hip = [landmarks[mp_pose.PoseLandmark.LEFT_HIP.value].x,
+                           landmarks[mp_pose.PoseLandmark.LEFT_HIP.value].y]
+                    shoulder = [landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER.value].x,
+                                landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER.value].y]
+                    elbow = [landmarks[mp_pose.PoseLandmark.LEFT_ELBOW.value].x,
+                             landmarks[mp_pose.PoseLandmark.LEFT_ELBOW.value].y]
+                    color = (255, 0, 0)
+                    label = 'L'
+                    cx, cy = int(shoulder[0] * width), int(shoulder[1] * height)
 
-                cx_r, cy_r = int(right_shoulder[0] * width), int(right_shoulder[1] * height)
-                cv2.putText(frame, f'R: {int(angle_right)}', (cx_r, cy_r - 20),
-                            cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+                else:
+                    cap.release()
+                    out.release()
+                    raise ValueError("Lado inválido. Debe ser 'derecha' o 'izquierda'.")
 
-                # ========== Brazo izquierdo: Cadera – Hombro – Codo ==========
-                left_hip = [landmarks[mp_pose.PoseLandmark.LEFT_HIP.value].x,
-                            landmarks[mp_pose.PoseLandmark.LEFT_HIP.value].y]
-                left_shoulder = [landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER.value].x,
-                                 landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER.value].y]
-                left_elbow = [landmarks[mp_pose.PoseLandmark.LEFT_ELBOW.value].x,
-                              landmarks[mp_pose.PoseLandmark.LEFT_ELBOW.value].y]
+                angle = calculate_angle(hip, shoulder, elbow)
+                max_angle = max(max_angle, angle)
+                min_angle = min(min_angle, angle)
 
-                angle_left = calculate_angle(left_hip, left_shoulder, left_elbow)
-                max_angle_left = max(max_angle_left, angle_left)
-                min_angle_left = min(min_angle_left, angle_left)
+                cv2.putText(frame, f'{label}: {int(angle)}', (cx, cy - 20),
+                            cv2.FONT_HERSHEY_SIMPLEX, 1, color, 2)
 
-                cx_l, cy_l = int(left_shoulder[0] * width), int(left_shoulder[1] * height)
-                cv2.putText(frame, f'L: {int(angle_left)}', (cx_l, cy_l - 20),
-                            cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
-
-                # Dibuja pose completa
                 mp_drawing.draw_landmarks(
                     frame, results.pose_landmarks, mp_pose.POSE_CONNECTIONS)
 
@@ -87,14 +87,12 @@ def abduccion_video(path: str):
     out.release()
 
     print(f" Video procesado guardado en: {output_filename}")
-    print(f" Ángulo derecho - Máximo: {max_angle_right:.2f}, Mínimo: {min_angle_right:.2f}")
-    print(f" Ángulo izquierdo - Máximo: {max_angle_left:.2f}, Mínimo: {min_angle_left:.2f}")
+    print(f" Ángulo {lado} - Máximo: {max_angle:.2f}, Mínimo: {min_angle:.2f}")
 
     return {
         "message": "Video procesado y guardado correctamente.",
         "output": output_filename,
-        "max_angle_right": max_angle_right,
-        "min_angle_right": min_angle_right,
-        "max_angle_left": max_angle_left,
-        "min_angle_left": min_angle_left
+        "lado": lado,
+        "max_angle": max_angle,
+        "min_angle": min_angle
     }

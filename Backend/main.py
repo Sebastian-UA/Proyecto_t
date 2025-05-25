@@ -45,6 +45,7 @@ app.add_middleware(
 async def analizar_video(
     file: UploadFile = File(...),
     movimiento: str = Form(...),
+    lado: str = Form(...),
 ):
     #print(f"Recibido archivo: {file.filename}, Tamaño: {len(await file.read())} bytes")
     print(f"Movimiento: {movimiento}")
@@ -76,15 +77,15 @@ async def analizar_video(
     # Elegir el modelo según el tipo de movimiento
     if movimiento.lower() == "abducción":
         print("Ejecutando modelo de Abducción")
-        resultado = abduccion_video(mp4_path)
+        resultado = abduccion_video(mp4_path,lado=lado)
     elif movimiento.lower() == "pronación y supinación":
         print("Ejecutando modelo de p y s")
-        resultado = pys_video(mp4_path)
+        resultado = pys_video(mp4_path,lado=lado)
     elif movimiento.lower() == "flexión":
         print("Ejecutando modelo de flexion")
-        resultado = flexion_video(mp4_path)
+        resultado = flexion_video(mp4_path,lado=lado)
     else:
-        os.remove(mp4_path)
+        os.remove(mp4_path,lado=lado)
         raise HTTPException(status_code=400, detail="Movimiento no reconocido")
 
     os.remove(mp4_path)

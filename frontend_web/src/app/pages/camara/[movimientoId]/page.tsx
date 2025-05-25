@@ -2,32 +2,31 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useParams } from 'next/navigation'
-import { getMovimientoById } from '@/app/services/movimiento.api'; // Asegúrate de importar correctamente tu función
+import { getMovimientoById } from '@/app/services/movimiento.api'
 
 export default function CameraRecorder() {
-  const { movimientoId } = useParams() // Obtener el ID del movimiento de la URL
-  const [movimiento, setMovimiento] = useState<string>('') // Estado para almacenar el nombre del movimiento
+  const { movimientoId } = useParams()
+  const [movimiento, setMovimiento] = useState<string>('')
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const [stream, setStream] = useState<MediaStream | null>(null)
   const [recording, setRecording] = useState(false)
   const [countdown, setCountdown] = useState<number | null>(null)
   const [recordedVideoURL, setRecordedVideoURL] = useState<string | null>(null)
+  const [lado, setLado] = useState<string>('derecha')
 
   useEffect(() => {
     if (movimientoId) {
-      // Llamar a la API para obtener el movimiento por ID
       getMovimientoById(Number(movimientoId))
         .then((data) => {
-          setMovimiento(data.nombre); // Asumiendo que `data.nombre` es el nombre del movimiento
+          setMovimiento(data.nombre)
         })
         .catch((error) => {
-          console.error('Error al obtener el movimiento:', error);
-        });
+          console.error('Error al obtener el movimiento:', error)
+        })
     }
-  }, [movimientoId]);
+  }, [movimientoId])
 
-  // Activar cámara
   const handleStartCamera = async () => {
     try {
       const mediaStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
@@ -40,7 +39,6 @@ export default function CameraRecorder() {
     }
   }
 
-  // Grabar video durante 10 segundos
   const handleStartRecording = () => {
     if (!stream) return
 
@@ -67,6 +65,7 @@ export default function CameraRecorder() {
       const formData = new FormData()
       formData.append('file', blob, 'grabacion.webm')
       formData.append('movimiento', movimiento)
+      formData.append('lado', lado)
 
       formData.forEach((value, key) => {
         console.log(`${key}:`, value)
@@ -92,7 +91,6 @@ export default function CameraRecorder() {
 
     mediaRecorder.start()
 
-    // Detener grabación automáticamente después de 10 segundos
     const interval = setInterval(() => {
       setCountdown((prev) => {
         if (prev && prev > 1) return prev - 1
@@ -105,7 +103,6 @@ export default function CameraRecorder() {
 
   useEffect(() => {
     return () => {
-      // Limpiar recursos al desmontar
       if (stream) {
         stream.getTracks().forEach((track) => track.stop())
       }
@@ -127,7 +124,7 @@ export default function CameraRecorder() {
         </p>
       </div>
 
-      <div className="flex gap-4 mb-4">
+      <div className="flex gap-4 mb-4 items-end">
         <button
           onClick={handleStartCamera}
           className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"
@@ -135,11 +132,26 @@ export default function CameraRecorder() {
           Activar Cámara
         </button>
 
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Selecciona el lado a analizar:
+          </label>
+          <select
+            value={lado}
+            onChange={(e) => setLado(e.target.value)}
+            className="block w-38 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+          >
+            <option value="derecha">Derecha</option>
+            <option value="izquierda">Izquierda</option>
+          </select>
+        </div>
+
         <button
           onClick={handleStartRecording}
           disabled={!stream || recording}
-          className={`${recording ? 'bg-gray-400' : 'bg-green-500 hover:bg-green-600'
-            } text-white font-bold py-2 px-4 rounded`}
+          className={`${
+            recording ? 'bg-gray-400' : 'bg-green-500 hover:bg-green-600'
+          } text-white font-bold py-2 px-4 rounded`}
         >
           Grabar 10s
         </button>
