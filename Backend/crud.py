@@ -6,8 +6,10 @@ from models import medicion as MedicionDB
 from models import sesion as SesionDB
 from models import profesional as ProfesionalDB
 from schemas import usuarioData, PacienteCreate, PacienteWithUsuario, ArticulacionCreate,MovimientoCreate, Movimiento,MedicionCreate,SesionCreate
-from schemas import ProfesionalCreate,ProfesionalWithUsuario
+from schemas import ProfesionalCreate,ProfesionalWithUsuario,SesionWithMedicion,ProfesionalUsuarioOut,PacienteUsuarioOut
 from passlib.context import CryptContext
+from typing import Optional
+
 
 import models
 
@@ -23,7 +25,7 @@ def get_usuario_id(db: Session, id: int):
     return db.query(UsuarioDB).filter(UsuarioDB.usuarioId == id).first()
 
 def create_usuario(db: Session, usuario: usuarioData):
-    fake_password = usuario.contrasena + '#fake'  # Añadimos el sufijo a la contraseña
+    fake_password = usuario.contrasena + '#fake', # Añadimos el sufijo a la contraseña
     # Aquí instanciamos el modelo SQLAlchemy, no el esquema Pydantic
     new_usuario = UsuarioDB(
         nombre=usuario.nombre, 
@@ -46,7 +48,7 @@ def create_profesional_with_usuario(db: Session, data: ProfesionalWithUsuario):
     nuevo_usuario = UsuarioDB(
         nombre=data.nombre,
         correo=data.correo,
-        contrasena=data.contrasena + "#fake",  # o aplicar hash real
+        contrasena=data.contrasena + "#fake", # o aplicar hash real
         rol=data.rol,
         rut=data.rut  
     )
@@ -224,7 +226,7 @@ def delete_movimiento(db: Session, movimiento_id: int):
 def create_sesion(db: Session, sesion: SesionCreate):
     db_sesion = SesionDB(
         PacienteId=sesion.PacienteId,
-        ProfesionalId=sesion.ProfecionalId,
+        ProfesionalId=sesion.ProfesionalId,
         fecha=sesion.fecha,
         hora=sesion.hora,
         notas=sesion.notas
@@ -265,7 +267,6 @@ def create_medicion(db: Session, medicion: MedicionCreate):
         MovimientoId=medicion.MovimientoId,
         anguloMin=medicion.anguloMin,
         anguloMax=medicion.anguloMax,
-        fecha=medicion.fecha
     )
     db.add(db_medicion)
     db.commit()
@@ -292,3 +293,86 @@ def verificar_login(correo: str, contrasena: str, db: Session):
         return None  # Contraseña incorrecta
 
     return usuario  # Usuario encontrado y contraseña correcta
+
+def get_profesional_by_usuario_id(db: Session, usuario_id: int):
+    return db.query(models.profesional).filter(models.profesional.usuarioId == usuario_id).first()
+
+def get_paciente_by_usuario_id(db: Session, usuario_id: int):
+    return db.query(models.paciente).filter(models.paciente.usuarioId == usuario_id).first()
+
+
+def verificar_login_con_rol(correo: str, contrasena: str, db: Session) -> Optional[dict]:
+    # Buscar usuario por correo
+    usuario = db.query(UsuarioDB).filter(UsuarioDB.correo == correo).first()
+    if not usuario:
+        return None  # Usuario no encontrado
+    
+    # Validar contraseña (aquí comparación simple, mejor usar hash)
+    if contrasena != usuario.contrasena:
+        return None  # Contraseña incorrecta
+
+    # Según el rol, buscar datos relacionados
+    profesional = None
+    paciente = None
+
+    if usuario.rol == "profesional":
+        profesional_db = db.query(ProfesionalDB).filter(ProfesionalDB.usuarioId == usuario.usuarioId).first()
+        if profesional_db:
+            profesional = ProfesionalUsuarioOut(
+                profesionalId=profesional_db.profesionalId,
+                nombre=usuario.nombre,
+                correo=usuario.correo,
+                rol=usuario.rol,
+                especialidad=profesional_db.especialidad
+            )
+    elif usuario.rol == "paciente":
+        paciente_db = db.query(PacienteDB).filter(PacienteDB.usuarioId == usuario.usuarioId).first()
+        if paciente_db:
+            paciente = PacienteUsuarioOut(
+                pacienteId=paciente_db.pacienteId,
+                nombre=usuario.nombre,
+                rut=usuario.rut,
+                edad=paciente_db.edad,
+                telefono=paciente_db.telefono
+            )
+    
+    # Construir dict con datos del usuario y datos rol
+    return {
+        "usuarioId": usuario.usuarioId,
+        "nombre": usuario.nombre,
+        "correo": usuario.correo,
+        "rol": usuario.rol,
+        "rut": usuario.rut,
+        "profesional": profesional,
+        "paciente": paciente
+    }
+def create_sesion_with_medicion(db: Session, data: SesionWithMedicion):
+    # 1. Crear sesión
+    nueva_sesion = SesionDB(
+        PacienteId=data.PacienteId,
+        ProfesionalId=data.ProfesionalId,
+        fecha=data.fecha,
+        hora=data.hora,
+        notas=data.notas,
+    )
+    db.add(nueva_sesion)
+    db.commit()
+    db.refresh(nueva_sesion)
+
+    # 2. Crear medición asociada
+    nueva_medicion = MedicionDB(
+        SesionId=nueva_sesion.sesionId,
+        EjercicioId=data.EjercicioId,
+        MovimientoId=data.MovimientoId,
+        anguloMin=data.anguloMin,
+        anguloMax=data.anguloMax,
+        lado=data.lado,
+    )
+    db.add(nueva_medicion)
+    db.commit()
+    db.refresh(nueva_medicion)
+
+    return {
+        "sesion": nueva_sesion,
+        "medicion": nueva_medicion
+    }

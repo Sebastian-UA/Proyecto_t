@@ -67,4 +67,3 @@ class medicion(Base):
     anguloMin= Column(Float, index=True)
     anguloMax= Column(Float, index=True)
     lado= Column(String(100), index=True)
-    fecha= Column(Date, index=True)

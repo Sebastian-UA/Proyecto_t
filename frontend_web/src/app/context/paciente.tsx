@@ -1,31 +1,50 @@
 // src/context/PatientContext.tsx
 "use client"
-import React, { createContext, useContext, useState, ReactNode } from "react";
+import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 
-// Definir el tipo del paciente (puedes ajustarlo según tu modelo)
+// Tipo del paciente
 interface Patient {
-    pacienteId: number;  // <- no 'id', sino 'pacienteId' como lo usas en tu página
-    nombre: string;
-    rut: string;
-    edad: number;
-    telefono: string;
-    correo: string;
-    contrasena: string;
-    rol: string;
-}  
+  pacienteId: number;
+  nombre: string;
+  rut: string;
+  edad: number;
+  telefono: string;
+  correo: string;
+  contrasena: string;
+  rol: string;
+}
 
-// Definir el contexto con un valor inicial
+// Tipo del contexto
 interface PatientContextType {
   patient: Patient | null;
   setPatient: (patient: Patient) => void;
 }
 
-// Crear el contexto con un valor por defecto
+// Crear el contexto
 const PatientContext = createContext<PatientContextType | undefined>(undefined);
 
-// Crear el Provider para envolver la aplicación y proporcionar el contexto
+// Provider
 export const PatientProvider = ({ children }: { children: ReactNode }) => {
-  const [patient, setPatient] = useState<Patient | null>(null);
+  const [patient, setPatientState] = useState<Patient | null>(null);
+
+  // Envolver setPatient para guardar en localStorage
+  const setPatient = (patient: Patient) => {
+    setPatientState(patient);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("paciente", JSON.stringify(patient));
+    }
+  };
+
+  // Restaurar desde localStorage al montar
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("paciente");
+      if (stored) {
+        console.log("Paciente restaurado desde localStorage:", JSON.parse(stored));
+        setPatientState(JSON.parse(stored));
+      }
+    }
+  }, []);
 
   return (
     <PatientContext.Provider value={{ patient, setPatient }}>
@@ -34,7 +53,7 @@ export const PatientProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-// Crear un hook para usar el contexto en otros componentes
+// Hook para usar el contexto
 export const usePatient = () => {
   const context = useContext(PatientContext);
   if (!context) {

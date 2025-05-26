@@ -61,7 +61,7 @@ class Profesional(ProfesionalData):
 # ===========================
 class SesionData(BaseModel):
     PacienteId: int
-    ProfecionalId: int
+    ProfesionalId: int
     fecha: date
     hora: time
     notas: Optional[str]
@@ -124,7 +124,6 @@ class MedicionData(BaseModel):
     anguloMin: float
     anguloMax: float
     lado:str
-    fecha: date
 class MedicionCreate(MedicionData):
     pass
 class Medicion(MedicionData):
@@ -180,3 +179,37 @@ class ProfesionalUsuarioOut(BaseModel):
 class LoginRequest(BaseModel):
     correo: str
     contrasena: str
+
+class LoginResponse(BaseModel):
+    usuarioId: int
+    nombre: str
+    correo: str
+    rol: str
+    rut: str
+
+    profesional: Optional[ProfesionalUsuarioOut] = None
+    paciente: Optional[PacienteUsuarioOut] = None
+
+    class Config:
+        orm_mode = True
+
+class SesionWithMedicion(BaseModel):
+    PacienteId: int
+    ProfesionalId: int
+    fecha: date
+    hora: time
+    notas: Optional[str] = None
+
+    # Datos de la medición
+    EjercicioId: Optional[int] = None
+    MovimientoId: int
+    anguloMin: float
+    anguloMax: float
+    lado: str
+
+class SesionConMedicionResponse(BaseModel):
+    sesion: Sesion
+    medicion: Medicion
+
+    class Config:
+        orm_mode = True

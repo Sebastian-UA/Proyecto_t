@@ -3,6 +3,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { getMovimientoById } from '@/app/services/movimiento.api'
+import { usePatient } from '@/app/context/paciente'
+import { useProfessional } from '@/app/context/profesional' // si tienes este hook
+import { createSesionWithMedicion } from '@/app/services/sesion.api'
+import { format } from 'date-fns'
 
 export default function CameraRecorder() {
   const { movimientoId } = useParams()
@@ -14,6 +18,10 @@ export default function CameraRecorder() {
   const [countdown, setCountdown] = useState<number | null>(null)
   const [recordedVideoURL, setRecordedVideoURL] = useState<string | null>(null)
   const [lado, setLado] = useState<string>('derecha')
+
+  const { patient } = usePatient()
+  const { professional } = useProfessional() // solo si ya tienes este contexto
+
 
   useEffect(() => {
     if (movimientoId) {
@@ -27,6 +35,12 @@ export default function CameraRecorder() {
     }
   }, [movimientoId])
 
+  useEffect(() => {
+    console.log("Paciente desde contexto:", patient)
+    console.log("Profesional desde contexto:", professional)
+  }, [patient, professional])
+
+
   const handleStartCamera = async () => {
     try {
       const mediaStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
@@ -38,6 +52,13 @@ export default function CameraRecorder() {
       console.error('Error al acceder a la cámara:', error)
     }
   }
+  const [resultadoAnalisis, setResultadoAnalisis] = useState<{
+    max_angle: number
+    min_angle: number
+    delta_angle: number
+    output: string
+    lado: string
+  } | null>(null)
 
   const handleStartRecording = () => {
     if (!stream) return
@@ -78,10 +99,13 @@ export default function CameraRecorder() {
         })
 
         if (response.ok) {
-          console.log('Video enviado y procesado correctamente.')
+          const data = await response.json()
+          console.log('Resultado del análisis:', data)
+          setResultadoAnalisis(data)
         } else {
           console.error('Error al procesar el video.')
         }
+
       } catch (error) {
         console.error('Error al enviar el video:', error)
       }
@@ -100,6 +124,39 @@ export default function CameraRecorder() {
       })
     }, 1000)
   }
+  const handleGuardarAnalisis = async () => {
+    if (!resultadoAnalisis || !movimientoId || !patient || !professional) {
+      alert("Faltan datos para guardar el análisis");
+      return;
+    }
+
+    try {
+      // Fecha y hora actuales (puedes usar Date nativo o date-fns para formato)
+      const now = new Date();
+
+      const dataToSend = {
+        PacienteId: patient.pacienteId,             // desde contexto paciente
+        ProfesionalId: professional.profesionalId,             // desde contexto profesional
+        fecha: now.toISOString().slice(0, 10),      // YYYY-MM-DD
+        hora: now.toISOString().slice(11, 19),      // HH:MM:SS
+        notas: "",                                  // opcional, aquí vacío o algún texto
+        EjercicioId: null,                          // si no tienes ejercicio, null
+        MovimientoId: Number(movimientoId),
+        anguloMin: resultadoAnalisis.min_angle,
+        anguloMax: resultadoAnalisis.max_angle,
+        lado: resultadoAnalisis.lado,
+      };
+      console.log("Datos que se envían al backend:", dataToSend);
+
+      const respuesta = await createSesionWithMedicion(dataToSend);
+      alert("Sesión con medición guardada correctamente");
+      console.log("Respuesta backend:", respuesta);
+    } catch (error) {
+      alert("Error al guardar sesión con medición");
+      console.error(error);
+    }
+  };
+
 
   useEffect(() => {
     return () => {
@@ -149,9 +206,8 @@ export default function CameraRecorder() {
         <button
           onClick={handleStartRecording}
           disabled={!stream || recording}
-          className={`${
-            recording ? 'bg-gray-400' : 'bg-green-500 hover:bg-green-600'
-          } text-white font-bold py-2 px-4 rounded`}
+          className={`${recording ? 'bg-gray-400' : 'bg-green-500 hover:bg-green-600'
+            } text-white font-bold py-2 px-4 rounded`}
         >
           Grabar 10s
         </button>
@@ -173,6 +229,29 @@ export default function CameraRecorder() {
           />
         </div>
       )}
+      {resultadoAnalisis && (
+        <div className="mt-6 p-4 bg-gray-100 rounded shadow w-full max-w-md">
+          <h3 className="text-lg font-bold mb-2">Resultados del análisis:</h3>
+          <p><strong>Lado analizado:</strong> {resultadoAnalisis.lado}</p>
+          <p><strong>Ángulo máximo:</strong> {resultadoAnalisis.max_angle.toFixed(2)}°</p>
+          <p><strong>Ángulo mínimo:</strong> {resultadoAnalisis.min_angle.toFixed(2)}°</p>
+          <p><strong>Delta:</strong> {resultadoAnalisis.delta_angle.toFixed(2)}°</p>
+          <video
+            src={`http://localhost:8000/${resultadoAnalisis.output}`}
+            controls
+            className="mt-4 w-full rounded"
+          />
+        </div>
+      )}
+
+      <button
+        onClick={handleGuardarAnalisis}
+        className="mt-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded"
+      >
+        Guardar análisis
+      </button>
+
+
     </div>
   )
 }

@@ -116,19 +116,34 @@ def create_usuario(usuario: schemas.UsuarioCreate, db: Session = Depends(get_db)
 
 @app.post("/login")
 def login(request: LoginRequest, db: Session = Depends(get_db)):
-    # Verificar las credenciales del usuario
     usuario = verificar_login(request.correo, request.contrasena, db)
-    
     if not usuario:
         raise HTTPException(status_code=401, detail="Correo o contraseña incorrectos")
     
-    return {
-        "id": usuario.usuarioId,
+    profesional = None
+    paciente = None
+    
+    if usuario.rol == "profesional":
+        profesional = crud.get_profesional_by_usuario_id(db, usuario.usuarioId)
+    elif usuario.rol == "paciente":
+        paciente = crud.get_paciente_by_usuario_id(db, usuario.usuarioId)
+    
+    response = {
+        "id_usuario": usuario.usuarioId,
         "nombre": usuario.nombre,
         "correo": usuario.correo,
         "rol": usuario.rol,
-        "rut": usuario.rut  # Si necesitas el RUT
+        "rut": usuario.rut,
     }
+
+    if profesional:
+        response["id"] = profesional.profesionalId
+    if paciente:
+        response["id"] = paciente.pacienteId
+
+    return response
+
+
 # ===========================
 # PACIENTE
 # ===========================
@@ -279,3 +294,11 @@ def obtener_medicion(medicion_id: int, db: Session = Depends(get_db)):
     if not medicion:
         raise HTTPException(status_code=404, detail="Medición no encontrada")
     return medicion
+
+@app.post("/sesiones_con_medicion/", response_model=schemas.SesionConMedicionResponse)
+def crear_sesion_con_medicion(data: schemas.SesionWithMedicion, db: Session = Depends(get_db)):
+    result = crud.create_sesion_with_medicion(db=db, data=data)
+    return {
+        "sesion": result["sesion"],
+        "medicion": result["medicion"]
+    }
