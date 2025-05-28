@@ -95,6 +95,7 @@ async def analizar_video(
             raise HTTPException(status_code=400, detail="Error al convertir el video procesado.")
     elif movimiento.lower() == "pronación y supinación":
         print("Ejecutando modelo de p y s")
+        print(f"Lado recibido: '{lado}'")  # <--- DEBUG
         resultado = pys_video(mp4_path,lado=lado)
         original_output = resultado["output"]
         final_output = original_output.replace("_output.mp4", "_final.mp4")

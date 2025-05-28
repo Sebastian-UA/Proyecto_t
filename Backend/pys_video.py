@@ -3,7 +3,6 @@ import numpy as np
 import mediapipe as mp
 import uuid
 import os
-import datetime
 
 mp_hands = mp.solutions.hands
 mp_pose = mp.solutions.pose
@@ -23,17 +22,17 @@ def calculate_angle(a, b, c):
         angle = 360 - angle
     return angle
 
-# Parámetros de pronación y supinación
+# Umbral para clasificar pronación y supinación
 NEUTRAL_ANGLE_THRESHOLD = 15
 
 # Inicializar los módulos de MediaPipe
 hands = mp_hands.Hands(min_detection_confidence=0.5, min_tracking_confidence=0.5)
 pose = mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5)
 
-# Función principal para procesar el video
+# Función principal
 def pys_video(path: str, lado: str):
-    if lado.lower() not in ["izquierdo", "derecho"]:
-        raise ValueError("El parámetro 'lado' debe ser 'izquierdo' o 'derecho'")
+    if lado.lower() not in ["izquierda", "derecha"]:
+        raise ValueError("El parámetro 'lado' debe ser 'izquierda' o 'derecha'")
 
     cap = cv2.VideoCapture(path)
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
@@ -42,8 +41,8 @@ def pys_video(path: str, lado: str):
     output_filename = f"{OUTPUT_DIR}/{uuid.uuid4()}_output.mp4"
     out = cv2.VideoWriter(output_filename, fourcc, fps, size)
 
-    left_angles = []
-    right_angles = []
+    pronation_angles = []
+    supination_angles = []
 
     while cap.isOpened():
         ret, frame = cap.read()
@@ -72,42 +71,44 @@ def pys_video(path: str, lado: str):
                     thumb_x, thumb_y = int(thumb.x * width), int(thumb.y * height)
                     index_x, index_y = int(index.x * width), int(index.y * height)
 
-                    if lado.lower() == "izquierdo" and wrist_x < width / 2:
+                    if lado.lower() == "izquierda" and wrist_x < width / 2:
                         shoulder = pose_results.pose_landmarks.landmark[mp_pose.PoseLandmark.LEFT_SHOULDER]
-                        left_angle = calculate_angle(
+                        angle = calculate_angle(
                             (shoulder.x * width, shoulder.y * height),
                             (thumb_x, thumb_y),
                             (index_x, index_y)
                         )
-                        left_angles.append(left_angle)
-                        cv2.putText(frame, f'Left Angle: {int(left_angle)}', (20, 70),
+                        cv2.putText(frame, f'Left Angle: {int(angle)}', (20, 70),
                                     cv2.FONT_HERSHEY_PLAIN, 2, (0, 0, 255), 2)
 
-                        if left_angle < (90 - NEUTRAL_ANGLE_THRESHOLD):
+                        if angle < (90 - NEUTRAL_ANGLE_THRESHOLD):
+                            pronation_angles.append(angle)
                             cv2.putText(frame, 'Pronacion Left', (20, 120),
                                         cv2.FONT_HERSHEY_PLAIN, 2, (0, 255, 0), 2)
-                        elif left_angle > (90 + NEUTRAL_ANGLE_THRESHOLD):
+                        elif angle > (90 + NEUTRAL_ANGLE_THRESHOLD):
+                            supination_angles.append(angle)
                             cv2.putText(frame, 'Supinacion Left', (20, 120),
                                         cv2.FONT_HERSHEY_PLAIN, 2, (0, 0, 255), 2)
                         else:
                             cv2.putText(frame, 'Neutral Left', (20, 120),
                                         cv2.FONT_HERSHEY_PLAIN, 2, (255, 255, 0), 2)
 
-                    elif lado.lower() == "derecho" and wrist_x >= width / 2:
+                    elif lado.lower() == "derecha" and wrist_x >= width / 2:
                         shoulder = pose_results.pose_landmarks.landmark[mp_pose.PoseLandmark.RIGHT_SHOULDER]
-                        right_angle = calculate_angle(
+                        angle = calculate_angle(
                             (shoulder.x * width, shoulder.y * height),
                             (thumb_x, thumb_y),
                             (index_x, index_y)
                         )
-                        right_angles.append(right_angle)
-                        cv2.putText(frame, f'Right Angle: {int(right_angle)}', (20, 170),
+                        cv2.putText(frame, f'Right Angle: {int(angle)}', (20, 170),
                                     cv2.FONT_HERSHEY_PLAIN, 2, (0, 0, 255), 2)
 
-                        if right_angle < (90 - NEUTRAL_ANGLE_THRESHOLD):
+                        if angle < (90 - NEUTRAL_ANGLE_THRESHOLD):
+                            pronation_angles.append(angle)
                             cv2.putText(frame, 'Pronacion Right', (20, 180),
                                         cv2.FONT_HERSHEY_PLAIN, 2, (0, 255, 0), 2)
-                        elif right_angle > (90 + NEUTRAL_ANGLE_THRESHOLD):
+                        elif angle > (90 + NEUTRAL_ANGLE_THRESHOLD):
+                            supination_angles.append(angle)
                             cv2.putText(frame, 'Supinacion Right', (20, 180),
                                         cv2.FONT_HERSHEY_PLAIN, 2, (0, 0, 255), 2)
                         else:
@@ -122,22 +123,19 @@ def pys_video(path: str, lado: str):
     resultado = {
         "message": "Video procesado y guardado correctamente.",
         "output": output_filename,
+        "lado": lado.lower()
     }
 
-    if lado.lower() == "izquierdo" and left_angles:
-        delta_left = max(left_angles) - min(left_angles)
-        resultado.update({
-            "delta_left": delta_left,
-            "max_left": max(left_angles),
-            "min_left": min(left_angles)
-        })
+    if pronation_angles:
+        resultado["pronacion"] = {
+            "min_angle": min(pronation_angles),
+            "max_angle": max(pronation_angles)
+        }
 
-    if lado.lower() == "derecho" and right_angles:
-        delta_right = max(right_angles) - min(right_angles)
-        resultado.update({
-            "delta_right": delta_right,
-            "max_right": max(right_angles),
-            "min_right": min(right_angles)
-        })
+    if supination_angles:
+        resultado["supinacion"] = {
+            "min_angle": min(supination_angles),
+            "max_angle": max(supination_angles)
+        }
 
     return resultado

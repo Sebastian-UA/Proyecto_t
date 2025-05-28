@@ -60,7 +60,7 @@ def flexion_video(path: str, lado: str):
                 landmarks = results.pose_landmarks.landmark
                 height, width, _ = frame.shape
 
-                if lado.lower() == "derecho":
+                if lado.lower() == "derecha":
                     shoulder = [landmarks[mp_pose.PoseLandmark.RIGHT_SHOULDER.value].x,
                                 landmarks[mp_pose.PoseLandmark.RIGHT_SHOULDER.value].y]
                     elbow = [landmarks[mp_pose.PoseLandmark.RIGHT_ELBOW.value].x,
@@ -125,5 +125,4 @@ def flexion_video(path: str, lado: str):
         "lado": lado,
         "max_angle": max_angle,
         "min_angle": min_angle,
-        "delta_angle": delta_angle
     }

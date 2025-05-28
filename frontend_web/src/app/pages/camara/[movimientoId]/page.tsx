@@ -235,7 +235,6 @@ export default function CameraRecorder() {
           <p><strong>Lado analizado:</strong> {resultadoAnalisis.lado}</p>
           <p><strong>Ángulo máximo:</strong> {resultadoAnalisis.max_angle.toFixed(2)}°</p>
           <p><strong>Ángulo mínimo:</strong> {resultadoAnalisis.min_angle.toFixed(2)}°</p>
-          <p><strong>Delta:</strong> {resultadoAnalisis.delta_angle.toFixed(2)}°</p>
           <video
             src={`http://localhost:8000/${resultadoAnalisis.output}`}
             controls
