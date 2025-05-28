@@ -31,6 +31,9 @@ app = FastAPI()
 
 # Montar carpeta 'img' para servir imágenes estáticas
 app.mount("/img", StaticFiles(directory=os.path.join(os.getcwd(), "img")), name="img")
+# Montar carpeta 'videos' para servir videos procesados
+app.mount("/videos", StaticFiles(directory=os.path.join(os.getcwd(), "videos")), name="videos")
+
 
 # Configurar CORS para permitir solicitudes desde el frontend
 app.add_middleware(
@@ -78,17 +81,54 @@ async def analizar_video(
     if movimiento.lower() == "abducción":
         print("Ejecutando modelo de Abducción")
         resultado = abduccion_video(mp4_path,lado=lado)
+        original_output = resultado["output"]
+        final_output = original_output.replace("_output.mp4", "_final.mp4")
+
+        try:
+            subprocess.run(
+                f'ffmpeg -y -i "{original_output}" -vcodec libx264 -acodec aac "{final_output}"',
+                shell=True,
+                check=True,
+            )
+            resultado["output"] = final_output
+        except subprocess.CalledProcessError:
+            raise HTTPException(status_code=400, detail="Error al convertir el video procesado.")
     elif movimiento.lower() == "pronación y supinación":
         print("Ejecutando modelo de p y s")
         resultado = pys_video(mp4_path,lado=lado)
+        original_output = resultado["output"]
+        final_output = original_output.replace("_output.mp4", "_final.mp4")
+
+        try:
+            subprocess.run(
+                f'ffmpeg -y -i "{original_output}" -vcodec libx264 -acodec aac "{final_output}"',
+                shell=True,
+                check=True,
+            )
+            resultado["output"] = final_output
+        except subprocess.CalledProcessError:
+            raise HTTPException(status_code=400, detail="Error al convertir el video procesado.")
     elif movimiento.lower() == "flexión":
         print("Ejecutando modelo de flexion")
         resultado = flexion_video(mp4_path,lado=lado)
+
+        original_output = resultado["output"]
+        final_output = original_output.replace("_output.mp4", "_final.mp4")
+
+        try:
+            subprocess.run(
+                f'ffmpeg -y -i "{original_output}" -vcodec libx264 -acodec aac "{final_output}"',
+                shell=True,
+                check=True,
+            )
+            resultado["output"] = final_output
+        except subprocess.CalledProcessError:
+            raise HTTPException(status_code=400, detail="Error al convertir el video procesado.")
     else:
         os.remove(mp4_path,lado=lado)
         raise HTTPException(status_code=400, detail="Movimiento no reconocido")
 
-    os.remove(mp4_path)
+    #os.remove(mp4_path)
     return resultado
 
 # Función para obtener una sesión de base de datos
