@@ -98,7 +98,7 @@ export default function PerfilPaciente() {
             {grupo.movimientos.map((mov) => (
               <div
                 key={mov.movimientoId}
-                onClick={() => router.push(`/camara/${mov.movimientoId}`)}
+                onClick={() => router.push(`/pages/camara/${mov.movimientoId}`)}
                 className="w-24 h-24 rounded-full bg-white shadow hover:bg-blue-100 transition cursor-pointer flex items-center justify-center text-center text-sm font-medium p-2"
               >
                 <div>
