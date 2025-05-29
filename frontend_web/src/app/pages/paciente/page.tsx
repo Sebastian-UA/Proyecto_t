@@ -83,17 +83,17 @@ export default function PacientePage() {
   if (!professional) {
     return <div>Cargando datos del profesional...</div>;
   }
-  
-  const handleRowClick = (index: number) => {
-    setSelectedIndex(index === selectedIndex ? null : index);  // Cambiar la selección de fila
 
+  const handleRowClick = (index: number) => {
     if (index !== null && pacientes[index]) {
       const pacienteSeleccionado = pacientes[index];
-      console.log(`Paciente ID: ${pacienteSeleccionado.pacienteId}`);
-      console.log("Paciente seleccionado:", pacienteSeleccionado.nombre);
-      setPatient(pacienteSeleccionado);  // Almacenar el paciente en el contexto
+      setPatient(pacienteSeleccionado);  // Guardar en contexto
+
+      // Redirigir inmediatamente a la página de perfil con el ID del paciente
+      router.push(`/pages/perfil/${pacienteSeleccionado.pacienteId}`); // O .pacienteId si tu API usa ese nombre
     }
   };
+
 
 
   const handleContinuarClick = () => {
