@@ -94,22 +94,30 @@ export default function PerfilPaciente() {
         <div key={grupo.id} className="bg-gray-100 rounded-2xl p-4 shadow-md">
           <h3 className="text-xl font-semibold mb-4">{grupo.nombre}</h3>
 
-          <div className="flex flex-wrap gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {grupo.movimientos.map((mov) => (
               <div
                 key={mov.movimientoId}
                 onClick={() => router.push(`/pages/camara/${mov.movimientoId}`)}
-                className="w-24 h-24 rounded-full bg-white shadow hover:bg-blue-100 transition cursor-pointer flex items-center justify-center text-center text-sm font-medium p-2"
+                className="w-32 h-32 rounded-full bg-white shadow-md hover:bg-blue-100 transition cursor-pointer flex flex-col items-center justify-center text-center p-3"
               >
-                <div>
-                  <div className="text-2xl mb-1">{mov.imagen_path || "🎯"}</div>
-                  <span>{mov.nombre}</span>
-                </div>
+                {mov.imagen_path ? (
+                  <img
+                    src={`http://localhost:8000${mov.imagen_path}`}
+                    alt={mov.nombre}
+                    className="w-20 h-20 object-cover rounded-full mb-2"
+                  />
+                ) : (
+                  <span className="text-3xl mb-2">🎯</span>
+                )}
+                <span className="text-sm font-medium">{mov.nombre}</span>
               </div>
             ))}
-          </div>
         </div>
-      ))}
-    </div>
+
+        </div>
+  ))
+}
+    </div >
   );
 }
