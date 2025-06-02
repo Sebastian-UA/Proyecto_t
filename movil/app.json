@@ -1,5 +1,8 @@
 {
   "expo": {
+    "extra": {
+      "API_URL": "http://192.168.1.88:8000"
+    },
     "name": "movil",
     "slug": "movil",
     "version": "1.0.0",

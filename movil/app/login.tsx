@@ -1,59 +1,86 @@
-import { View, Text, TextInput, Button, StyleSheet } from "react-native";
-import { useRouter } from "expo-router";
-import { useState } from "react";
+// app/login.tsx
+import React, { useState } from 'react';
+import { View, Text, TextInput, Button, StyleSheet } from 'react-native';
+import { useRouter } from 'expo-router';
+import { useProfessional } from '@/context/profesional';
 
-export default function LoginScreen() {
+const LoginScreen = () => {
   const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const { setProfessional } = useProfessional();
 
-  const handleLogin = () => {
-    // Aquí puedes validar email/contraseña si quieres
-    if (email && password) {
-      router.push("/home");
-    } else {
-      alert("Completa todos los campos");
+  const [correo, setCorreo] = useState('');
+  const [contrasena, setContrasena] = useState('');
+  const [error, setError] = useState('');
+
+  const handleLogin = async () => {
+    try {
+      const response = await fetch('http://localhost:8000/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ correo, contrasena }),
+      });
+
+      if (!response.ok) throw new Error('Credenciales inválidas');
+
+      const data = await response.json();
+
+      setProfessional({
+        profesionalId: data.id,
+        nombre: data.nombre,
+        correo: data.correo,
+        rut: data.rut,
+        rol: data.rol,
+      });
+
+      // Redireccionar a la pantalla de paciente
+      router.replace('/paciente');
+    } catch (err) {
+      setError('Correo o contraseña incorrectos');
+      console.error(err);
     }
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Iniciar Sesión</Text>
+      <Text style={styles.title}>Login</Text>
+
       <TextInput
         style={styles.input}
         placeholder="Correo"
-        value={email}
-        onChangeText={setEmail}
+        value={correo}
+        onChangeText={setCorreo}
         autoCapitalize="none"
+        keyboardType="email-address"
       />
+
       <TextInput
         style={styles.input}
         placeholder="Contraseña"
-        value={password}
-        onChangeText={setPassword}
+        value={contrasena}
+        onChangeText={setContrasena}
         secureTextEntry
       />
-      <Button title="Entrar" onPress={handleLogin} />
+
+      {!!error && <Text style={styles.error}>{error}</Text>}
+
+      <Button title="Iniciar sesión" onPress={handleLogin} />
+
+      <View style={{ marginTop: 20 }}>
+        <Button
+          title="Registrarse"
+          onPress={() => router.push('/registro')}
+          color="green"
+        />
+      </View>
     </View>
   );
-}
+};
+
+export default LoginScreen;
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: "center",
-    padding: 20,
-  },
-  title: {
-    fontSize: 24,
-    marginBottom: 20,
-    textAlign: "center",
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    marginBottom: 12,
-    padding: 10,
-    borderRadius: 5,
-  },
+  container: { flex: 1, justifyContent: 'center', padding: 20, backgroundColor: '#fff' },
+  title: { fontSize: 28, marginBottom: 20, textAlign: 'center' },
+  input: { borderWidth: 1, borderColor: '#ccc', padding: 10, marginBottom: 15, borderRadius: 5 },
+  error: { color: 'red', marginBottom: 10, textAlign: 'center' },
 });
