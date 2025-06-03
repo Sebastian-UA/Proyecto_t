@@ -10,7 +10,7 @@ export default function LoginScreen() {
   const handleLogin = () => {
     // Aquí puedes validar email/contraseña si quieres
     if (email && password) {
-      router.push("/home");
+      router.push("/");
     } else {
       alert("Completa todos los campos");
     }
