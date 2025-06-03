@@ -7,14 +7,23 @@ export default function Layout() {
         name="index"
         options={{ title: "Inicio" }}
       />
-      <Stack.Screen
-        name="registro"
-        options={{ title: "Registro de Paciente" }}
+<Stack.Screen
+ name="sesion/login"
+  options={{ title: "Iniciar Sesión" }}
       />
+<Stack.Screen
+ name="sesion/registro" 
+  options={{ title: "Registro" }} />
+    
       <Stack.Screen
-        name="login"
-        options={{ title: "Iniciar Sesión" }}
-      />
+       name="medicion" 
+       options={{ title: "Medición" }} />
+      <Stack.Screen
+       name="reporte"
+       options={{ title: "Reporte" }} />
+      <Stack.Screen
+       name="historial"
+       options={{ title: "Historial" }} />
     </Stack>
   );
 }

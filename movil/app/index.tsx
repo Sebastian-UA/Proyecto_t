@@ -16,11 +16,11 @@ export default function HomeScreen() {
       />
 
       <View style={styles.buttonContainer}>
-        <Button title="Registrarse" onPress={() => router.push("/registro")} />
+        <Button title="Registrarse" onPress={() => router.push("/sesion/registro")} />
       </View>
 
       <View style={styles.buttonContainer}>
-        <Button title="Iniciar Sesión" onPress={() => router.push("/login")} />
+        <Button title="Iniciar Sesión" onPress={() => router.push("/sesion/login")} />
       </View>
     </View>
   );
