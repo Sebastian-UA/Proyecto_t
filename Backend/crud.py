@@ -25,7 +25,7 @@ def get_usuario_id(db: Session, id: int):
     return db.query(UsuarioDB).filter(UsuarioDB.usuarioId == id).first()
 
 def create_usuario(db: Session, usuario: usuarioData):
-    fake_password = usuario.contrasena + '#fake', # Añadimos el sufijo a la contraseña
+    fake_password = usuario.contrasena, # Añadimos el sufijo a la contraseña
     # Aquí instanciamos el modelo SQLAlchemy, no el esquema Pydantic
     new_usuario = UsuarioDB(
         nombre=usuario.nombre, 
@@ -48,7 +48,7 @@ def create_profesional_with_usuario(db: Session, data: ProfesionalWithUsuario):
     nuevo_usuario = UsuarioDB(
         nombre=data.nombre,
         correo=data.correo,
-        contrasena=data.contrasena + "#fake", # o aplicar hash real
+        contrasena=data.contrasena, # o aplicar hash real
         rol=data.rol,
         rut=data.rut  
     )
@@ -119,7 +119,7 @@ def create_paciente_with_usuario(db: Session, data: PacienteWithUsuario):
     nuevo_usuario = UsuarioDB(
         nombre=data.nombre,
         correo=data.correo,
-        contrasena=data.contrasena + "#fake",  # Ejemplo simple
+        contrasena=data.contrasena ,  # Ejemplo simple
         rol=data.rol,
         rut=data.rut
     )

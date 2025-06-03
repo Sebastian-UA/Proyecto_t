@@ -23,7 +23,7 @@ class profesional(Base):
     __tablename__ ='profesional'
     profesionalId = Column(Integer, primary_key=True, index=True)
     usuarioId = Column(Integer, ForeignKey("usuario.usuarioId"), index=True)
-    especialidad= Column(String(30), index=True, unique=True)
+    especialidad= Column(String(30), index=True)
 
 class sesion(Base):
     __tablename__ ='sesion'

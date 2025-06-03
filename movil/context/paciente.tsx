@@ -1,6 +1,6 @@
-// src/context/PatientContext.tsx
-"use client"
-import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
+// context/PatientContext.tsx
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Tipo del paciente
 interface Patient {
@@ -27,23 +27,30 @@ const PatientContext = createContext<PatientContextType | undefined>(undefined);
 export const PatientProvider = ({ children }: { children: ReactNode }) => {
   const [patient, setPatientState] = useState<Patient | null>(null);
 
-  // Envolver setPatient para guardar en localStorage
-  const setPatient = (patient: Patient) => {
+  const setPatient = async (patient: Patient) => {
     setPatientState(patient);
-    if (typeof window !== "undefined") {
-      localStorage.setItem("paciente", JSON.stringify(patient));
+    try {
+      await AsyncStorage.setItem('paciente', JSON.stringify(patient));
+    } catch (error) {
+      console.error('Error al guardar paciente en AsyncStorage:', error);
     }
   };
 
-  // Restaurar desde localStorage al montar
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("paciente");
-      if (stored) {
-        console.log("Paciente restaurado desde localStorage:", JSON.parse(stored));
-        setPatientState(JSON.parse(stored));
+    const loadPatient = async () => {
+      try {
+        const stored = await AsyncStorage.getItem('paciente');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          console.log('Paciente restaurado desde AsyncStorage:', parsed);
+          setPatientState(parsed);
+        }
+      } catch (error) {
+        console.error('Error al cargar paciente desde AsyncStorage:', error);
       }
-    }
+    };
+
+    loadPatient();
   }, []);
 
   return (
@@ -57,7 +64,7 @@ export const PatientProvider = ({ children }: { children: ReactNode }) => {
 export const usePatient = () => {
   const context = useContext(PatientContext);
   if (!context) {
-    throw new Error("usePatient debe ser usado dentro de un PatientProvider");
+    throw new Error('usePatient debe ser usado dentro de un PatientProvider');
   }
   return context;
 };
