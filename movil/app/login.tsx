@@ -14,7 +14,7 @@ const LoginScreen = () => {
 
   const handleLogin = async () => {
     try {
-      const response = await fetch('http://192.168.1.90:8000/login', {
+      const response = await fetch('http://192.168.1.90:8000/login', {//cambiar 192.168.1.90 por el ip de tu pc
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ correo, contrasena }),
