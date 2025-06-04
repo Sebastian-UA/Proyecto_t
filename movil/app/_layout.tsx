@@ -16,13 +16,13 @@ export default function Layout() {
   options={{ title: "Registro" }} />
     
       <Stack.Screen
-       name="medicion" 
+       name="medicion/medicion" 
        options={{ title: "Medición" }} />
       <Stack.Screen
-       name="reporte"
+       name="reporte/reporte"
        options={{ title: "Reporte" }} />
       <Stack.Screen
-       name="historial"
+       name="historial/historial"
        options={{ title: "Historial" }} />
     </Stack>
   );
