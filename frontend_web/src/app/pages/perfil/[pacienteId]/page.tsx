@@ -24,7 +24,7 @@ interface Paciente {
   pacienteId: number;
   nombre: string;
   edad: number;
-  sexo: string;
+  rut: string;
 }
 
 interface ArticulacionConMovimientos {
@@ -86,7 +86,7 @@ export default function PerfilPaciente() {
         <h2 className="text-2xl font-bold mb-2">Perfil del Paciente</h2>
         <p><strong>Nombre:</strong> {paciente.nombre}</p>
         <p><strong>Edad:</strong> {paciente.edad} años</p>
-        <p><strong>Sexo:</strong> {paciente.sexo}</p>
+        <p><strong>RUT:</strong> {paciente.rut}</p>
       </div>
 
       {/* Movimientos agrupados por articulación */}
