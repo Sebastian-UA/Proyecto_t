@@ -6,7 +6,7 @@ from schemas import LoginRequest
 from crud import verificar_login
 from database import engine, localSession
 from schemas import usuarioData, UsuarioCreate, PacienteCreate, Paciente,ArticulacionCreate, Articulacion,MovimientoCreate,MedicionCreate, Medicion,SesionCreate, Sesion
-from schemas import ProfesionalCreate, Profesional,ProfesionalWithUsuario  
+from schemas import ProfesionalCreate, Profesional,ProfesionalWithUsuario,MedicionConSesionCompleta
 from abduccion_video import abduccion_video
 from pys_video import pys_video
 from flexion_video import flexion_video
@@ -15,6 +15,7 @@ import uuid
 import cv2
 import uuid
 import subprocess
+from typing import List
 import os
 
 from fastapi import Form
@@ -343,3 +344,15 @@ def crear_sesion_con_medicion(data: schemas.SesionWithMedicion, db: Session = De
         "sesion": result["sesion"],
         "medicion": result["medicion"]
     }
+
+@app.get("/medicion_completa/{medicion_id}", response_model=MedicionConSesionCompleta)
+def obtener_medicion_completa(medicion_id: int, db: Session = Depends(get_db)):
+    resultado = crud.get_medicion_completa(db, medicion_id)
+    if not resultado:
+        raise HTTPException(status_code=404, detail="Medición o datos relacionados no encontrados")
+    return resultado
+
+@app.get("/mediciones_completas_paciente/{paciente_id}", response_model=List[MedicionConSesionCompleta])
+def get_mediciones_por_paciente_completas(paciente_id: int, db: Session = Depends(get_db)):
+    resultados = crud.get_mediciones_por_paciente_completas(db, paciente_id)
+    return resultados

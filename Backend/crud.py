@@ -9,7 +9,7 @@ from schemas import usuarioData, PacienteCreate, PacienteWithUsuario, Articulaci
 from schemas import ProfesionalCreate,ProfesionalWithUsuario,SesionWithMedicion,ProfesionalUsuarioOut,PacienteUsuarioOut
 from passlib.context import CryptContext
 from typing import Optional
-
+from sqlalchemy.orm import aliased
 
 import models
 
@@ -18,6 +18,10 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 # ===========================
 # USUARIO
 # ===========================
+usuario_paciente = aliased(UsuarioDB)
+usuario_profesional = aliased(UsuarioDB)
+
+
 def get_usuario(db: Session):
     return db.query(UsuarioDB).all()
 
@@ -376,3 +380,129 @@ def create_sesion_with_medicion(db: Session, data: SesionWithMedicion):
         "sesion": nueva_sesion,
         "medicion": nueva_medicion
     }
+
+def get_medicion_completa(db: Session, medicion_id: int):
+    # 1. Obtener la medición
+    medicion = db.query(MedicionDB).filter(MedicionDB.medicionId == medicion_id).first()
+    if not medicion:
+        return None
+
+    # 2. Obtener la sesión relacionada
+    sesion = db.query(SesionDB).filter(SesionDB.sesionId == medicion.SesionId).first()
+    if not sesion:
+        return None
+
+    # 3. Obtener el paciente
+    paciente = db.query(PacienteDB).filter(PacienteDB.pacienteId == sesion.PacienteId).first()
+    usuario_paciente = db.query(UsuarioDB).filter(UsuarioDB.usuarioId == paciente.usuarioId).first()
+
+    # 4. Obtener el profesional
+    profesional = db.query(ProfesionalDB).filter(ProfesionalDB.profesionalId == sesion.ProfesionalId).first()
+    usuario_profesional = db.query(UsuarioDB).filter(UsuarioDB.usuarioId == profesional.usuarioId).first()
+
+    return {
+        "medicionId": medicion.medicionId,
+        "anguloMin": medicion.anguloMin,
+        "anguloMax": medicion.anguloMax,
+        "lado": medicion.lado,
+        "MovimientoId": medicion.MovimientoId,
+        "EjercicioId": medicion.EjercicioId,
+
+        "sesionId": sesion.sesionId,
+        "fecha": sesion.fecha,
+        "hora": sesion.hora,
+        "notas": sesion.notas,
+
+        "paciente": {
+            "pacienteId": paciente.pacienteId,
+            "nombre": usuario_paciente.nombre,
+            "rut": usuario_paciente.rut,
+            "edad": paciente.edad,
+            "telefono": paciente.telefono
+        },
+        "profesional": {
+            "profesionalId": profesional.profesionalId,
+            "nombre": usuario_profesional.nombre,
+            "correo": usuario_profesional.correo,
+            "rol": usuario_profesional.rol,
+            "especialidad": profesional.especialidad
+        }
+    }
+
+def get_mediciones_por_paciente_completas(db: Session, paciente_id: int):
+    usuario_paciente = aliased(UsuarioDB)
+    usuario_profesional = aliased(UsuarioDB)
+
+    resultados = (
+        db.query(
+            MedicionDB,
+            SesionDB,
+            PacienteDB,
+            usuario_paciente,
+            ProfesionalDB,
+            usuario_profesional,
+            MovimientoDB,
+            models.articulacion
+        )
+        .join(SesionDB, MedicionDB.SesionId == SesionDB.sesionId)
+        .join(PacienteDB, SesionDB.PacienteId == PacienteDB.pacienteId)
+        .join(usuario_paciente, PacienteDB.usuarioId == usuario_paciente.usuarioId)
+        .join(ProfesionalDB, SesionDB.ProfesionalId == ProfesionalDB.profesionalId)
+        .join(usuario_profesional, ProfesionalDB.usuarioId == usuario_profesional.usuarioId)
+        .join(MovimientoDB, MedicionDB.MovimientoId == MovimientoDB.movimientoId)
+        .join(models.articulacion, MovimientoDB.ArticulacionId == models.articulacion.articulacionId)
+        .filter(PacienteDB.pacienteId == paciente_id)
+        .all()
+    )
+
+    resultados_formateados = []
+
+    for medicion, sesion, paciente, usuario_paciente, profesional, usuario_profesional, movimiento, articulacion in resultados:
+        resultados_formateados.append({
+            "medicionId": medicion.medicionId,
+            "anguloMin": medicion.anguloMin,
+            "anguloMax": medicion.anguloMax,
+            "lado": medicion.lado,
+            "MovimientoId": medicion.MovimientoId,
+            "EjercicioId": medicion.EjercicioId,
+
+            "sesion": {
+                "sesionId": sesion.sesionId,
+                "fecha": sesion.fecha,
+                "hora": sesion.hora,
+                "notas": sesion.notas,
+            },
+
+            "paciente": {
+                "pacienteId": paciente.pacienteId,
+                "nombre": usuario_paciente.nombre,
+                "rut": usuario_paciente.rut,
+                "edad": paciente.edad,
+                "telefono": paciente.telefono,
+            },
+
+            "profesional": {
+                "profesionalId": profesional.profesionalId,
+                "nombre": usuario_profesional.nombre,
+                "correo": usuario_profesional.correo,
+                "rol": usuario_profesional.rol,
+                "especialidad": profesional.especialidad,
+            },
+
+            "movimiento": {
+                "movimientoId": movimiento.movimientoId,
+                "nombre": movimiento.nombre,
+                "descripcion": movimiento.descripcion,
+                "anguloMinReal": movimiento.anguloMinReal,
+                "anguloMaxReal": movimiento.anguloMaxReal,
+                "imagen_path": movimiento.imagen_path,
+            },
+
+            "articulacion": {
+                "articulacionId": articulacion.articulacionId,
+                "nombre": articulacion.nombre,
+                "imagen_path": articulacion.imagen_path,
+            }
+        })
+
+    return resultados_formateados

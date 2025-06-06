@@ -71,6 +71,14 @@ class Sesion(SesionData):
     sesionId: int 
     class Config:
         orm_mode = True
+class SesionOut(BaseModel):
+    sesionId: int
+    fecha: date
+    hora: time
+    notas: Optional[str]
+
+    class Config:
+        orm_mode = True
 
 # ===========================
 # ARTICULACION
@@ -82,6 +90,14 @@ class ArticulacionCreate(ArticulacionData):
     pass
 class Articulacion(ArticulacionData):
     articulacionId: int
+    class Config:
+        orm_mode = True
+
+class ArticulacionOut(BaseModel):
+    articulacionId: int
+    nombre: str
+    imagen_path: Optional[str] = None
+
     class Config:
         orm_mode = True
 
@@ -100,6 +116,19 @@ class Movimiento(MovimientoCreate):
     movimientoId: int
     class Config:
         orm_mode = True
+
+class MovimientoG(BaseModel):
+    movimientoId: int
+    nombre: str
+    descripcion: Optional[str]
+    imagen_path: Optional[str] = None
+    anguloMinReal: float
+    anguloMaxReal: float
+
+    class Config:
+        orm_mode = True
+
+
 
 # ===========================
 # EJERCICIO
@@ -210,6 +239,32 @@ class SesionWithMedicion(BaseModel):
 class SesionConMedicionResponse(BaseModel):
     sesion: Sesion
     medicion: Medicion
+
+    class Config:
+        orm_mode = True
+
+
+class MedicionConSesionCompleta(BaseModel):
+    medicionId: int
+    anguloMin: float
+    anguloMax: float
+    lado: str
+
+    movimiento: MovimientoG
+
+    sesion: SesionOut
+
+    paciente: PacienteUsuarioOut
+    profesional: ProfesionalUsuarioOut
+
+    class Config:
+        orm_mode = True
+
+from typing import List
+
+class MedicionPacienteOut(BaseModel):
+    paciente: PacienteUsuarioOut
+    mediciones: List[MedicionConSesionCompleta]
 
     class Config:
         orm_mode = True
