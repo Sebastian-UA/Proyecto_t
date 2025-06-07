@@ -154,7 +154,7 @@ export default function PerfilPaciente() {
             <table className="w-full text-sm border">
               <thead>
                 <tr className="bg-gray-100">
-                  <th className="p-2 border">Medición ID</th>
+                  <th className="p-2 border">Movimiento</th>
                   <th className="p-2 border">Ángulo Máximo</th>
                   <th className="p-2 border">Fecha</th>
                   <th className="p-2 border">Paciente</th>
