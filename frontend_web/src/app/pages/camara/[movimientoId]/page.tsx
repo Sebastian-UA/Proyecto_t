@@ -125,6 +125,7 @@ export default function CameraRecorder() {
     }, 1000)
   }
   const handleGuardarAnalisis = async () => {
+    
     if (!resultadoAnalisis || !movimientoId || !patient || !professional) {
       alert("Faltan datos para guardar el análisis");
       return;

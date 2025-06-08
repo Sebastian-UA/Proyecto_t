@@ -1,11 +1,32 @@
 "use client";
-
+import { Line } from "react-chartjs-2";
 import { useRouter, useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { getArticulaciones } from "@/app/services/articulacion.api";
 import { getMovimientos } from "@/app/services/movimiento.api";
 import { getPacientesInfo } from "@/app/services/paciente.api";
 import { getMedicionesCompletasPorPaciente } from "@/app/services/sesion.api";
+
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+} from "chart.js";
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend
+);
 
 interface Movimiento {
   movimientoId: number;
@@ -44,6 +65,12 @@ export default function PerfilPaciente() {
   const [vista, setVista] = useState<"movimientos" | "analisis">("movimientos");
   const [medicionesCompletas, setMedicionesCompletas] = useState<any[]>([]);
 
+  const [movimientoSeleccionado, setMovimientoSeleccionado] = useState<string>("todos");
+
+  const movimientosUnicos = [
+    ...new Set(medicionesCompletas.map((med) => med.movimiento?.nombre)),
+  ];
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -81,22 +108,79 @@ export default function PerfilPaciente() {
 
   if (!paciente) return <div className="p-4">Cargando perfil...</div>;
 
+  const medicionesFiltradas =
+    movimientoSeleccionado === "todos"
+      ? medicionesCompletas
+      : medicionesCompletas.filter(
+          (med) => med.movimiento?.nombre === movimientoSeleccionado
+        );
+
+  // Ordenar mediciones por fecha ascendente para mostrar en el gráfico
+  const medicionesOrdenadas = [...medicionesFiltradas].sort((a, b) => {
+    const fechaA = a.sesion?.fecha ? new Date(a.sesion.fecha).getTime() : 0;
+    const fechaB = b.sesion?.fecha ? new Date(b.sesion.fecha).getTime() : 0;
+    return fechaA - fechaB;
+  });
+
+  // Preparar datos para el gráfico
+  const labels = medicionesOrdenadas.map((_, index) => `Análisis ${index + 1}`);
+  const anguloMinData = medicionesOrdenadas.map((med) =>
+    med.anguloMin !== null && med.anguloMin !== undefined ? med.anguloMin : 0
+  );
+
+  const data = {
+    labels,
+    datasets: [
+      {
+        label: "Ángulo Mínimo",
+        data: anguloMinData,
+        borderColor: "rgba(75,192,192,1)",
+        backgroundColor: "rgba(75,192,192,0.2)",
+        fill: true,
+        tension: 0.3,
+      },
+    ],
+  };
+
+  const options = {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: "top" as const,
+      },
+      title: {
+        display: true,
+        text:
+          movimientoSeleccionado === "todos"
+            ? "Evolución Ángulo Mínimo"
+            : `Evolución Ángulo Mínimo para ${movimientoSeleccionado}`,
+      },
+    },
+  };
+
   return (
     <div className="p-6 space-y-8">
       {/* Info del Paciente */}
       <div className="bg-white shadow-md rounded-2xl p-6">
         <h2 className="text-2xl font-bold mb-2">Perfil del Paciente</h2>
-        <p><strong>Nombre:</strong> {paciente.nombre}</p>
-        <p><strong>Edad:</strong> {paciente.edad} años</p>
-        <p><strong>RUT:</strong> {paciente.rut}</p>
+        <p>
+          <strong>Nombre:</strong> {paciente.nombre}
+        </p>
+        <p>
+          <strong>Edad:</strong> {paciente.edad} años
+        </p>
+        <p>
+          <strong>RUT:</strong> {paciente.rut}
+        </p>
       </div>
 
       {/* Botones de navegación */}
       <div className="flex space-x-4">
         <button
           onClick={() => setVista("movimientos")}
-          className={`px-4 py-2 rounded-xl font-medium ${vista === "movimientos" ? "bg-blue-500 text-white" : "bg-gray-200"
-            }`}
+          className={`px-4 py-2 rounded-xl font-medium ${
+            vista === "movimientos" ? "bg-blue-500 text-white" : "bg-gray-200"
+          }`}
         >
           Movimientos
         </button>
@@ -105,15 +189,18 @@ export default function PerfilPaciente() {
             setVista("analisis");
             if (medicionesCompletas.length === 0) {
               try {
-                const data = await getMedicionesCompletasPorPaciente(parseInt(pacienteId as string));
+                const data = await getMedicionesCompletasPorPaciente(
+                  parseInt(pacienteId as string)
+                );
                 setMedicionesCompletas(data);
               } catch (err) {
                 console.error("Error cargando análisis:", err);
               }
             }
           }}
-          className={`px-4 py-2 rounded-xl font-medium ${vista === "analisis" ? "bg-blue-500 text-white" : "bg-gray-200"
-            }`}
+          className={`px-4 py-2 rounded-xl font-medium ${
+            vista === "analisis" ? "bg-blue-500 text-white" : "bg-gray-200"
+          }`}
         >
           Análisis
         </button>
@@ -122,13 +209,18 @@ export default function PerfilPaciente() {
       {/* Vista de movimientos */}
       {vista === "movimientos" ? (
         datosAgrupados.map((grupo) => (
-          <div key={grupo.id} className="bg-gray-100 rounded-2xl p-4 shadow-md">
+          <div
+            key={grupo.id}
+            className="bg-gray-100 rounded-2xl p-4 shadow-md"
+          >
             <h3 className="text-xl font-semibold mb-4">{grupo.nombre}</h3>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
               {grupo.movimientos.map((mov) => (
                 <div
                   key={mov.movimientoId}
-                  onClick={() => router.push(`/pages/camara/${mov.movimientoId}`)}
+                  onClick={() =>
+                    router.push(`/pages/camara/${mov.movimientoId}`)
+                  }
                   className="w-32 h-32 rounded-full bg-white shadow-md hover:bg-blue-100 transition cursor-pointer flex flex-col items-center justify-center text-center p-3"
                 >
                   {mov.imagen_path ? (
@@ -149,32 +241,63 @@ export default function PerfilPaciente() {
       ) : (
         // Vista de análisis
         <div className="bg-white rounded-xl p-4 shadow-md">
+          <div className="mb-4">
+            <label className="mr-2 font-medium">Filtrar por movimiento:</label>
+            <select
+              value={movimientoSeleccionado}
+              onChange={(e) => setMovimientoSeleccionado(e.target.value)}
+              className="p-2 border rounded-md"
+            >
+              <option value="todos">Todos</option>
+              {movimientosUnicos.map((nombre) => (
+                <option key={nombre} value={nombre}>
+                  {nombre}
+                </option>
+              ))}
+            </select>
+          </div>
+
           <h2 className="text-xl font-bold mb-4">Análisis</h2>
           {medicionesCompletas.length > 0 ? (
-            <table className="w-full text-sm border">
-              <thead>
-                <tr className="bg-gray-100">
-                  <th className="p-2 border">Movimiento</th>
-                  <th className="p-2 border">Ángulo Máximo</th>
-                  <th className="p-2 border">Fecha</th>
-                  <th className="p-2 border">Paciente</th>
-                  <th className="p-2 border">Profesional</th>
-                </tr>
-              </thead>
-              <tbody>
-                {medicionesCompletas.map((med) => (
-                  <tr key={med.medicionId}>
-                    <td className="p-2 border">{med.movimiento?.nombre}</td>
-                    <td className="p-2 border">{med.anguloMax ?? "N/A"}</td>
-                    <td className="p-2 border">{med.sesion?.fecha ?? "N/A"}</td>
-                    <td className="p-2 border">{med.paciente?.nombre ?? "N/A"}</td>
-                    <td className="p-2 border">{med.profesional?.nombre ?? "N/A"}</td>
+            <>
+              <table className="w-full text-sm border">
+                <thead>
+                  <tr className="bg-gray-100">
+                    <th className="p-2 border">Movimiento</th>
+                    <th className="p-2 border">Ángulo Máximo</th>
+                    <th className="p-2 border">Ángulo Minimo</th>
+                    <th className="p-2 border">Ángulo Máximo Esperado</th>
+                    <th className="p-2 border">Ángulo Minimo Esperado</th>
+                    <th className="p-2 border">Fecha</th>
+                    <th className="p-2 border">Paciente</th>
+                    <th className="p-2 border">Profesional</th>
                   </tr>
-                ))}
-              </tbody>
+                </thead>
+                <tbody>
+                  {medicionesFiltradas.map((med) => (
+                    <tr key={med.medicionId}>
+                      <td className="p-2 border">{med.movimiento?.nombre}</td>
+                      <td className="p-2 border">{med.anguloMax ?? "N/A"}</td>
+                      <td className="p-2 border">{med.anguloMin ?? "N/A"}</td>
+                      <td className="p-2 border">
+                        {med.movimiento.anguloMaxReal ?? "N/A"}
+                      </td>
+                      <td className="p-2 border">
+                        {med.movimiento.anguloMinReal ?? "N/A"}
+                      </td>
+                      <td className="p-2 border">{med.sesion?.fecha ?? "N/A"}</td>
+                      <td className="p-2 border">{med.paciente?.nombre ?? "N/A"}</td>
+                      <td className="p-2 border">{med.profesional?.nombre ?? "N/A"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
 
-
-            </table>
+              {/* Gráfico línea con evolución de ángulo mínimo */}
+              <div className="mt-6">
+                <Line data={data} options={options} />
+              </div>
+            </>
           ) : (
             <p>No hay mediciones registradas para este paciente.</p>
           )}
