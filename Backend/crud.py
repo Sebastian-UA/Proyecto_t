@@ -496,12 +496,8 @@ def get_mediciones_por_paciente_completas(db: Session, paciente_id: int):
                 "anguloMinReal": movimiento.anguloMinReal,
                 "anguloMaxReal": movimiento.anguloMaxReal,
                 "imagen_path": movimiento.imagen_path,
-            },
-
-            "articulacion": {
-                "articulacionId": articulacion.articulacionId,
-                "nombre": articulacion.nombre,
-                "imagen_path": articulacion.imagen_path,
+                "ArticulacionId": articulacion.articulacionId,
+                "artnombre":articulacion.nombre,
             }
         })
 

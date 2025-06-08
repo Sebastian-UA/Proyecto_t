@@ -124,6 +124,8 @@ class MovimientoG(BaseModel):
     imagen_path: Optional[str] = None
     anguloMinReal: float
     anguloMaxReal: float
+    ArticulacionId: int
+    artnombre:str
 
     class Config:
         orm_mode = True

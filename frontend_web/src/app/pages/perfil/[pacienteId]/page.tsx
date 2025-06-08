@@ -67,9 +67,20 @@ export default function PerfilPaciente() {
 
   const [movimientoSeleccionado, setMovimientoSeleccionado] = useState<string>("todos");
 
-  const movimientosUnicos = [
-    ...new Set(medicionesCompletas.map((med) => med.movimiento?.nombre)),
-  ];
+  const movimientosUnicos = Array.from(
+    new Map(
+      medicionesCompletas
+        .filter((med) => med.movimiento && med.movimiento.nombre && med.movimiento?.artnombre)
+        .map((med) => [
+          med.movimiento.nombre,
+          {
+            value: med.movimiento.nombre,
+            label: `${med.movimiento.artnombre} - ${med.movimiento.nombre}`,
+          },
+        ])
+    ).values()
+  );
+
 
   useEffect(() => {
     const fetchData = async () => {
@@ -112,8 +123,8 @@ export default function PerfilPaciente() {
     movimientoSeleccionado === "todos"
       ? medicionesCompletas
       : medicionesCompletas.filter(
-          (med) => med.movimiento?.nombre === movimientoSeleccionado
-        );
+        (med) => med.movimiento?.nombre === movimientoSeleccionado
+      );
 
   // Ordenar mediciones por fecha ascendente para mostrar en el gráfico
   const medicionesOrdenadas = [...medicionesFiltradas].sort((a, b) => {
@@ -128,6 +139,11 @@ export default function PerfilPaciente() {
     med.anguloMin !== null && med.anguloMin !== undefined ? med.anguloMin : 0
   );
 
+  const anguloMaxData = medicionesOrdenadas.map((med) =>
+    med.anguloMax !== null && med.anguloMax !== undefined ? med.anguloMax : 0
+  );
+
+  // PARA EL GRAFICO
   const data = {
     labels,
     datasets: [
@@ -139,9 +155,18 @@ export default function PerfilPaciente() {
         fill: true,
         tension: 0.3,
       },
+      {
+        label: "Ángulo Máximo",
+        data: anguloMaxData,
+        borderColor: "rgba(255,99,132,1)",
+        backgroundColor: "rgba(255,99,132,0.2)",
+        fill: true,
+        tension: 0.3,
+      },
     ],
   };
 
+  // TITULO GRAFICO
   const options = {
     responsive: true,
     plugins: {
@@ -152,11 +177,12 @@ export default function PerfilPaciente() {
         display: true,
         text:
           movimientoSeleccionado === "todos"
-            ? "Evolución Ángulo Mínimo"
-            : `Evolución Ángulo Mínimo para ${movimientoSeleccionado}`,
+            ? "Evolución Ángulos Mínimo y Máximo"
+            : `Evolución Ángulos para ${movimientoSeleccionado}`,
       },
     },
   };
+
 
   return (
     <div className="p-6 space-y-8">
@@ -178,9 +204,8 @@ export default function PerfilPaciente() {
       <div className="flex space-x-4">
         <button
           onClick={() => setVista("movimientos")}
-          className={`px-4 py-2 rounded-xl font-medium ${
-            vista === "movimientos" ? "bg-blue-500 text-white" : "bg-gray-200"
-          }`}
+          className={`px-4 py-2 rounded-xl font-medium ${vista === "movimientos" ? "bg-blue-500 text-white" : "bg-gray-200"
+            }`}
         >
           Movimientos
         </button>
@@ -198,9 +223,8 @@ export default function PerfilPaciente() {
               }
             }
           }}
-          className={`px-4 py-2 rounded-xl font-medium ${
-            vista === "analisis" ? "bg-blue-500 text-white" : "bg-gray-200"
-          }`}
+          className={`px-4 py-2 rounded-xl font-medium ${vista === "analisis" ? "bg-blue-500 text-white" : "bg-gray-200"
+            }`}
         >
           Análisis
         </button>
@@ -249,12 +273,13 @@ export default function PerfilPaciente() {
               className="p-2 border rounded-md"
             >
               <option value="todos">Todos</option>
-              {movimientosUnicos.map((nombre) => (
-                <option key={nombre} value={nombre}>
-                  {nombre}
+              {movimientosUnicos.map((mov) => (
+                <option key={mov.value} value={mov.value}>
+                  {mov.label}
                 </option>
               ))}
             </select>
+
           </div>
 
           <h2 className="text-xl font-bold mb-4">Análisis</h2>
