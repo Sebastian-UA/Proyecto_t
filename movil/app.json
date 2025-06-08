@@ -1,13 +1,13 @@
 {
   "expo": {
     "extra": {
-      "API_URL": "http://192.168.1.90:8000"
+      "API_URL": "http://192.168.1.19:8000"
     },
     "name": "movil",
     "slug": "movil",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/codo.png",
     "scheme": "movil",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -16,7 +16,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
+    
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true
