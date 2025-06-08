@@ -12,6 +12,7 @@ interface ProfesionalData {
   rol?: string;
 }
 
+
 export const createProfesionalConUsuario = async (data: ProfesionalData) => {
   try {
     const response = await fetch(`${API_URL}/profesional_con_usuario/`, {
