@@ -66,6 +66,23 @@ export default function PerfilPaciente() {
   const [medicionesCompletas, setMedicionesCompletas] = useState<any[]>([]);
 
   const [movimientoSeleccionado, setMovimientoSeleccionado] = useState<string>("todos");
+  const [ladoSeleccionado, setLadoSeleccionado] = useState<string>("todos");
+  const esPronacionSupinacion = movimientoSeleccionado === "Pronación y Supinación";
+  // Opciones para lado cuando NO es pron/sup
+  const opcionesLadoSimple = [
+    { value: "todos", label: "Todos" },
+    { value: "derecha", label: "Derecha" },
+    { value: "izquierda", label: "Izquierda" },
+  ];
+
+  // Opciones para lado cuando SÍ es pron/sup
+  const opcionesLadoPronSup = [
+    { value: "todos", label: "Todos" },
+    { value: "derecha - pronación", label: "Derecha - Pronación" },
+    { value: "derecha - supinación", label: "Derecha - Supinación" },
+    { value: "izquierda - pronación", label: "Izquierda - Pronación" },
+    { value: "izquierda - supinación", label: "Izquierda - Supinación" },
+  ];
 
   const movimientosUnicos = Array.from(
     new Map(
@@ -119,12 +136,32 @@ export default function PerfilPaciente() {
 
   if (!paciente) return <div className="p-4">Cargando perfil...</div>;
 
-  const medicionesFiltradas =
-    movimientoSeleccionado === "todos"
-      ? medicionesCompletas
-      : medicionesCompletas.filter(
-        (med) => med.movimiento?.nombre === movimientoSeleccionado
-      );
+  const medicionesFiltradas = medicionesCompletas.filter((med) => {
+    const coincideMovimiento =
+      movimientoSeleccionado === "todos" ||
+      med.movimiento?.nombre === movimientoSeleccionado;
+
+    let coincideLado = false;
+
+    if (!esPronacionSupinacion) {
+      // Caso normal
+      coincideLado =
+        ladoSeleccionado === "todos" ||
+        med.lado?.toLowerCase() === ladoSeleccionado;
+    } else {
+      // Caso pronacion y supinacion
+      if (ladoSeleccionado === "todos") {
+        coincideLado = true;
+      } else {
+        // ladoSeleccionado puede ser "derecha-pronacion", etc
+          coincideLado = med.lado?.toLowerCase() === ladoSeleccionado;
+      }
+    }
+
+    return coincideMovimiento && coincideLado;
+  });
+
+
 
   // Ordenar mediciones por fecha ascendente para mostrar en el gráfico
   const medicionesOrdenadas = [...medicionesFiltradas].sort((a, b) => {
@@ -265,22 +302,41 @@ export default function PerfilPaciente() {
       ) : (
         // Vista de análisis
         <div className="bg-white rounded-xl p-4 shadow-md">
-          <div className="mb-4">
-            <label className="mr-2 font-medium">Filtrar por movimiento:</label>
-            <select
-              value={movimientoSeleccionado}
-              onChange={(e) => setMovimientoSeleccionado(e.target.value)}
-              className="p-2 border rounded-md"
-            >
-              <option value="todos">Todos</option>
-              {movimientosUnicos.map((mov) => (
-                <option key={mov.value} value={mov.value}>
-                  {mov.label}
-                </option>
-              ))}
-            </select>
+          <div className="mb-4 flex items-center gap-4">
+            <div>
+              <label className="mr-2 font-medium">Filtrar por movimiento:</label>
+              <select
+                value={movimientoSeleccionado}
+                onChange={(e) => setMovimientoSeleccionado(e.target.value)}
+                className="p-2 border rounded-md"
+              >
+                <option value="todos">Todos</option>
+                {movimientosUnicos.map((mov) => (
+                  <option key={mov.value} value={mov.value}>
+                    {mov.label}
+                  </option>
+                ))}
+              </select>
+            </div>
 
+            <div className="flex items-center gap-2">
+              <label className="font-medium">Lado:</label>
+              {(esPronacionSupinacion ? opcionesLadoPronSup : opcionesLadoSimple).map(
+                (opt) => (
+                  <label key={opt.value} className="flex items-center gap-1">
+                    <input
+                      type="radio"
+                      value={opt.value}
+                      checked={ladoSeleccionado === opt.value}
+                      onChange={() => setLadoSeleccionado(opt.value)}
+                    />
+                    {opt.label}
+                  </label>
+                )
+              )}
+            </div>
           </div>
+
 
           <h2 className="text-xl font-bold mb-4">Análisis</h2>
           {medicionesCompletas.length > 0 ? (
@@ -312,7 +368,7 @@ export default function PerfilPaciente() {
                       </td>
                       <td className="p-2 border">{med.sesion?.fecha ?? "N/A"}</td>
                       <td className="p-2 border">{med.paciente?.nombre ?? "N/A"}</td>
-                      <td className="p-2 border">{med.profesional?.nombre ?? "N/A"}</td>
+                      <td className="p-2 border">{med.lado ?? "N/A"}</td>
                     </tr>
                   ))}
                 </tbody>

@@ -144,32 +144,59 @@ export default function CameraRecorder() {
       return;
     }
 
-    let maxA: number, minA: number;
-    if (resultadoAnalisis.tipo === 'simple') {
-      ({ max_angle: maxA, min_angle: minA } = resultadoAnalisis);
-    } else {
-      ({ max_angle: maxA, min_angle: minA } = resultadoAnalisis.pronacion); // puedes ajustar esto
-    }
-
     const now = new Date();
 
-    const dataToSend = {
+    // Datos comunes a cualquier medición
+    const sesionData = {
       PacienteId: patient.pacienteId,
       ProfesionalId: professional.profesionalId,
       fecha: now.toISOString().slice(0, 10),
       hora: now.toISOString().slice(11, 19),
       notas: "",
-      EjercicioId: null,
-      MovimientoId: Number(movimientoId),
-      anguloMin: minA,
-      anguloMax: maxA,
-      lado: resultadoAnalisis.lado,
     };
 
     try {
-      const respuesta = await createSesionWithMedicion(dataToSend);
+      if (resultadoAnalisis.tipo === 'simple') {
+        const dataToSend = {
+          ...sesionData,
+          EjercicioId: null,
+          MovimientoId: Number(movimientoId),
+          anguloMin: resultadoAnalisis.min_angle,
+          anguloMax: resultadoAnalisis.max_angle,
+          lado: resultadoAnalisis.lado, // "derecha" o "izquierda"
+        };
+
+        await createSesionWithMedicion(dataToSend);
+
+      } else if (resultadoAnalisis.tipo === 'ps') {
+        // Guardar 2 mediciones: una para pronación y otra para supinación
+        const mediciones = [
+          {
+            ...sesionData,
+            EjercicioId: null,
+            MovimientoId: Number(movimientoId),
+            anguloMin: resultadoAnalisis.pronacion.min_angle,
+            anguloMax: resultadoAnalisis.pronacion.max_angle,
+            lado: `${resultadoAnalisis.lado} - pronación`,
+          },
+          {
+            ...sesionData,
+            EjercicioId: null,
+            MovimientoId: Number(movimientoId),
+            anguloMin: resultadoAnalisis.supinacion.min_angle,
+            anguloMax: resultadoAnalisis.supinacion.max_angle,
+            lado: `${resultadoAnalisis.lado} - supinación`,
+          },
+        ];
+
+        // Guardar ambas mediciones
+        for (const dataToSend of mediciones) {
+          await createSesionWithMedicion(dataToSend);
+        }
+      }
+
       alert("Sesión con medición guardada correctamente");
-      console.log("Respuesta backend:", respuesta);
+
     } catch (error) {
       alert("Error al guardar sesión con medición");
       console.error(error);
