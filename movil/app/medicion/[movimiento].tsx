@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocalSearchParams } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { View, Text, Button, ActivityIndicator, Image, Alert } from 'react-native';
@@ -31,6 +31,23 @@ export default function MedicionPage() {
     }
   };
 
+  const grabarVideo = async () => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permiso denegado para acceder a la cámara');
+      return;
+    }
+
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Videos,
+      quality: 1,
+    });
+
+    if (!result.canceled && result.assets.length > 0) {
+      setVideoUri(result.assets[0].uri);
+    }
+  };
+
   const enviarVideo = async () => {
     if (!videoUri) return Alert.alert('Selecciona un video primero.');
 
@@ -45,7 +62,7 @@ export default function MedicionPage() {
       formData.append('movimiento', movimientoData?.nombre || '');
       formData.append('lado', lado);
 
-      const res = await fetch('http://192.168.1.50:8000/analizar_video', {//ip del pc 
+      const res = await fetch('http://192.168.1.19:8000/analizar_video', {
         method: 'POST',
         body: formData,
         headers: {
@@ -92,19 +109,22 @@ export default function MedicionPage() {
     }
   };
 
-  useState(() => {
+  useEffect(() => {
     const cargarMovimiento = async () => {
       const data = await getMovimientoById(Number(movimiento));
       setMovimientoData(data);
     };
     cargarMovimiento();
-  });
+  }, [movimiento]);
 
   return (
     <View style={styles.container}>
       <Text style={styles.titulo}>Medición: {movimientoData?.nombre || '...'}</Text>
 
-      <Button title="Seleccionar Video" onPress={seleccionarVideo} />
+      <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginVertical: 10 }}>
+        <Button title="Seleccionar Video" onPress={seleccionarVideo} />
+        <Button title="Grabar Video" onPress={grabarVideo} />
+      </View>
 
       {videoUri && (
         <View style={{ marginVertical: 10 }}>

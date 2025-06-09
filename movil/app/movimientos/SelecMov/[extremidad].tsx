@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { getMovimientosByArticulacion } from '../../../services/movimiento';
+import { getMovimientosByArticulacion } from '@/services/movimiento';
 import { View, Text, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
-import styles from '../../../estilos/styles';
+import styles from '@/estilos/styles';
 
 interface Movimiento {
   movimientoId: number;
@@ -54,19 +54,19 @@ export default function SeleccionMovimientos() {
       <Text style={styles.titulo}>Movimientos para: {extremidad}</Text>
 
       <View style={styles.botonesContainer}>
-        {movimientos.map((movimiento) => (
+        {movimientos.map((mov) => (
           <TouchableOpacity
-            key={movimiento.movimientoId}
+            key={mov.movimientoId}
             style={styles.boton}
-            onPress={() => router.push(`/medicion/${movimiento.movimientoId}` as any)}
+            onPress={() => router.push(`/medicion/${mov.movimientoId}` as const)}
           >
-            {movimiento.imagen_path && (
+            {mov.imagen_path && (
               <Image
-                source={{ uri: `http://192.168.1.19:8000${movimiento.imagen_path}` }}
+                source={{ uri: `http://192.168.1.19:8000${mov.imagen_path}` }}
                 style={styles.imagen}
               />
             )}
-            <Text style={styles.textoBoton}>{movimiento.nombre}</Text>
+            <Text style={styles.textoBoton}>{mov.nombre}</Text>
           </TouchableOpacity>
         ))}
       </View>

@@ -10,10 +10,15 @@ export default function SeleccionExtremidades() {
       <Text style={styles.titulo}>Selección de Extremidades</Text>
 
       <View style={styles.botonesContainer}>
-        /* Botón: Codo */
+        {/* Botón: Codo */}
         <TouchableOpacity
           style={styles.boton}
-          onPress={() => router.push('/movimientos/selecMov/codo' as any)}
+          onPress={() =>
+            router.push({
+              pathname: '/movimientos/SelecMov/[extremidad]',
+              params: { extremidad: 'codo' },
+            })
+          }
         >
           <Image
             source={require('@/assets/images/codo.png')}
@@ -22,13 +27,18 @@ export default function SeleccionExtremidades() {
           <Text style={styles.textoBoton}>Codo</Text>
         </TouchableOpacity>
 
-        /* Botón: Hombro */
+        {/* Botón: Hombro */}
         <TouchableOpacity
           style={styles.boton}
-          onPress={() => router.push('/movimientos/selecMov/hombro' as any)}
+          onPress={() =>
+            router.push({
+              pathname: '/movimientos/SelecMov/[extremidad]',
+              params: { extremidad: 'hombro' },
+            })
+          }
         >
           <Image
-            source={require('@/assets/images/hombro.png')} 
+            source={require('@/assets/images/hombro.png')}
             style={styles.imagen}
           />
           <Text style={styles.textoBoton}>Hombro</Text>
