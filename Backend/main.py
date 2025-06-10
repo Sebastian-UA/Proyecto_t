@@ -6,7 +6,7 @@ from schemas import LoginRequest
 from crud import verificar_login
 from database import engine, localSession
 from schemas import usuarioData, UsuarioCreate, PacienteCreate, Paciente,ArticulacionCreate, Articulacion,MovimientoCreate,MedicionCreate, Medicion,SesionCreate, Sesion
-from schemas import ProfesionalCreate, Profesional,ProfesionalWithUsuario,MedicionConSesionCompleta
+from schemas import ProfesionalCreate, Profesional,ProfesionalWithUsuario,MedicionConSesionCompleta,PacienteUpdate,PacienteWithUsuarioUpdate
 from abduccion_video import abduccion_video
 from pys_video import pys_video
 from flexion_video import flexion_video
@@ -201,6 +201,18 @@ def listar_pacientes(db: Session = Depends(get_db)):
 def obtener_detalle_pacientes(db: Session = Depends(get_db)):
     return crud.get_pacientes_con_datos_usuario(db)
 
+@app.patch("/paciente_con_usuario/{paciente_id}", response_model=schemas.PacienteUsuarioOut)
+def update_paciente_con_usuario(
+    paciente_id: int,
+    data: schemas.PacienteWithUsuarioUpdate,
+    db: Session = Depends(get_db)
+):
+    updated = crud.update_paciente_with_usuario(db, paciente_id, data)
+    if not updated:
+        raise HTTPException(status_code=404, detail="Paciente no encontrado")
+    return updated
+
+
 @app.get("/pacientes/{id}", response_model=schemas.Paciente)
 def obtener_paciente(id: int, db: Session = Depends(get_db)):
     paciente = crud.get_paciente_id(db, id)
@@ -211,6 +223,13 @@ def obtener_paciente(id: int, db: Session = Depends(get_db)):
 @app.post("/paciente_con_usuario/")
 def create_paciente_con_usuario(data: schemas.PacienteWithUsuario, db: Session = Depends(get_db)):
     return crud.create_paciente_with_usuario(db=db, data=data)
+
+@app.patch("/pacientes/{paciente_id}", response_model=schemas.Paciente)
+def actualizar_paciente(paciente_id: int, paciente_update: schemas.PacienteUpdate, db: Session = Depends(get_db)):
+    paciente_actualizado = crud.update_paciente(db=db, paciente_id=paciente_id, paciente_update=paciente_update)
+    if not paciente_actualizado:
+        raise HTTPException(status_code=404, detail="Paciente no encontrado")
+    return paciente_actualizado
 
 # ===========================
 # PROFESIONAL

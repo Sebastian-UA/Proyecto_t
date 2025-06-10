@@ -6,6 +6,7 @@ import { getArticulaciones } from "@/app/services/articulacion.api";
 import { getMovimientos } from "@/app/services/movimiento.api";
 import { getPacientesInfo } from "@/app/services/paciente.api";
 import { getMedicionesCompletasPorPaciente } from "@/app/services/sesion.api";
+import type { ScriptableContext } from "chart.js";
 
 import {
   Chart as ChartJS,
@@ -47,6 +48,8 @@ interface Paciente {
   nombre: string;
   edad: number;
   rut: string;
+  telefono: string;
+  genero: string;
 }
 
 interface ArticulacionConMovimientos {
@@ -80,6 +83,7 @@ export default function PerfilPaciente() {
     { value: "izquierda - supinación", label: "Izquierda - Supinación" },
   ];
 
+
   const [movimientoSeleccionado, setMovimientoSeleccionado] = useState<string>("");
   const esPronacionSupinacion = movimientoSeleccionado === "Pronación y Supinación";
 
@@ -100,6 +104,7 @@ export default function PerfilPaciente() {
         ])
     ).values()
   );
+
 
 
   useEffect(() => {
@@ -173,9 +178,6 @@ export default function PerfilPaciente() {
     return coincideMovimiento && coincideLado;
   });
 
-
-
-
   // Ordenar mediciones por fecha ascendente para mostrar en el gráfico
   const medicionesOrdenadas = [...medicionesFiltradas].sort((a, b) => {
     const fechaA = a.sesion?.fecha ? new Date(a.sesion.fecha).getTime() : 0;
@@ -183,11 +185,21 @@ export default function PerfilPaciente() {
     return fechaA - fechaB;
   });
 
+
   // Preparar datos para el gráfico
   const labels = medicionesOrdenadas.map((_, index) => `Análisis ${index + 1}`);
-  const anguloMinData = medicionesOrdenadas.map((med) =>
-    med.anguloMin !== null && med.anguloMin !== undefined ? med.anguloMin : 0
+  // Todos los valores del ángulo mínimo en un solo array
+  const anguloMinData = medicionesOrdenadas.map(med =>
+    med.anguloMin ?? null
   );
+
+  // Colores de cada punto (para los círculos)
+  const coloresPuntos = medicionesOrdenadas.map(med =>
+    med.profesional?.profesionalId
+      ? "rgba(75,192,192,1)"        // azul cuando hay profesional
+      : "rgba(255,165,0,1)"         // naranja cuando no hay profesional
+  );
+
 
   const anguloMaxData = medicionesOrdenadas.map((med) =>
     med.anguloMax !== null && med.anguloMax !== undefined ? med.anguloMax : 0
@@ -199,11 +211,24 @@ export default function PerfilPaciente() {
     datasets: [
       {
         label: "Ángulo Mínimo",
-        data: anguloMinData,
-        borderColor: "rgba(75,192,192,1)",
-        backgroundColor: "rgba(75,192,192,0.2)",
-        fill: true,
+        data: medicionesOrdenadas.map((med) => med.anguloMin ?? null),
+        spanGaps: true,
+        borderWidth: 3,
+        backgroundColor: "transparent",
         tension: 0.3,
+        pointBackgroundColor: medicionesOrdenadas.map((med) =>
+          med.profesional?.profesionalId
+            ? "rgba(75,192,192,1)"
+            : "rgba(255,165,0,1)"
+        ),
+        segment: {
+          borderColor: (ctx: any) => {
+            const med = medicionesOrdenadas[ctx.p0DataIndex];
+            return med.profesional?.profesionalId
+              ? "rgba(75,192,192,1)"
+              : "rgba(255,165,0,1)";
+          }
+        }
       },
       {
         label: "Ángulo Máximo",
@@ -247,6 +272,12 @@ export default function PerfilPaciente() {
         </p>
         <p>
           <strong>RUT:</strong> {paciente.rut}
+        </p>
+        <p>
+          <strong>Telefono:</strong> {paciente.telefono}
+        </p>
+        <p>
+          <strong>Género:</strong> {paciente.genero}
         </p>
       </div>
 

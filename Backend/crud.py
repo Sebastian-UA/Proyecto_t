@@ -6,7 +6,7 @@ from models import medicion as MedicionDB
 from models import sesion as SesionDB
 from models import profesional as ProfesionalDB
 from schemas import usuarioData, PacienteCreate, PacienteWithUsuario, ArticulacionCreate,MovimientoCreate, Movimiento,MedicionCreate,SesionCreate
-from schemas import ProfesionalCreate,ProfesionalWithUsuario,SesionWithMedicion,ProfesionalUsuarioOut,PacienteUsuarioOut
+from schemas import ProfesionalCreate,ProfesionalWithUsuario,SesionWithMedicion,ProfesionalUsuarioOut,PacienteUsuarioOut,PacienteUpdate,PacienteWithUsuarioUpdate
 from passlib.context import CryptContext
 from typing import Optional
 from sqlalchemy.orm import aliased
@@ -43,8 +43,25 @@ def create_usuario(db: Session, usuario: usuarioData):
     db.refresh(new_usuario)  # Actualiza el objeto con los datos de la base de datos (por ejemplo, ID generado)
     return new_usuario
 
+def update_paciente(db: Session, paciente_id: int, paciente_update: PacienteUpdate):
+    db_paciente = db.query(PacienteDB).filter(PacienteDB.pacienteId == paciente_id).first()
+    if not db_paciente:
+        return None
+
+    if paciente_update.edad is not None:
+        db_paciente.edad = paciente_update.edad
+    if paciente_update.telefono is not None:
+        db_paciente.telefono = paciente_update.telefono
+    if paciente_update.genero is not None:
+        db_paciente.genero = paciente_update.genero
+
+    db.commit()
+    db.refresh(db_paciente)
+    return db_paciente
+
+
 # ===========================
-# PACIENTE
+# PROFESIONAL
 # ===========================
 
 def create_profesional_with_usuario(db: Session, data: ProfesionalWithUsuario):
@@ -55,6 +72,7 @@ def create_profesional_with_usuario(db: Session, data: ProfesionalWithUsuario):
         contrasena=data.contrasena, # o aplicar hash real
         rol=data.rol,
         rut=data.rut  
+        
     )
     db.add(nuevo_usuario)
     db.commit()
@@ -111,12 +129,50 @@ def create_paciente(db: Session, paciente: PacienteCreate):
     new_paciente = PacienteDB(
         usuarioId=paciente.usuarioId,
         edad=paciente.edad,
-        telefono=paciente.telefono
+        telefono=paciente.telefono,
+        genero=paciente.genero
     )
     db.add(new_paciente)
     db.commit()
     db.refresh(new_paciente)
     return new_paciente
+
+def update_paciente_with_usuario(db: Session, paciente_id: int, data: PacienteWithUsuarioUpdate):
+    paciente = db.query(PacienteDB).filter(PacienteDB.pacienteId == paciente_id).first()
+    if not paciente:
+        return None
+
+    usuario = db.query(UsuarioDB).filter(UsuarioDB.usuarioId == paciente.usuarioId).first()
+    if not usuario:
+        return None
+
+    # Actualizar campos del usuario
+    if data.nombre is not None:
+        usuario.nombre = data.nombre
+    if data.correo is not None:
+        usuario.correo = data.correo
+    if data.rut is not None:
+        usuario.rut = data.rut
+    if data.contrasena is not None:
+        usuario.contrasena = data.contrasena  # Aquí deberías hashearla si corresponde
+
+    # Actualizar campos del paciente
+    if data.edad is not None:
+        paciente.edad = data.edad
+    if data.telefono is not None:
+        paciente.telefono = data.telefono
+    if data.genero is not None:
+        paciente.genero = data.genero
+
+    db.commit()
+    db.refresh(paciente)
+    db.refresh(usuario)
+
+    return {
+        "paciente": paciente,
+        "usuario": usuario
+    }
+
 
 def create_paciente_with_usuario(db: Session, data: PacienteWithUsuario):
     # Crear usuario primero
@@ -135,7 +191,8 @@ def create_paciente_with_usuario(db: Session, data: PacienteWithUsuario):
     nuevo_paciente = PacienteDB(
         usuarioId=nuevo_usuario.usuarioId,
         edad=data.edad,
-        telefono=data.telefono
+        telefono=data.telefono,
+        genero=data.genero
     )
     db.add(nuevo_paciente)
     db.commit()
@@ -163,7 +220,8 @@ def get_pacientes_con_datos_usuario(db: Session):
             models.usuario.nombre,
             models.usuario.rut,
             models.paciente.edad,
-            models.paciente.telefono
+            models.paciente.telefono,
+            models.paciente.genero
         )
         .join(models.paciente, models.usuario.usuarioId == models.paciente.usuarioId)
         .filter(models.usuario.rol == "paciente")
@@ -337,7 +395,8 @@ def verificar_login_con_rol(correo: str, contrasena: str, db: Session) -> Option
                 nombre=usuario.nombre,
                 rut=usuario.rut,
                 edad=paciente_db.edad,
-                telefono=paciente_db.telefono
+                telefono=paciente_db.telefono,
+                genero=paciente_db.genero
             )
     
     # Construir dict con datos del usuario y datos rol
@@ -418,7 +477,8 @@ def get_medicion_completa(db: Session, medicion_id: int):
             "nombre": usuario_paciente.nombre,
             "rut": usuario_paciente.rut,
             "edad": paciente.edad,
-            "telefono": paciente.telefono
+            "telefono": paciente.telefono,
+            "genero":paciente.genero
         },
         "profesional": {
             "profesionalId": profesional.profesionalId,
@@ -447,8 +507,8 @@ def get_mediciones_por_paciente_completas(db: Session, paciente_id: int):
         .join(SesionDB, MedicionDB.SesionId == SesionDB.sesionId)
         .join(PacienteDB, SesionDB.PacienteId == PacienteDB.pacienteId)
         .join(usuario_paciente, PacienteDB.usuarioId == usuario_paciente.usuarioId)
-        .join(ProfesionalDB, SesionDB.ProfesionalId == ProfesionalDB.profesionalId)
-        .join(usuario_profesional, ProfesionalDB.usuarioId == usuario_profesional.usuarioId)
+        .outerjoin(ProfesionalDB, SesionDB.ProfesionalId == ProfesionalDB.profesionalId)
+        .outerjoin(usuario_profesional, ProfesionalDB.usuarioId == usuario_profesional.usuarioId)
         .join(MovimientoDB, MedicionDB.MovimientoId == MovimientoDB.movimientoId)
         .join(models.articulacion, MovimientoDB.ArticulacionId == models.articulacion.articulacionId)
         .filter(PacienteDB.pacienteId == paciente_id)
@@ -479,14 +539,15 @@ def get_mediciones_por_paciente_completas(db: Session, paciente_id: int):
                 "rut": usuario_paciente.rut,
                 "edad": paciente.edad,
                 "telefono": paciente.telefono,
+                "genero":paciente.genero,
             },
 
             "profesional": {
-                "profesionalId": profesional.profesionalId,
-                "nombre": usuario_profesional.nombre,
-                "correo": usuario_profesional.correo,
-                "rol": usuario_profesional.rol,
-                "especialidad": profesional.especialidad,
+                "profesionalId": profesional.profesionalId if profesional else None,
+                "nombre": usuario_profesional.nombre if usuario_profesional else None,
+                "correo": usuario_profesional.correo if usuario_profesional else None,
+                "rol": usuario_profesional.rol if usuario_profesional else None,
+                "especialidad": profesional.especialidad if profesional else None,
             },
 
             "movimiento": {

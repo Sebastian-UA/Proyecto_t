@@ -36,12 +36,18 @@ class PacienteData(BaseModel):
     usuarioId: int
     edad: int
     telefono: int
+    genero: str
 class PacienteCreate(PacienteData):
     pass
 class Paciente(PacienteData):
     pacienteId: int
     class Config:
         orm_mode = True
+        
+class PacienteUpdate(BaseModel):
+    edad: Optional[int] = None
+    telefono: Optional[str] = None
+    genero: Optional[str] = None
 
 # ===========================
 # PROFESIONAL
@@ -61,7 +67,7 @@ class Profesional(ProfesionalData):
 # ===========================
 class SesionData(BaseModel):
     PacienteId: int
-    ProfesionalId: int
+    ProfesionalId: Optional[int] = None
     fecha: date
     hora: time
     notas: Optional[str]
@@ -173,7 +179,18 @@ class PacienteWithUsuario(BaseModel):
     rol: str
     edad: int
     telefono: int
+    genero: str
     rut :str
+
+class PacienteWithUsuarioUpdate(BaseModel):
+    nombre: Optional[str] = None
+    correo: Optional[str] = None
+    contrasena: Optional[str] = None
+    edad: Optional[int] = None
+    telefono: Optional[int] = None
+    genero: Optional[str] = None
+    rut: Optional[str] = None
+    contrasena: Optional[str] = None
 
 class PacienteUsuarioOut(BaseModel):
     pacienteId: int
@@ -181,6 +198,7 @@ class PacienteUsuarioOut(BaseModel):
     rut: str
     edad: int
     telefono: int
+    genero: str
 
     class Config:
         orm_mode = True
@@ -193,16 +211,15 @@ class ProfesionalWithUsuario(BaseModel):
     especialidad: str
     rut :str
 
-
     class Config:
         orm_mode = True
 
 class ProfesionalUsuarioOut(BaseModel):
-    profesionalId: int
-    nombre: str
-    correo: str
-    rol: str
-    especialidad: str
+    profesionalId: Optional[int] = None
+    nombre: Optional[str] = None
+    correo: Optional[str] = None
+    rol: Optional[str] = None
+    especialidad: Optional[str] = None
 
     class Config:
         orm_mode = True
@@ -226,7 +243,7 @@ class LoginResponse(BaseModel):
 
 class SesionWithMedicion(BaseModel):
     PacienteId: int
-    ProfesionalId: int
+    ProfesionalId:Optional[int] = None
     fecha: date
     hora: time
     notas: Optional[str] = None
