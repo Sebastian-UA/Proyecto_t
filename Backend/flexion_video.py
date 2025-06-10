@@ -15,6 +15,13 @@ mp_drawing = mp.solutions.drawing_utils
 OUTPUT_DIR = "videos"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
+ARM_CONNECTIONS = [
+    (mp_pose.PoseLandmark.LEFT_SHOULDER, mp_pose.PoseLandmark.LEFT_ELBOW),
+    (mp_pose.PoseLandmark.LEFT_ELBOW, mp_pose.PoseLandmark.LEFT_WRIST),
+    (mp_pose.PoseLandmark.RIGHT_SHOULDER, mp_pose.PoseLandmark.RIGHT_ELBOW),
+    (mp_pose.PoseLandmark.RIGHT_ELBOW, mp_pose.PoseLandmark.RIGHT_WRIST)
+]
+
 # Función para calcular el ángulo entre tres puntos
 def calculate_angle(a, b, c):
     a = np.array(a)
@@ -67,6 +74,7 @@ def flexion_video(path: str, lado: str):
                              landmarks[mp_pose.PoseLandmark.RIGHT_ELBOW.value].y]
                     wrist = [landmarks[mp_pose.PoseLandmark.RIGHT_WRIST.value].x,
                              landmarks[mp_pose.PoseLandmark.RIGHT_WRIST.value].y]
+                    text_pos = (20, 120)
                     color = (0, 255, 0)
                     cx, cy = int(elbow[0] * width), int(elbow[1] * height)
 
@@ -77,6 +85,7 @@ def flexion_video(path: str, lado: str):
                              landmarks[mp_pose.PoseLandmark.LEFT_ELBOW.value].y]
                     wrist = [landmarks[mp_pose.PoseLandmark.LEFT_WRIST.value].x,
                              landmarks[mp_pose.PoseLandmark.LEFT_WRIST.value].y]
+                    text_pos = (20, 70)
                     color = (255, 0, 0)
                     cx, cy = int(elbow[0] * width), int(elbow[1] * height)
 
@@ -85,15 +94,7 @@ def flexion_video(path: str, lado: str):
                 min_angle = min(min_angle, angle)
 
                 # Mostrar ángulo cerca del codo
-                cv2.putText(frame, f'{int(angle)}°', (cx + 10, cy - 10), cv2.FONT_HERSHEY_PLAIN, 2, (0, 255, 255), 2)
-
-
-                ARM_CONNECTIONS = [
-                    (mp_pose.PoseLandmark.LEFT_SHOULDER, mp_pose.PoseLandmark.LEFT_ELBOW),
-                    (mp_pose.PoseLandmark.LEFT_ELBOW, mp_pose.PoseLandmark.LEFT_WRIST),
-                    (mp_pose.PoseLandmark.RIGHT_SHOULDER, mp_pose.PoseLandmark.RIGHT_ELBOW),
-                    (mp_pose.PoseLandmark.RIGHT_ELBOW, mp_pose.PoseLandmark.RIGHT_WRIST)
-                ]
+                cv2.putText(frame, f'{lado.capitalize()} Angle: {int(angle)}°', text_pos,cv2.FONT_HERSHEY_PLAIN, 2, color, 2)
 
                 mp_drawing.draw_landmarks(
                     frame,
@@ -102,6 +103,7 @@ def flexion_video(path: str, lado: str):
                     mp_drawing.DrawingSpec(color=(0, 0, 255), thickness=2, circle_radius=2),
                     mp_drawing.DrawingSpec(color=(0, 0, 255), thickness=2, circle_radius=2)
                 )
+
 
             out.write(frame)
 

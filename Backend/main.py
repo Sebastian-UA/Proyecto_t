@@ -6,7 +6,7 @@ from schemas import LoginRequest
 from crud import verificar_login
 from database import engine, localSession
 from schemas import usuarioData, UsuarioCreate, PacienteCreate, Paciente,ArticulacionCreate, Articulacion,MovimientoCreate,MedicionCreate, Medicion,SesionCreate, Sesion
-from schemas import ProfesionalCreate, Profesional,ProfesionalWithUsuario  
+from schemas import ProfesionalCreate, Profesional,ProfesionalWithUsuario,MedicionConSesionCompleta,PacienteUpdate,PacienteWithUsuarioUpdate
 from abduccion_video import abduccion_video
 from pys_video import pys_video
 from flexion_video import flexion_video
@@ -15,6 +15,7 @@ import uuid
 import cv2
 import uuid
 import subprocess
+from typing import List
 import os
 
 from fastapi import Form
@@ -38,8 +39,7 @@ app.mount("/videos", StaticFiles(directory=os.path.join(os.getcwd(), "videos")),
 # Configurar CORS para permitir solicitudes desde el frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000",
-                    "http://192.168.1.19"],  # Permitir solicitudes desde el frontend
+    allow_origins=["http://localhost:3000"],  # Permitir solicitudes desde el frontend
     allow_credentials=True,
     allow_methods=["*"],  # Permitir todos los métodos (GET, POST, etc.)
     allow_headers=["*"],  # Permitir todos los encabezados
@@ -201,6 +201,18 @@ def listar_pacientes(db: Session = Depends(get_db)):
 def obtener_detalle_pacientes(db: Session = Depends(get_db)):
     return crud.get_pacientes_con_datos_usuario(db)
 
+@app.patch("/paciente_con_usuario/{paciente_id}", response_model=schemas.PacienteUsuarioOut)
+def update_paciente_con_usuario(
+    paciente_id: int,
+    data: schemas.PacienteWithUsuarioUpdate,
+    db: Session = Depends(get_db)
+):
+    updated = crud.update_paciente_with_usuario(db, paciente_id, data)
+    if not updated:
+        raise HTTPException(status_code=404, detail="Paciente no encontrado")
+    return updated
+
+
 @app.get("/pacientes/{id}", response_model=schemas.Paciente)
 def obtener_paciente(id: int, db: Session = Depends(get_db)):
     paciente = crud.get_paciente_id(db, id)
@@ -211,6 +223,13 @@ def obtener_paciente(id: int, db: Session = Depends(get_db)):
 @app.post("/paciente_con_usuario/")
 def create_paciente_con_usuario(data: schemas.PacienteWithUsuario, db: Session = Depends(get_db)):
     return crud.create_paciente_with_usuario(db=db, data=data)
+
+@app.patch("/pacientes/{paciente_id}", response_model=schemas.Paciente)
+def actualizar_paciente(paciente_id: int, paciente_update: schemas.PacienteUpdate, db: Session = Depends(get_db)):
+    paciente_actualizado = crud.update_paciente(db=db, paciente_id=paciente_id, paciente_update=paciente_update)
+    if not paciente_actualizado:
+        raise HTTPException(status_code=404, detail="Paciente no encontrado")
+    return paciente_actualizado
 
 # ===========================
 # PROFESIONAL
@@ -344,3 +363,15 @@ def crear_sesion_con_medicion(data: schemas.SesionWithMedicion, db: Session = De
         "sesion": result["sesion"],
         "medicion": result["medicion"]
     }
+
+@app.get("/medicion_completa/{medicion_id}", response_model=MedicionConSesionCompleta)
+def obtener_medicion_completa(medicion_id: int, db: Session = Depends(get_db)):
+    resultado = crud.get_medicion_completa(db, medicion_id)
+    if not resultado:
+        raise HTTPException(status_code=404, detail="Medición o datos relacionados no encontrados")
+    return resultado
+
+@app.get("/mediciones_completas_paciente/{paciente_id}", response_model=List[MedicionConSesionCompleta])
+def get_mediciones_por_paciente_completas(paciente_id: int, db: Session = Depends(get_db)):
+    resultados = crud.get_mediciones_por_paciente_completas(db, paciente_id)
+    return resultados

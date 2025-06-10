@@ -4,167 +4,212 @@ import { useEffect, useRef, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { getMovimientoById } from '@/app/services/movimiento.api'
 import { usePatient } from '@/app/context/paciente'
-import { useProfessional } from '@/app/context/profesional' // si tienes este hook
+import { useProfessional } from '@/app/context/profesional'
 import { createSesionWithMedicion } from '@/app/services/sesion.api'
-import { format } from 'date-fns'
+
+// Tipos de resultado de análisis
+type AnalisisSimple = {
+  tipo: 'simple';
+  lado: string;
+  output: string;
+  max_angle: number;
+  min_angle: number;
+};
+
+type AnalisisPS = {
+  tipo: 'ps';
+  lado: string;
+  output: string;
+  pronacion: { max_angle: number; min_angle: number };
+  supinacion: { max_angle: number; min_angle: number };
+};
+
+type ResultadoAnalisis = AnalisisSimple | AnalisisPS;
 
 export default function CameraRecorder() {
-  const { movimientoId } = useParams()
-  const [movimiento, setMovimiento] = useState<string>('')
-  const videoRef = useRef<HTMLVideoElement | null>(null)
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
-  const [stream, setStream] = useState<MediaStream | null>(null)
-  const [recording, setRecording] = useState(false)
-  const [countdown, setCountdown] = useState<number | null>(null)
-  const [recordedVideoURL, setRecordedVideoURL] = useState<string | null>(null)
-  const [lado, setLado] = useState<string>('derecha')
+  const { movimientoId } = useParams();
+  const [movimiento, setMovimiento] = useState<string>('');
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const [stream, setStream] = useState<MediaStream | null>(null);
+  const [recording, setRecording] = useState(false);
+  const [countdown, setCountdown] = useState<number | null>(null);
+  const [recordedVideoURL, setRecordedVideoURL] = useState<string | null>(null);
+  const [lado, setLado] = useState<string>('derecha');
+  const [resultadoAnalisis, setResultadoAnalisis] = useState<ResultadoAnalisis | null>(null);
 
-  const { patient } = usePatient()
-  const { professional } = useProfessional() // solo si ya tienes este contexto
-
+  const { patient } = usePatient();
+  const { professional } = useProfessional();
 
   useEffect(() => {
     if (movimientoId) {
       getMovimientoById(Number(movimientoId))
-        .then((data) => {
-          setMovimiento(data.nombre)
-        })
-        .catch((error) => {
-          console.error('Error al obtener el movimiento:', error)
-        })
+        .then((data) => setMovimiento(data.nombre))
+        .catch((error) => console.error('Error al obtener el movimiento:', error));
     }
-  }, [movimientoId])
-
-  useEffect(() => {
-    console.log("Paciente desde contexto:", patient)
-    console.log("Profesional desde contexto:", professional)
-  }, [patient, professional])
-
+  }, [movimientoId]);
 
   const handleStartCamera = async () => {
     try {
-      const mediaStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+      const mediaStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
       if (videoRef.current) {
-        videoRef.current.srcObject = mediaStream
+        videoRef.current.srcObject = mediaStream;
       }
-      setStream(mediaStream)
+      setStream(mediaStream);
     } catch (error) {
-      console.error('Error al acceder a la cámara:', error)
+      console.error('Error al acceder a la cámara:', error);
     }
-  }
-  const [resultadoAnalisis, setResultadoAnalisis] = useState<{
-    max_angle: number
-    min_angle: number
-    delta_angle: number
-    output: string
-    lado: string
-  } | null>(null)
+  };
 
   const handleStartRecording = () => {
-    if (!stream) return
+    if (!stream) return;
 
-    const chunks: BlobPart[] = []
+    const chunks: BlobPart[] = [];
     const mediaRecorder = new MediaRecorder(stream, {
       mimeType: 'video/webm; codecs=vp8'
-    })
+    });
 
-    mediaRecorderRef.current = mediaRecorder
-    setRecording(true)
-    setCountdown(10)
+    mediaRecorderRef.current = mediaRecorder;
+    setRecording(true);
+    setCountdown(10);
 
     mediaRecorder.ondataavailable = (event) => {
       if (event.data.size > 0) {
-        chunks.push(event.data)
+        chunks.push(event.data);
       }
-    }
+    };
 
     mediaRecorder.onstop = async () => {
-      const blob = new Blob(chunks, { type: 'video/webm' })
-      const videoURL = URL.createObjectURL(blob)
-      setRecordedVideoURL(videoURL)
+      const blob = new Blob(chunks, { type: 'video/webm' });
+      const videoURL = URL.createObjectURL(blob);
+      setRecordedVideoURL(videoURL);
 
-      const formData = new FormData()
-      formData.append('file', blob, 'grabacion.webm')
-      formData.append('movimiento', movimiento)
-      formData.append('lado', lado)
-
-      formData.forEach((value, key) => {
-        console.log(`${key}:`, value)
-      })
+      const formData = new FormData();
+      formData.append('file', blob, 'grabacion.webm');
+      formData.append('movimiento', movimiento);
+      formData.append('lado', lado);
 
       try {
         const response = await fetch('http://localhost:8000/analizar_video', {
           method: 'POST',
           body: formData,
-        })
+        });
 
         if (response.ok) {
-          const data = await response.json()
-          console.log('Resultado del análisis:', data)
-          setResultadoAnalisis(data)
-        } else {
-          console.error('Error al procesar el video.')
-        }
+          const data = await response.json();
+          console.log("Resultado backend:", data);
 
+          if ('pronacion' in data && 'supinacion' in data) {
+            setResultadoAnalisis({
+              tipo: 'ps',
+              lado: data.lado,
+              output: data.output,
+              pronacion: data.pronacion,
+              supinacion: data.supinacion,
+            });
+          } else {
+            setResultadoAnalisis({
+              tipo: 'simple',
+              lado: data.lado,
+              output: data.output,
+              max_angle: data.max_angle,
+              min_angle: data.min_angle,
+            });
+          }
+        } else {
+          console.error('Error al procesar el video.');
+        }
       } catch (error) {
-        console.error('Error al enviar el video:', error)
+        console.error('Error al enviar el video:', error);
       }
 
-      setRecording(false)
-    }
+      setRecording(false);
+    };
 
-    mediaRecorder.start()
+    mediaRecorder.start();
 
     const interval = setInterval(() => {
       setCountdown((prev) => {
-        if (prev && prev > 1) return prev - 1
-        clearInterval(interval)
-        mediaRecorder.stop()
-        return null
-      })
-    }, 1000)
-  }
+        if (prev && prev > 1) return prev - 1;
+        clearInterval(interval);
+        mediaRecorder.stop();
+        return null;
+      });
+    }, 1000);
+  };
+
   const handleGuardarAnalisis = async () => {
     if (!resultadoAnalisis || !movimientoId || !patient || !professional) {
       alert("Faltan datos para guardar el análisis");
       return;
     }
 
+    const now = new Date();
+
+    // Datos comunes a cualquier medición
+    const sesionData = {
+      PacienteId: patient.pacienteId,
+      ProfesionalId: professional.profesionalId,
+      fecha: now.toISOString().slice(0, 10),
+      hora: now.toISOString().slice(11, 19),
+      notas: "",
+    };
+
     try {
-      // Fecha y hora actuales (puedes usar Date nativo o date-fns para formato)
-      const now = new Date();
+      if (resultadoAnalisis.tipo === 'simple') {
+        const dataToSend = {
+          ...sesionData,
+          EjercicioId: null,
+          MovimientoId: Number(movimientoId),
+          anguloMin: resultadoAnalisis.min_angle,
+          anguloMax: resultadoAnalisis.max_angle,
+          lado: resultadoAnalisis.lado, // "derecha" o "izquierda"
+        };
 
-      const dataToSend = {
-        PacienteId: patient.pacienteId,             // desde contexto paciente
-        ProfesionalId: professional.profesionalId,             // desde contexto profesional
-        fecha: now.toISOString().slice(0, 10),      // YYYY-MM-DD
-        hora: now.toISOString().slice(11, 19),      // HH:MM:SS
-        notas: "",                                  // opcional, aquí vacío o algún texto
-        EjercicioId: null,                          // si no tienes ejercicio, null
-        MovimientoId: Number(movimientoId),
-        anguloMin: resultadoAnalisis.min_angle,
-        anguloMax: resultadoAnalisis.max_angle,
-        lado: resultadoAnalisis.lado,
-      };
-      console.log("Datos que se envían al backend:", dataToSend);
+        await createSesionWithMedicion(dataToSend);
 
-      const respuesta = await createSesionWithMedicion(dataToSend);
+      } else if (resultadoAnalisis.tipo === 'ps') {
+        // Guardar 2 mediciones: una para pronación y otra para supinación
+        const mediciones = [
+          {
+            ...sesionData,
+            EjercicioId: null,
+            MovimientoId: Number(movimientoId),
+            anguloMin: resultadoAnalisis.pronacion.min_angle,
+            anguloMax: resultadoAnalisis.pronacion.max_angle,
+            lado: `${resultadoAnalisis.lado} - pronación`,
+          },
+          {
+            ...sesionData,
+            EjercicioId: null,
+            MovimientoId: Number(movimientoId),
+            anguloMin: resultadoAnalisis.supinacion.min_angle,
+            anguloMax: resultadoAnalisis.supinacion.max_angle,
+            lado: `${resultadoAnalisis.lado} - supinación`,
+          },
+        ];
+
+        // Guardar ambas mediciones
+        for (const dataToSend of mediciones) {
+          await createSesionWithMedicion(dataToSend);
+        }
+      }
+
       alert("Sesión con medición guardada correctamente");
-      console.log("Respuesta backend:", respuesta);
+
     } catch (error) {
       alert("Error al guardar sesión con medición");
       console.error(error);
     }
   };
 
-
   useEffect(() => {
     return () => {
       if (stream) {
-        stream.getTracks().forEach((track) => track.stop())
+        stream.getTracks().forEach((track) => track.stop());
       }
-    }
-  }, [stream])
+    };
+  }, [stream]);
 
   return (
     <div className="flex flex-col items-center p-4">
@@ -175,11 +220,9 @@ export default function CameraRecorder() {
         className="w-full max-w-md rounded shadow mb-4"
       />
 
-      <div className="mb-4">
-        <p className="text-xl font-semibold">
-          Movimiento: {movimiento || 'Cargando...'}
-        </p>
-      </div>
+      <p className="text-xl font-semibold mb-4">
+        Movimiento: {movimiento || 'Cargando...'}
+      </p>
 
       <div className="flex gap-4 mb-4 items-end">
         <button
@@ -191,12 +234,12 @@ export default function CameraRecorder() {
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Selecciona el lado a analizar:
+            Selecciona el lado:
           </label>
           <select
             value={lado}
             onChange={(e) => setLado(e.target.value)}
-            className="block w-38 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+            className="block w-38 px-3 py-2 border border-gray-300 rounded-md"
           >
             <option value="derecha">Derecha</option>
             <option value="izquierda">Izquierda</option>
@@ -229,12 +272,29 @@ export default function CameraRecorder() {
           />
         </div>
       )}
+
       {resultadoAnalisis && (
         <div className="mt-6 p-4 bg-gray-100 rounded shadow w-full max-w-md">
           <h3 className="text-lg font-bold mb-2">Resultados del análisis:</h3>
-          <p><strong>Lado analizado:</strong> {resultadoAnalisis.lado}</p>
-          <p><strong>Ángulo máximo:</strong> {resultadoAnalisis.max_angle.toFixed(2)}°</p>
-          <p><strong>Ángulo mínimo:</strong> {resultadoAnalisis.min_angle.toFixed(2)}°</p>
+          <p><strong>Lado:</strong> {resultadoAnalisis.lado}</p>
+
+          {resultadoAnalisis.tipo === 'simple' ? (
+            <>
+              <p><strong>Ángulo máximo:</strong> {resultadoAnalisis.max_angle.toFixed(2)}°</p>
+              <p><strong>Ángulo mínimo:</strong> {resultadoAnalisis.min_angle.toFixed(2)}°</p>
+            </>
+          ) : (
+            <>
+              <p className="font-semibold mt-2">Pronación</p>
+              <p>Máx: {resultadoAnalisis.pronacion.max_angle.toFixed(2)}°</p>
+              <p>Mín: {resultadoAnalisis.pronacion.min_angle.toFixed(2)}°</p>
+
+              <p className="font-semibold mt-2">Supinación</p>
+              <p>Máx: {resultadoAnalisis.supinacion.max_angle.toFixed(2)}°</p>
+              <p>Mín: {resultadoAnalisis.supinacion.min_angle.toFixed(2)}°</p>
+            </>
+          )}
+
           <video
             src={`http://localhost:8000/${resultadoAnalisis.output}`}
             controls
@@ -249,8 +309,6 @@ export default function CameraRecorder() {
       >
         Guardar análisis
       </button>
-
-
     </div>
-  )
+  );
 }

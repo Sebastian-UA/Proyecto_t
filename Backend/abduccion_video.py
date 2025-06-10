@@ -15,11 +15,15 @@ def calculate_angle(a, b, c):
     a = np.array(a)
     b = np.array(b)
     c = np.array(c)
-    ab = a - b
-    cb = c - b
-    cosine_angle = np.dot(ab, cb) / (np.linalg.norm(ab) * np.linalg.norm(cb))
-    angle = np.arccos(np.clip(cosine_angle, -1.0, 1.0))
-    return np.degrees(angle)
+
+    rad = np.arctan2(c[1] - b[1], c[0] - b[0]) - np.arctan2(a[1] - b[1], a[0] - b[0])
+    angle = np.abs(rad * 180.0 / np.pi)
+
+    if angle > 180.0:
+        angle = 360 - angle
+
+    return angle
+
 
 def abduccion_video(path: str, lado: str):
     cap = cv2.VideoCapture(path)
