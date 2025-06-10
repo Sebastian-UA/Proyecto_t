@@ -2,7 +2,7 @@ import { StyleSheet } from 'react-native';
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flexGrow: 1,
     backgroundColor: '#B3F0FF',
     alignItems: 'center',
     justifyContent: 'center',
@@ -31,12 +31,12 @@ const styles = StyleSheet.create({
     margin: 10,
   },
   subtitulo: {
-  fontSize: 18,
-  fontWeight: 'bold',
-  marginTop: 20,
-  marginBottom: 10,
-  textAlign: 'center',
- },
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginTop: 20,
+    marginBottom: 10,
+    textAlign: 'center',
+  },
   imagen: {
     width: 60,
     height: 60,
@@ -49,4 +49,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default styles;
+export default styles; 

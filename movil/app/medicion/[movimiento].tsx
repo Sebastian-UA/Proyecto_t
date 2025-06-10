@@ -1,12 +1,28 @@
 import { useState, useEffect } from 'react';
 import { useLocalSearchParams } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
-import { View, Text, Button, ActivityIndicator, Image, Alert } from 'react-native';
+import { View, Text, Button, ActivityIndicator, Image, Alert, ScrollView } from 'react-native';
 import { usePatient } from '../../context/paciente';
 import { useProfessional } from '../../context/profesional';
 import { getMovimientoById } from '../../services/movimiento';
 import { createSesionWithMedicion } from '../../services/sesion';
 import styles from '../../estilos/styles';
+
+// Función para solicitar permisos
+const requestPermissions = async () => {
+  const cameraPermission = await ImagePicker.requestCameraPermissionsAsync();
+  const mediaLibraryPermission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+  if (cameraPermission.status !== 'granted' || mediaLibraryPermission.status !== 'granted') {
+    Alert.alert(
+      'Permisos necesarios',
+      'Se requieren permisos de cámara y galería para usar esta función.',
+      [{ text: 'OK' }]
+    );
+    return false;
+  }
+  return true;
+};
 
 export default function MedicionPage() {
   const { movimiento } = useLocalSearchParams() as { movimiento: string };
@@ -19,50 +35,84 @@ export default function MedicionPage() {
   const { patient } = usePatient();
   const { professional } = useProfessional();
 
-  const seleccionarVideo = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Videos,
-      allowsEditing: false,
-      quality: 1,
-    });
+  useEffect(() => {
+    requestPermissions();
+  }, []);
 
-    if (!result.canceled && result.assets.length > 0) {
-      setVideoUri(result.assets[0].uri);
+  const seleccionarVideo = async () => {
+    try {
+      const hasPermission = await requestPermissions();
+      if (!hasPermission) return;
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Videos,
+        allowsEditing: true,
+        quality: 0.7,
+        videoMaxDuration: 30,
+        videoExportPreset: ImagePicker.VideoExportPreset.LowQuality,
+        videoQuality: ImagePicker.UIImagePickerControllerQualityType.Medium,
+      });
+
+      if (!result.canceled && result.assets.length > 0) {
+        setVideoUri(result.assets[0].uri);
+      }
+    } catch (error) {
+      console.error('Error al seleccionar video:', error);
+      Alert.alert('Error', 'No se pudo seleccionar el video');
     }
   };
 
   const grabarVideo = async () => {
-    const { status } = await ImagePicker.requestCameraPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('Permiso denegado para acceder a la cámara');
-      return;
-    }
+    try {
+      const hasPermission = await requestPermissions();
+      if (!hasPermission) return;
 
-    const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Videos,
-      quality: 1,
-    });
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Videos,
+        allowsEditing: true,
+        quality: 0.7,
+        videoMaxDuration: 30,
+        videoExportPreset: ImagePicker.VideoExportPreset.LowQuality,
+        videoQuality: ImagePicker.UIImagePickerControllerQualityType.Medium,
+      });
 
-    if (!result.canceled && result.assets.length > 0) {
-      setVideoUri(result.assets[0].uri);
+      if (!result.canceled && result.assets.length > 0) {
+        setVideoUri(result.assets[0].uri);
+      }
+    } catch (error) {
+      console.error('Error al grabar video:', error);
+      Alert.alert('Error', 'No se pudo grabar el video');
     }
   };
 
   const enviarVideo = async () => {
     if (!videoUri) return Alert.alert('Selecciona un video primero.');
+    if (!movimientoData?.nombre) return Alert.alert('Error', 'No se ha cargado la información del movimiento');
 
     try {
       setLoading(true);
       const formData = new FormData();
+      
+      // Obtener la extensión del archivo
+      const extension = videoUri.split('.').pop()?.toLowerCase() || 'mp4';
+      const mimeType = `video/${extension}`;
+      
       formData.append('file', {
         uri: videoUri,
-        name: 'video.mp4',
-        type: 'video/mp4',
+        name: `video.${extension}`,
+        type: mimeType,
       } as any);
-      formData.append('movimiento', movimientoData?.nombre || '');
+      
+      formData.append('movimiento', movimientoData.nombre);
       formData.append('lado', lado);
 
-      const res = await fetch('http://192.168.1.19:8000/analizar_video', {
+      console.log('Enviando video:', {
+        uri: videoUri,
+        movimiento: movimientoData.nombre,
+        lado: lado
+      });
+
+      const res = await fetch('http://192.168.1.19:8000/analizar_video/', {
         method: 'POST',
         body: formData,
         headers: {
@@ -70,11 +120,26 @@ export default function MedicionPage() {
         },
       });
 
+      if (!res.ok) {
+        const errorData = await res.text();
+        console.error('Error del servidor:', errorData);
+        throw new Error(`Error en el servidor: ${res.status}`);
+      }
+
       const data = await res.json();
+      console.log('Respuesta del servidor:', data);
+      
+      if (!data.output) {
+        throw new Error('Respuesta incompleta del servidor');
+      }
+
       setResultado(data);
     } catch (error) {
       console.error('Error al enviar el video:', error);
-      Alert.alert('Error al analizar el video');
+      Alert.alert(
+        'Error', 
+        'No se pudo analizar el video. Por favor, verifica tu conexión e intenta de nuevo.'
+      );
     } finally {
       setLoading(false);
     }
@@ -85,73 +150,156 @@ export default function MedicionPage() {
       return Alert.alert('Faltan datos para guardar la sesión');
     }
 
-    const now = new Date();
-
-    const sesion = {
-      PacienteId: patient.pacienteId,
-      ProfesionalId: professional.profesionalId,
-      fecha: now.toISOString().split('T')[0],
-      hora: now.toTimeString().split(' ')[0],
-      notas: '',
-      EjercicioId: null,
-      MovimientoId: Number(movimiento),
-      anguloMin: resultado.min_angle,
-      anguloMax: resultado.max_angle,
-      lado: resultado.lado,
-    };
-
     try {
+      const now = new Date();
+      let anguloMin, anguloMax;
+
+      // Determinar los ángulos según el tipo de movimiento
+      if (movimientoData.nombre.toLowerCase() === "pronación y supinación") {
+        // Para pronación y supinación, usamos los ángulos de pronación
+        anguloMin = resultado.pronacion?.min_angle || 0;
+        anguloMax = resultado.pronacion?.max_angle || 0;
+      } else {
+        // Para abducción y flexión
+        anguloMin = resultado.min_angle || 0;
+        anguloMax = resultado.max_angle || 0;
+      }
+
+      const sesion = {
+        PacienteId: patient.pacienteId,
+        ProfesionalId: professional.profesionalId,
+        fecha: now.toISOString().split('T')[0],
+        hora: now.toTimeString().split(' ')[0],
+        notas: '',
+        EjercicioId: null,
+        MovimientoId: Number(movimiento),
+        anguloMin: anguloMin,
+        anguloMax: anguloMax,
+        lado: resultado.lado,
+      };
+
       await createSesionWithMedicion(sesion);
-      Alert.alert('Sesión guardada correctamente');
+      Alert.alert('Éxito', 'Sesión guardada correctamente');
     } catch (error) {
       console.error('Error al guardar sesión:', error);
-      Alert.alert('No se pudo guardar la sesión');
+      Alert.alert('Error', 'No se pudo guardar la sesión');
     }
   };
 
   useEffect(() => {
     const cargarMovimiento = async () => {
-      const data = await getMovimientoById(Number(movimiento));
-      setMovimientoData(data);
+      try {
+        const data = await getMovimientoById(Number(movimiento));
+        setMovimientoData(data);
+      } catch (error) {
+        console.error('Error al cargar movimiento:', error);
+        Alert.alert('Error', 'No se pudo cargar la información del movimiento');
+      }
     };
     cargarMovimiento();
   }, [movimiento]);
 
   return (
-    <View style={styles.container}>
+    <ScrollView
+      style={{ flex: 1, backgroundColor: '#B3F0FF' }}
+      contentContainerStyle={styles.container}
+    >
       <Text style={styles.titulo}>Medición: {movimientoData?.nombre || '...'}</Text>
 
       <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginVertical: 10 }}>
-        <Button title="Seleccionar Video" onPress={seleccionarVideo} />
-        <Button title="Grabar Video" onPress={grabarVideo} />
+        <Button 
+          title="Seleccionar Video" 
+          onPress={seleccionarVideo} 
+          disabled={loading} 
+        />
+        <Button 
+          title="Grabar Video" 
+          onPress={grabarVideo} 
+          disabled={loading} 
+        />
       </View>
 
       {videoUri && (
-        <View style={{ marginVertical: 10 }}>
-          <Text>Video seleccionado:</Text>
-          <Text style={{ fontSize: 12 }}>{videoUri}</Text>
+        <View style={{ marginVertical: 10, padding: 10, backgroundColor: '#f5f5f5', borderRadius: 10 }}>
+          <Text style={styles.subtitulo}>Video seleccionado:</Text>
+          <Text style={{ fontSize: 12, color: '#666', marginTop: 5 }}>{videoUri}</Text>
         </View>
       )}
 
-      <Button title="Enviar para análisis" onPress={enviarVideo} disabled={loading} />
+      <View style={{ marginVertical: 10, padding: 10, backgroundColor: '#f5f5f5', borderRadius: 10 }}>
+        <Text style={styles.subtitulo}>Selecciona el lado a analizar:</Text>
+        <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: 5 }}>
+          <Button 
+            title="Derecha" 
+            onPress={() => setLado('derecha')}
+            color={lado === 'derecha' ? '#4CAF50' : undefined}
+          />
+          <Button 
+            title="Izquierda" 
+            onPress={() => setLado('izquierda')}
+            color={lado === 'izquierda' ? '#4CAF50' : undefined}
+          />
+        </View>
+      </View>
 
-      {loading && <ActivityIndicator size="large" style={{ marginTop: 20 }} />}
+      <Button 
+        title="Enviar para análisis" 
+        onPress={enviarVideo} 
+        disabled={loading || !videoUri} 
+      />
+
+      {loading && (
+        <View style={{ marginVertical: 20 }}>
+          <ActivityIndicator size="large" />
+          <Text style={{ textAlign: 'center', marginTop: 10 }}>
+            Analizando video...
+          </Text>
+        </View>
+      )}
 
       {resultado && (
-        <View style={{ marginTop: 20 }}>
-          <Text style={styles.titulo}>Resultado:</Text>
-          <Text>Ángulo Mínimo: {resultado.min_angle}°</Text>
-          <Text>Ángulo Máximo: {resultado.max_angle}°</Text>
-          <Text>Diferencia: {resultado.delta_angle}°</Text>
-          {resultado.output && (
-            <Image
-              source={{ uri: `http://192.168.1.19:8000/${resultado.output}` }}
-              style={{ width: 300, height: 200, marginTop: 10 }}
-            />
+        <View style={{ marginTop: 20, padding: 15, backgroundColor: '#f5f5f5', borderRadius: 10 }}>
+          <Text style={styles.titulo}>Resultados del análisis:</Text>
+          
+          {movimientoData.nombre.toLowerCase() === "pronación y supinación" ? (
+            <View style={{ marginVertical: 10 }}>
+              <Text style={styles.subtitulo}>Pronación:</Text>
+              <Text>Mínimo: {resultado.pronacion?.min_angle?.toFixed(2)}°</Text>
+              <Text>Máximo: {resultado.pronacion?.max_angle?.toFixed(2)}°</Text>
+              
+              <Text style={[styles.subtitulo, { marginTop: 10 }]}>Supinación:</Text>
+              <Text>Mínimo: {resultado.supinacion?.min_angle?.toFixed(2)}°</Text>
+              <Text>Máximo: {resultado.supinacion?.max_angle?.toFixed(2)}°</Text>
+            </View>
+          ) : (
+            <View style={{ marginVertical: 10 }}>
+              <Text style={styles.subtitulo}>Ángulos:</Text>
+              <Text>Mínimo: {resultado.min_angle?.toFixed(2)}°</Text>
+              <Text>Máximo: {resultado.max_angle?.toFixed(2)}°</Text>
+              {resultado.delta_angle && (
+                <Text>Diferencia: {resultado.delta_angle.toFixed(2)}°</Text>
+              )}
+            </View>
           )}
-          <Button title="Guardar Sesión" onPress={guardarSesion} />
+
+          {resultado.output && (
+            <View style={{ marginVertical: 10 }}>
+              <Text style={styles.subtitulo}>Video procesado:</Text>
+              <Image
+                source={{ uri: `http://192.168.1.19:8000/${resultado.output}` }}
+                style={{ width: '100%', height: 200, marginVertical: 10 }}
+                resizeMode="contain"
+              />
+            </View>
+          )}
+
+          <Button 
+            title="Guardar Sesión" 
+            onPress={guardarSesion}
+            color="#4CAF50"
+          />
         </View>
       )}
-    </View>
+    </ScrollView>
   );
 }
