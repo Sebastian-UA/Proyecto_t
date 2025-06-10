@@ -269,50 +269,6 @@ export default function MedicionPage() {
           </Text>
         </View>
       )}
-
-      {resultado && (
-        <View style={{ marginTop: 20, padding: 15, backgroundColor: '#f5f5f5', borderRadius: 10 }}>
-          <Text style={styles.titulo}>Resultados del análisis:</Text>
-          
-          {movimientoData.nombre.toLowerCase() === "pronación y supinación" ? (
-            <View style={{ marginVertical: 10 }}>
-              <Text style={styles.subtitulo}>Pronación:</Text>
-              <Text>Mínimo: {resultado.pronacion?.min_angle?.toFixed(2)}°</Text>
-              <Text>Máximo: {resultado.pronacion?.max_angle?.toFixed(2)}°</Text>
-              
-              <Text style={[styles.subtitulo, { marginTop: 10 }]}>Supinación:</Text>
-              <Text>Mínimo: {resultado.supinacion?.min_angle?.toFixed(2)}°</Text>
-              <Text>Máximo: {resultado.supinacion?.max_angle?.toFixed(2)}°</Text>
-            </View>
-          ) : (
-            <View style={{ marginVertical: 10 }}>
-              <Text style={styles.subtitulo}>Ángulos:</Text>
-              <Text>Mínimo: {resultado.min_angle?.toFixed(2)}°</Text>
-              <Text>Máximo: {resultado.max_angle?.toFixed(2)}°</Text>
-              {resultado.delta_angle && (
-                <Text>Diferencia: {resultado.delta_angle.toFixed(2)}°</Text>
-              )}
-            </View>
-          )}
-
-          {resultado.output && (
-            <View style={{ marginVertical: 10 }}>
-              <Text style={styles.subtitulo}>Video procesado:</Text>
-              <Image
-                source={{ uri: `http://192.168.1.19:8000/${resultado.output}` }}
-                style={{ width: '100%', height: 200, marginVertical: 10 }}
-                resizeMode="contain"
-              />
-            </View>
-          )}
-
-          <Button 
-            title="Guardar Sesión" 
-            onPress={guardarSesion}
-            color="#4CAF50"
-          />
-        </View>
-      )}
     </ScrollView>
   );
 }

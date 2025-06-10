@@ -1,33 +1,48 @@
 import React from 'react';
 import { useLocalSearchParams } from 'expo-router';
-import { View, Text, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, Image } from 'react-native';
 
-export default function AnalisisPage() {
+export default function AnalisisPacientePage() {
   const params = useLocalSearchParams();
   const resultado = params.resultado ? JSON.parse(params.resultado as string) : null;
-  const movimiento = params.movimiento;
+  // Asegurarse de que movimiento sea string
+  const movimiento = Array.isArray(params.movimiento) ? params.movimiento[0] : params.movimiento;
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.titulo}>Análisis de {movimiento}</Text>
+      <Text style={styles.titulo}>Resultados del análisis</Text>
+      <Text style={styles.subtitulo}>Movimiento: {movimiento}</Text>
       {resultado ? (
         <View style={styles.caja}>
-          <Text style={styles.subtitulo}>Ángulos:</Text>
-          <Text>Mínimo: {resultado.min_angle?.toFixed(2)}°</Text>
-          <Text>Máximo: {resultado.max_angle?.toFixed(2)}°</Text>
-          {resultado.pronacion && (
-            <>
+          {movimiento?.toLowerCase() === "pronación y supinación" ? (
+            <View style={{ marginVertical: 10 }}>
               <Text style={styles.subtitulo}>Pronación:</Text>
-              <Text>Mínimo: {resultado.pronacion.min_angle?.toFixed(2)}°</Text>
-              <Text>Máximo: {resultado.pronacion.max_angle?.toFixed(2)}°</Text>
-            </>
+              <Text>Mínimo: {resultado.pronacion?.min_angle?.toFixed(2)}°</Text>
+              <Text>Máximo: {resultado.pronacion?.max_angle?.toFixed(2)}°</Text>
+              <Text style={[styles.subtitulo, { marginTop: 10 }]}>Supinación:</Text>
+              <Text>Mínimo: {resultado.supinacion?.min_angle?.toFixed(2)}°</Text>
+              <Text>Máximo: {resultado.supinacion?.max_angle?.toFixed(2)}°</Text>
+            </View>
+          ) : (
+            <View style={{ marginVertical: 10 }}>
+              <Text style={styles.subtitulo}>Ángulos:</Text>
+              <Text>Mínimo: {resultado.min_angle?.toFixed(2)}°</Text>
+              <Text>Máximo: {resultado.max_angle?.toFixed(2)}°</Text>
+              {resultado.delta_angle && (
+                <Text>Diferencia: {resultado.delta_angle.toFixed(2)}°</Text>
+              )}
+            </View>
           )}
-          {resultado.supinacion && (
-            <>
-              <Text style={styles.subtitulo}>Supinación:</Text>
-              <Text>Mínimo: {resultado.supinacion.min_angle?.toFixed(2)}°</Text>
-              <Text>Máximo: {resultado.supinacion.max_angle?.toFixed(2)}°</Text>
-            </>
+
+          {resultado.output && (
+            <View style={{ marginVertical: 10 }}>
+              <Text style={styles.subtitulo}>Video procesado:</Text>
+              <Image
+                source={{ uri: `http://192.168.1.19:8000/${resultado.output}` }}
+                style={{ width: '100%', height: 200, marginVertical: 10 }}
+                resizeMode="contain"
+              />
+            </View>
           )}
         </View>
       ) : (
