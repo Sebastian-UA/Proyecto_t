@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { View, Text, Button, ActivityIndicator, Image, Alert, ScrollView } from 'react-native';
 import { usePatient } from '../../context/paciente';
@@ -34,6 +34,7 @@ export default function MedicionPage() {
 
   const { patient } = usePatient();
   const { professional } = useProfessional();
+  const router = useRouter();
 
   useEffect(() => {
     requestPermissions();
@@ -134,6 +135,18 @@ export default function MedicionPage() {
       }
 
       setResultado(data);
+      // Redirigir a la pantalla de análisis
+      router.push({
+  pathname: '/analisis/analisisPaciente',
+  params: {
+    resultado: JSON.stringify(data),
+    movimiento: movimientoData.nombre,
+  },
+} as any);
+
+      setVideoUri(null); // Limpiar el video después del análisis
+      Alert.alert('Éxito', 'Video enviado y analizado correctamente');
+      
     } catch (error) {
       console.error('Error al enviar el video:', error);
       Alert.alert(
