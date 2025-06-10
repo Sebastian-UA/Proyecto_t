@@ -1,4 +1,4 @@
-import { View, Text, Image, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, Button, Image, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
 
 export default function HomeScreen() {
@@ -7,21 +7,21 @@ export default function HomeScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Goniotrack</Text>
-      <Text style={styles.subtitle}>Medición precisa de movilidad</Text>
+
 
       <Image
-        source={require("../assets/images/goniometro.png")}
+        source={require("../assets/images/goniometro.png")} 
         style={styles.image}
         resizeMode="contain"
       />
 
-      <TouchableOpacity style={styles.button} onPress={() => router.push("/registro")}>
-        <Text style={styles.buttonText}>Registrarse</Text>
-      </TouchableOpacity>
+      <View style={styles.buttonContainer}>
+        <Button title="Registrarse" onPress={() => router.push("/registro")} />
+      </View>
 
-      <TouchableOpacity style={styles.buttonOutline} onPress={() => router.push("/login")}>
-        <Text style={styles.buttonOutlineText}>Iniciar Sesión</Text>
-      </TouchableOpacity>
+      <View style={styles.buttonContainer}>
+        <Button title="Iniciar Sesión" onPress={() => router.push("/login")} />
+      </View>
     </View>
   );
 }
@@ -29,59 +29,24 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
-    alignItems: "center",
     justifyContent: "center",
+    alignItems: "center",
     padding: 20,
+    backgroundColor: "#fff",
   },
   title: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: "bold",
-    color: "#007bff",
-    marginBottom: 5,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: "#666",
-    marginBottom: 30,
+    marginBottom: 20,
+    textAlign: "center",
   },
   image: {
-    width: 180,
-    height: 180,
+    width: 200,
+    height: 200,
     marginBottom: 30,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 5, // para Android
   },
-  button: {
-    backgroundColor: "#007bff",
-    paddingVertical: 12,
-    paddingHorizontal: 32,
-    borderRadius: 8,
-    marginVertical: 10,
-    width: "80%",
-    alignItems: "center",
-  },
-  buttonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  buttonOutline: {
-    borderColor: "#007bff",
-    borderWidth: 2,
-    paddingVertical: 12,
-    paddingHorizontal: 32,
-    borderRadius: 8,
-    marginVertical: 10,
-    width: "80%",
-    alignItems: "center",
-  },
-  buttonOutlineText: {
-    color: "#007bff",
-    fontSize: 16,
-    fontWeight: "600",
+  buttonContainer: {
+    width: "100%",
+    marginVertical: 8,
   },
 });

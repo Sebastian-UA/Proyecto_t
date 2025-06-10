@@ -1,4 +1,4 @@
-const API_URL = "http://192.168.1.19:8000"; // ⚠️ Asegúrate de usar tu IP real aquí
+const API_URL = "http://localhost:8000";
 
 export const createPaciente = async (data: any) => {
   try {
@@ -11,15 +11,13 @@ export const createPaciente = async (data: any) => {
     });
 
     if (!response.ok) {
-      const errorBody = await response.json().catch(() => ({}));
-      console.error("🛑 Error desde el backend:", errorBody);
-      throw new Error(errorBody.detail || "Error al crear paciente");
+      throw new Error("Error al crear paciente");
     }
 
     const responseData = await response.json();
     return responseData;
   } catch (error) {
-    console.error("Error al registrar paciente:", error);
+    console.error("Error al crear paciente:", error);
     throw error;
   }
 };
