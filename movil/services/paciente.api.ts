@@ -1,6 +1,6 @@
 import Constants from 'expo-constants';
 
-const API_URL = Constants.expoConfig?.extra?.API_URL;
+const API_URL = 'http://192.168.1.19:8000';
 
 
 interface ProfesionalData {
@@ -11,6 +11,7 @@ interface ProfesionalData {
   especialidad?: string;
   rol?: string;
 }
+
 
 export const createProfesionalConUsuario = async (data: ProfesionalData) => {
   try {

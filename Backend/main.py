@@ -39,7 +39,8 @@ app.mount("/videos", StaticFiles(directory=os.path.join(os.getcwd(), "videos")),
 # Configurar CORS para permitir solicitudes desde el frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # Permitir solicitudes desde el frontend
+    allow_origins=["http://localhost:3000",
+                    "http://192.168.1.19"],  # Permitir solicitudes desde el frontend
     allow_credentials=True,
     allow_methods=["*"],  # Permitir todos los métodos (GET, POST, etc.)
     allow_headers=["*"],  # Permitir todos los encabezados
