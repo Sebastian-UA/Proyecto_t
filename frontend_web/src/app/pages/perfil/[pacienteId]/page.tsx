@@ -65,25 +65,28 @@ export default function PerfilPaciente() {
   const [vista, setVista] = useState<"movimientos" | "analisis">("movimientos");
   const [medicionesCompletas, setMedicionesCompletas] = useState<any[]>([]);
 
-  const [movimientoSeleccionado, setMovimientoSeleccionado] = useState<string>("todos");
-  const [ladoSeleccionado, setLadoSeleccionado] = useState<string>("todos");
-  const esPronacionSupinacion = movimientoSeleccionado === "Pronación y Supinación";
   // Opciones para lado cuando NO es pron/sup
   const opcionesLadoSimple = [
-    { value: "todos", label: "Todos" },
     { value: "derecha", label: "Derecha" },
     { value: "izquierda", label: "Izquierda" },
   ];
 
+
   // Opciones para lado cuando SÍ es pron/sup
   const opcionesLadoPronSup = [
-    { value: "todos", label: "Todos" },
     { value: "derecha - pronación", label: "Derecha - Pronación" },
     { value: "derecha - supinación", label: "Derecha - Supinación" },
     { value: "izquierda - pronación", label: "Izquierda - Pronación" },
     { value: "izquierda - supinación", label: "Izquierda - Supinación" },
   ];
 
+  const [movimientoSeleccionado, setMovimientoSeleccionado] = useState<string>("");
+  const esPronacionSupinacion = movimientoSeleccionado === "Pronación y Supinación";
+
+  const opcionesLadoActual = esPronacionSupinacion ? opcionesLadoPronSup : opcionesLadoSimple;
+
+
+  const [ladoSeleccionado, setLadoSeleccionado] = useState<string>(opcionesLadoActual[0].value);
   const movimientosUnicos = Array.from(
     new Map(
       medicionesCompletas
@@ -98,6 +101,17 @@ export default function PerfilPaciente() {
     ).values()
   );
 
+
+  useEffect(() => {
+    const opcionesLadoActual = movimientoSeleccionado === "Pronación y Supinación" ? opcionesLadoPronSup : opcionesLadoSimple;
+    setLadoSeleccionado(opcionesLadoActual[0].value);
+  }, [movimientoSeleccionado]);
+
+  useEffect(() => {
+    if (movimientosUnicos.length > 0 && movimientoSeleccionado === "") {
+      setMovimientoSeleccionado(movimientosUnicos[0].value);
+    }
+  }, [movimientosUnicos, movimientoSeleccionado]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -137,29 +151,28 @@ export default function PerfilPaciente() {
   if (!paciente) return <div className="p-4">Cargando perfil...</div>;
 
   const medicionesFiltradas = medicionesCompletas.filter((med) => {
+    const movimientoNombre = med.movimiento?.nombre?.toLowerCase().trim();
     const coincideMovimiento =
-      movimientoSeleccionado === "todos" ||
-      med.movimiento?.nombre === movimientoSeleccionado;
+      movimientoNombre === movimientoSeleccionado.toLowerCase().trim();
 
     let coincideLado = false;
 
     if (!esPronacionSupinacion) {
-      // Caso normal
       coincideLado =
         ladoSeleccionado === "todos" ||
-        med.lado?.toLowerCase() === ladoSeleccionado;
+        med.lado?.toLowerCase().trim() === ladoSeleccionado.toLowerCase().trim();
     } else {
-      // Caso pronacion y supinacion
       if (ladoSeleccionado === "todos") {
         coincideLado = true;
       } else {
-        // ladoSeleccionado puede ser "derecha-pronacion", etc
-          coincideLado = med.lado?.toLowerCase() === ladoSeleccionado;
+        coincideLado =
+          med.lado?.toLowerCase().trim() === ladoSeleccionado.toLowerCase().trim();
       }
     }
 
     return coincideMovimiento && coincideLado;
   });
+
 
 
 
@@ -310,7 +323,6 @@ export default function PerfilPaciente() {
                 onChange={(e) => setMovimientoSeleccionado(e.target.value)}
                 className="p-2 border rounded-md"
               >
-                <option value="todos">Todos</option>
                 {movimientosUnicos.map((mov) => (
                   <option key={mov.value} value={mov.value}>
                     {mov.label}
@@ -321,8 +333,9 @@ export default function PerfilPaciente() {
 
             <div className="flex items-center gap-2">
               <label className="font-medium">Lado:</label>
-              {(esPronacionSupinacion ? opcionesLadoPronSup : opcionesLadoSimple).map(
-                (opt) => (
+              {(esPronacionSupinacion ? opcionesLadoPronSup : opcionesLadoSimple)
+                .slice()
+                .map((opt) => (
                   <label key={opt.value} className="flex items-center gap-1">
                     <input
                       type="radio"
@@ -332,8 +345,7 @@ export default function PerfilPaciente() {
                     />
                     {opt.label}
                   </label>
-                )
-              )}
+                ))}
             </div>
           </div>
 
