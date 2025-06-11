@@ -200,10 +200,10 @@ export default function PerfilPaciente() {
       : "rgba(255,165,0,1)"         // naranja cuando no hay profesional
   );
 
-
   const anguloMaxData = medicionesOrdenadas.map((med) =>
     med.anguloMax !== null && med.anguloMax !== undefined ? med.anguloMax : 0
   );
+
 
   // PARA EL GRAFICO
   const data = {
@@ -214,30 +214,45 @@ export default function PerfilPaciente() {
         data: medicionesOrdenadas.map((med) => med.anguloMin ?? null),
         spanGaps: true,
         borderWidth: 3,
-        backgroundColor: "transparent",
+        backgroundColor: "rgb(0, 255, 136)", // relleno bajo la línea
         tension: 0.3,
         pointBackgroundColor: medicionesOrdenadas.map((med) =>
           med.profesional?.profesionalId
-            ? "rgba(75,192,192,1)"
-            : "rgba(255,165,0,1)"
+            ? "rgb(0, 255, 136)"
+            : "rgb(255, 85, 0)"
         ),
         segment: {
           borderColor: (ctx: any) => {
             const med = medicionesOrdenadas[ctx.p0DataIndex];
             return med.profesional?.profesionalId
-              ? "rgba(75,192,192,1)"
-              : "rgba(255,165,0,1)";
+              ? "rgb(0, 255, 136)"
+              : "rgb(255, 85, 0)"
           }
         }
       },
       {
         label: "Ángulo Máximo",
         data: anguloMaxData,
-        borderColor: "rgba(255,99,132,1)",
-        backgroundColor: "rgba(255,99,132,0.2)",
+        backgroundColor: "rgb(54, 137, 67)", // relleno bajo la línea
         fill: true,
         tension: 0.3,
-      },
+        // Color de cada punto según profesionalId (igual que para mínimo)
+        pointBackgroundColor: medicionesOrdenadas.map((med) =>
+          med.profesional?.profesionalId
+            ? "rgb(54, 137, 67)"
+            : "rgba(255,165,0,1)"
+        ),
+
+        // Color de segmento entre puntos, igual que mínimo
+        segment: {
+          borderColor: (ctx: any) => {
+            const med = medicionesOrdenadas[ctx.p0DataIndex];
+            return med.profesional?.profesionalId
+              ? "rgb(54, 137, 67)"
+              : "rgba(255,165,0,1)";
+          }
+        }
+      }
     ],
   };
 
@@ -247,6 +262,44 @@ export default function PerfilPaciente() {
     plugins: {
       legend: {
         position: "top" as const,
+        labels: {
+          generateLabels: () => {
+            return [
+              {
+                text: "Ángulo Mínimo por Profesional",
+                fillStyle: "rgb(0, 255, 136)",
+                strokeStyle: "rgb(0, 255, 136)",
+                lineWidth: 3,
+                hidden: false,
+                datasetIndex: 0,
+              },
+              {
+                text: "Ángulo Mínimo Por Paciente",
+                fillStyle: "rgb(255, 85, 0)",
+                strokeStyle: "rgb(255, 85, 0)",
+                lineWidth: 3,
+                hidden: false,
+                datasetIndex: 0,
+              },
+              {
+                text: "Ángulo Máximo por Profesional",
+                fillStyle: "rgb(54, 137, 67)",
+                strokeStyle: "rgb(54, 137, 67)",
+                lineWidth: 3,
+                hidden: false,
+                datasetIndex: 1,
+              },
+              {
+                text: "Ángulo Máximo Por Paciente",
+                fillStyle: "rgba(255,165,0,1)",
+                strokeStyle: "rgba(255,165,0,1)",
+                lineWidth: 3,
+                hidden: false,
+                datasetIndex: 1,
+              },
+            ];
+          },
+        },
       },
       title: {
         display: true,
@@ -257,6 +310,7 @@ export default function PerfilPaciente() {
       },
     },
   };
+
 
 
   return (
@@ -394,7 +448,7 @@ export default function PerfilPaciente() {
                     <th className="p-2 border">Ángulo Minimo Esperado</th>
                     <th className="p-2 border">Fecha</th>
                     <th className="p-2 border">Paciente</th>
-                    <th className="p-2 border">Profesional</th>
+                    <th className="p-2 border">Fecha</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -411,7 +465,7 @@ export default function PerfilPaciente() {
                       </td>
                       <td className="p-2 border">{med.sesion?.fecha ?? "N/A"}</td>
                       <td className="p-2 border">{med.paciente?.nombre ?? "N/A"}</td>
-                      <td className="p-2 border">{med.lado ?? "N/A"}</td>
+                      <td className="p-2 border">{med.sesion?.fecha ?? "N/A"}</td>
                     </tr>
                   ))}
                 </tbody>
