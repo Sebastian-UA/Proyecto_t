@@ -199,6 +199,7 @@ class PacienteUsuarioOut(BaseModel):
     edad: int
     telefono: int
     genero: str
+    correo: str
 
     class Config:
         orm_mode = True

@@ -154,7 +154,7 @@ def update_paciente_with_usuario(db: Session, paciente_id: int, data: PacienteWi
     if data.rut is not None:
         usuario.rut = data.rut
     if data.contrasena is not None:
-        usuario.contrasena = data.contrasena  # Aquí deberías hashearla si corresponde
+        usuario.contrasena = data.contrasena
 
     # Actualizar campos del paciente
     if data.edad is not None:
@@ -168,10 +168,16 @@ def update_paciente_with_usuario(db: Session, paciente_id: int, data: PacienteWi
     db.refresh(paciente)
     db.refresh(usuario)
 
-    return {
-        "paciente": paciente,
-        "usuario": usuario
-    }
+    # Retornar el esquema que espera FastAPI
+    return PacienteUsuarioOut(
+        pacienteId=paciente.pacienteId,
+        nombre=usuario.nombre,
+        rut=usuario.rut,
+        correo=usuario.correo,
+        edad=paciente.edad,
+        telefono=paciente.telefono,
+        genero=paciente.genero
+    )
 
 
 def create_paciente_with_usuario(db: Session, data: PacienteWithUsuario):
@@ -219,6 +225,7 @@ def get_pacientes_con_datos_usuario(db: Session):
             models.paciente.pacienteId,
             models.usuario.nombre,
             models.usuario.rut,
+            models.usuario.correo,
             models.paciente.edad,
             models.paciente.telefono,
             models.paciente.genero
@@ -394,6 +401,7 @@ def verificar_login_con_rol(correo: str, contrasena: str, db: Session) -> Option
                 pacienteId=paciente_db.pacienteId,
                 nombre=usuario.nombre,
                 rut=usuario.rut,
+                correo=usuario.correo,
                 edad=paciente_db.edad,
                 telefono=paciente_db.telefono,
                 genero=paciente_db.genero
