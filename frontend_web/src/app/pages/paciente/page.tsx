@@ -24,8 +24,7 @@ export default function PacientePage() {
     edad: "",
     correo: "",
     contrasena: "",
-    genero: "",
-    rol: "paciente",
+    rol: "",
   });
 
   const router = useRouter();  // Aquí se usa useRouter dentro de un componente cliente
@@ -68,8 +67,7 @@ export default function PacientePage() {
         edad: "",
         correo: "",
         contrasena: "",
-        genero: "",
-        rol: "paciente",
+        rol: "",
       });
     } catch (error) {
       console.error("Error al crear paciente:", error);
@@ -137,8 +135,6 @@ export default function PacientePage() {
               <th className="px-6 py-3 border-b">RUT</th>
               <th className="px-6 py-3 border-b">Edad</th>
               <th className="px-6 py-3 border-b">Teléfono</th>
-              <th className="px-6 py-3 border-b">Género</th>
-
             </tr>
           </thead>
           <tbody>
@@ -152,8 +148,6 @@ export default function PacientePage() {
                 <td className="px-6 py-4 border-b">{paciente.rut}</td>
                 <td className="px-6 py-4 border-b">{paciente.edad}</td>
                 <td className="px-6 py-4 border-b">{paciente.telefono}</td>
-                <td className="px-6 py-4 border-b">{paciente.genero}</td>
-
               </tr>
             ))}
           </tbody>
@@ -249,17 +243,16 @@ export default function PacientePage() {
                 />
               </div>
               <div className="space-y-1">
-                <label htmlFor="genero" className="block text-sm font-medium text-gray-700">Género</label>
+                <label htmlFor="rol" className="block text-sm font-medium text-gray-700">Rol</label>
                 <input
                   type="text"
-                  id="genero"
-                  name="genero"
-                  value={form.genero}
+                  id="rol"
+                  name="rol"
+                  value={form.rol}
                   onChange={handleInputChange}
                   className="border border-gray-300 rounded-md px-4 py-2 w-full"
                 />
               </div>
-
               <div className="mt-4 flex justify-end">
                 <button
                   type="submit"

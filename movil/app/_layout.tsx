@@ -17,8 +17,24 @@ export default function Layout() {
             options={{ title: "Registro de Paciente" }}
           />
           <Stack.Screen
+            name="paciente"
+            options={{ title: "Pacientes" }}
+            />
+          <Stack.Screen
             name="login"
             options={{ title: "Iniciar Sesión" }}
+          />
+          <Stack.Screen
+            name="movimientos/SelecExt"
+            options={{ title: "Seleccion Extremidad" }}
+          />
+            <Stack.Screen
+            name="movimientos/SelecMov/[extremidad]"
+            options={{ title: "Seleccion Movimiento" }}
+            />
+              <Stack.Screen
+            name="medicion/[movimiento]"
+            options={{ title: "Movimientos" }}
           />
         </Stack>
       </PatientProvider>

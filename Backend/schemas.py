@@ -36,18 +36,12 @@ class PacienteData(BaseModel):
     usuarioId: int
     edad: int
     telefono: int
-    genero: str
 class PacienteCreate(PacienteData):
     pass
 class Paciente(PacienteData):
     pacienteId: int
     class Config:
         orm_mode = True
-        
-class PacienteUpdate(BaseModel):
-    edad: Optional[int] = None
-    telefono: Optional[str] = None
-    genero: Optional[str] = None
 
 # ===========================
 # PROFESIONAL
@@ -67,7 +61,7 @@ class Profesional(ProfesionalData):
 # ===========================
 class SesionData(BaseModel):
     PacienteId: int
-    ProfesionalId: Optional[int] = None
+    ProfesionalId: int
     fecha: date
     hora: time
     notas: Optional[str]
@@ -75,14 +69,6 @@ class SesionCreate(SesionData):
     pass
 class Sesion(SesionData):
     sesionId: int 
-    class Config:
-        orm_mode = True
-class SesionOut(BaseModel):
-    sesionId: int
-    fecha: date
-    hora: time
-    notas: Optional[str]
-
     class Config:
         orm_mode = True
 
@@ -96,14 +82,6 @@ class ArticulacionCreate(ArticulacionData):
     pass
 class Articulacion(ArticulacionData):
     articulacionId: int
-    class Config:
-        orm_mode = True
-
-class ArticulacionOut(BaseModel):
-    articulacionId: int
-    nombre: str
-    imagen_path: Optional[str] = None
-
     class Config:
         orm_mode = True
 
@@ -122,21 +100,6 @@ class Movimiento(MovimientoCreate):
     movimientoId: int
     class Config:
         orm_mode = True
-
-class MovimientoG(BaseModel):
-    movimientoId: int
-    nombre: str
-    descripcion: Optional[str]
-    imagen_path: Optional[str] = None
-    anguloMinReal: float
-    anguloMaxReal: float
-    ArticulacionId: int
-    artnombre:str
-
-    class Config:
-        orm_mode = True
-
-
 
 # ===========================
 # EJERCICIO
@@ -179,18 +142,7 @@ class PacienteWithUsuario(BaseModel):
     rol: str
     edad: int
     telefono: int
-    genero: str
     rut :str
-
-class PacienteWithUsuarioUpdate(BaseModel):
-    nombre: Optional[str] = None
-    correo: Optional[str] = None
-    contrasena: Optional[str] = None
-    edad: Optional[int] = None
-    telefono: Optional[int] = None
-    genero: Optional[str] = None
-    rut: Optional[str] = None
-    contrasena: Optional[str] = None
 
 class PacienteUsuarioOut(BaseModel):
     pacienteId: int
@@ -198,7 +150,6 @@ class PacienteUsuarioOut(BaseModel):
     rut: str
     edad: int
     telefono: int
-    genero: str
 
     class Config:
         orm_mode = True
@@ -211,15 +162,16 @@ class ProfesionalWithUsuario(BaseModel):
     especialidad: str
     rut :str
 
+
     class Config:
         orm_mode = True
 
 class ProfesionalUsuarioOut(BaseModel):
-    profesionalId: Optional[int] = None
-    nombre: Optional[str] = None
-    correo: Optional[str] = None
-    rol: Optional[str] = None
-    especialidad: Optional[str] = None
+    profesionalId: int
+    nombre: str
+    correo: str
+    rol: str
+    especialidad: str
 
     class Config:
         orm_mode = True
@@ -243,7 +195,7 @@ class LoginResponse(BaseModel):
 
 class SesionWithMedicion(BaseModel):
     PacienteId: int
-    ProfesionalId:Optional[int] = None
+    ProfesionalId: int
     fecha: date
     hora: time
     notas: Optional[str] = None
@@ -258,32 +210,6 @@ class SesionWithMedicion(BaseModel):
 class SesionConMedicionResponse(BaseModel):
     sesion: Sesion
     medicion: Medicion
-
-    class Config:
-        orm_mode = True
-
-
-class MedicionConSesionCompleta(BaseModel):
-    medicionId: int
-    anguloMin: float
-    anguloMax: float
-    lado: str
-
-    movimiento: MovimientoG
-
-    sesion: SesionOut
-
-    paciente: PacienteUsuarioOut
-    profesional: ProfesionalUsuarioOut
-
-    class Config:
-        orm_mode = True
-
-from typing import List
-
-class MedicionPacienteOut(BaseModel):
-    paciente: PacienteUsuarioOut
-    mediciones: List[MedicionConSesionCompleta]
 
     class Config:
         orm_mode = True
