@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { createProfesionalConUsuario } from '@/app/services/profesional.api';
 import { useProfessional } from "@/app/context/profesional";
-
+import { usePatient } from "@/app/context/paciente";
 
 const LoginPage = () => {
     const { setProfessional } = useProfessional();
@@ -25,6 +25,7 @@ const LoginPage = () => {
         contrasena: '',
         especialidad: ''
     });
+    const { setPatient } = usePatient();
 
     const router = useRouter();  // Usamos `useRouter` de Next.js
 
@@ -59,31 +60,53 @@ const LoginPage = () => {
             const data = await response.json();
             console.log('Usuario autenticado:', data);
 
-            // ✅ Guardar en el contexto
-            setProfessional({
-                profesionalId: data.id,
-                nombre: data.nombre,
-                correo: data.correo,
-                rut: data.rut,
-                rol: data.rol,
-            });
-            localStorage.setItem("profesional", JSON.stringify({
-                profesionalId: data.id,
-                nombre: data.nombre,
-                correo: data.correo,
-                rut: data.rut,
-                rol: data.rol,
-            }));
+            if (data.rol === 'profesional') {
+                const profesionalData = {
+                    profesionalId: data.id,
+                    nombre: data.nombre,
+                    correo: data.correo,
+                    rut: data.rut,
+                    rol: data.rol,
+                };
 
+                setProfessional(profesionalData);
+                localStorage.setItem("profesional", JSON.stringify(profesionalData));
 
-            // ✅ Redirigir
-            router.push('/pages/paciente');
+                // Limpiar paciente si había alguno
+                setPatient(null);
+                localStorage.removeItem("paciente");
+
+                router.push('/pages/paciente');
+
+            } else if (data.rol === 'paciente') {
+                const pacienteData = {
+                    pacienteId: data.id,
+                    nombre: data.nombre,
+                    correo: data.correo,
+                    rut: data.rut,
+                    edad: data.edad,
+                    telefono: data.telefono,
+                    rol: data.rol,
+                };
+
+                setPatient(pacienteData);
+                localStorage.setItem("paciente", JSON.stringify(pacienteData));
+
+                // Limpiar profesional si había alguno
+                setProfessional(null);
+                localStorage.removeItem("profesional");
+
+                router.push(`/pages/perfil/${data.id}`);
+
+            } else {
+                console.warn("Rol desconocido:", data.rol);
+            }
+
         } catch (err) {
             setError('Error de autenticación, intenta de nuevo');
             console.error(err);
         }
     };
-
 
     const handleRegistroSubmit = async (event: React.FormEvent) => {
         event.preventDefault();

@@ -13,7 +13,7 @@ interface Professional {
 // Tipo de contexto
 interface ProfessionalContextType {
     professional: Professional | null;
-    setProfessional: (professional: Professional) => void;
+    setProfessional: (professional: Professional | null) => void;
 }
 
 // Crear el contexto
