@@ -3,7 +3,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 
 // Modelo
 interface Professional {
-    profesionalId: number;
+    id: number;
     nombre: string;
     rut: string;
     correo: string;

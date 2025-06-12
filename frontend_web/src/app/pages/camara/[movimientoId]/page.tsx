@@ -148,8 +148,8 @@ export default function CameraRecorder() {
 
     // Datos comunes a cualquier medición
     const sesionData = {
-      PacienteId: patient.pacienteId,
-      ProfesionalId: professional?.profesionalId ?? null,
+      PacienteId: patient.id,
+      ProfesionalId: professional?.id ?? null,
       fecha: now.toISOString().slice(0, 10),
       hora: now.toISOString().slice(11, 19),
       notas: "",

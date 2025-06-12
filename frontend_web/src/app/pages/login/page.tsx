@@ -11,6 +11,7 @@ import {
 import { createProfesionalConUsuario } from '@/app/services/profesional.api';
 import { useProfessional } from "@/app/context/profesional";
 import { usePatient } from "@/app/context/paciente";
+import { useAuth } from "@/app/context/entro";
 
 const LoginPage = () => {
     const { setProfessional } = useProfessional();
@@ -26,6 +27,7 @@ const LoginPage = () => {
         especialidad: ''
     });
     const { setPatient } = usePatient();
+    const { setUsuario } = useAuth(); // 👈 usar setUsuario
 
     const router = useRouter();  // Usamos `useRouter` de Next.js
 
@@ -62,12 +64,15 @@ const LoginPage = () => {
 
             if (data.rol === 'profesional') {
                 const profesionalData = {
-                    profesionalId: data.id,
+                    id: data.id,
                     nombre: data.nombre,
                     correo: data.correo,
                     rut: data.rut,
                     rol: data.rol,
                 };
+
+                setUsuario(profesionalData); // 👈 guardarlo en el contexto
+                localStorage.setItem("usuario", JSON.stringify(profesionalData));
 
                 setProfessional(profesionalData);
                 localStorage.setItem("profesional", JSON.stringify(profesionalData));
@@ -80,7 +85,7 @@ const LoginPage = () => {
 
             } else if (data.rol === 'paciente') {
                 const pacienteData = {
-                    pacienteId: data.id,
+                    id: data.id,
                     nombre: data.nombre,
                     correo: data.correo,
                     rut: data.rut,
@@ -88,6 +93,8 @@ const LoginPage = () => {
                     telefono: data.telefono,
                     rol: data.rol,
                 };
+                setUsuario(pacienteData); // 👈 guardarlo en el contexto
+                localStorage.setItem("usuario", JSON.stringify(pacienteData));
 
                 setPatient(pacienteData);
                 localStorage.setItem("paciente", JSON.stringify(pacienteData));

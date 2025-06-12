@@ -4,7 +4,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 
 // Tipo del paciente
 interface Patient {
-  pacienteId: number;
+  id: number;
   nombre: string;
   rut: string;
   edad: number;

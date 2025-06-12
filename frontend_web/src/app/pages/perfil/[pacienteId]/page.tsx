@@ -4,9 +4,10 @@ import { useRouter, useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { getArticulaciones } from "@/app/services/articulacion.api";
 import { getMovimientos } from "@/app/services/movimiento.api";
-import { getPacientesInfo } from "@/app/services/paciente.api";
+import { getPacientesInfo, updatePacienteConUsuario } from "@/app/services/paciente.api";
 import { getMedicionesCompletasPorPaciente } from "@/app/services/sesion.api";
 import type { ScriptableContext } from "chart.js";
+import { useAuth } from "@/app/context/entro";
 
 import {
   Chart as ChartJS,
@@ -62,11 +63,17 @@ export default function PerfilPaciente() {
   const router = useRouter();
   const params = useParams();
   const pacienteId = params.pacienteId;
+  const { usuario } = useAuth();
 
   const [paciente, setPaciente] = useState<Paciente | null>(null);
   const [datosAgrupados, setDatosAgrupados] = useState<ArticulacionConMovimientos[]>([]);
   const [vista, setVista] = useState<"movimientos" | "analisis">("movimientos");
   const [medicionesCompletas, setMedicionesCompletas] = useState<any[]>([]);
+
+  const [mostrarModalPassword, setMostrarModalPassword] = useState(false);
+  const [nuevaPassword, setNuevaPassword] = useState("");
+  const [confirmarPassword, setConfirmarPassword] = useState("");
+  const [errorPassword, setErrorPassword] = useState("");
 
   // Opciones para lado cuando NO es pron/sup
   const opcionesLadoSimple = [
@@ -152,6 +159,8 @@ export default function PerfilPaciente() {
       fetchData();
     }
   }, [pacienteId]);
+
+
 
   if (!paciente) return <div className="p-4">Cargando perfil...</div>;
 
@@ -311,8 +320,6 @@ export default function PerfilPaciente() {
     },
   };
 
-
-
   return (
     <div className="p-6 space-y-8">
       {/* Info del Paciente */}
@@ -333,6 +340,18 @@ export default function PerfilPaciente() {
         <p>
           <strong>Género:</strong> {paciente.genero}
         </p>
+
+        {usuario?.rol === "paciente" && usuario.rut === paciente.rut && (
+          <div className="mt-4 text-right">
+            <button
+              onClick={() => setMostrarModalPassword(true)}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
+            >
+              Editar Contraseña
+            </button>
+          </div>
+        )}
+
       </div>
 
       {/* Botones de navegación */}
@@ -481,6 +500,67 @@ export default function PerfilPaciente() {
           )}
         </div>
       )}
+      {mostrarModalPassword && (
+        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-lg">
+            <h3 className="text-xl font-bold mb-4">Cambiar Contraseña</h3>
+            <div className="space-y-4">
+              <input
+                type="password"
+                placeholder="Nueva contraseña"
+                value={nuevaPassword}
+                onChange={(e) => setNuevaPassword(e.target.value)}
+                className="w-full p-2 border rounded"
+              />
+              <input
+                type="password"
+                placeholder="Confirmar contraseña"
+                value={confirmarPassword}
+                onChange={(e) => setConfirmarPassword(e.target.value)}
+                className="w-full p-2 border rounded"
+              />
+              {errorPassword && (
+                <p className="text-red-600 text-sm">{errorPassword}</p>
+              )}
+              <div className="flex justify-end space-x-4">
+                <button
+                  onClick={() => {
+                    setMostrarModalPassword(false);
+                    setNuevaPassword("");
+                    setConfirmarPassword("");
+                    setErrorPassword("");
+                  }}
+                  className="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={async () => {
+                    if (nuevaPassword !== confirmarPassword) {
+                      setErrorPassword("Las contraseñas no coinciden");
+                      return;
+                    }
+
+                    try {
+                      await updatePacienteConUsuario(paciente.pacienteId, {
+                        contrasena: nuevaPassword,
+                      });
+                      console.log("Contraseña cambiada correctamente");
+                    } catch (err) {
+                      console.error("Error en updatePacienteConUsuario:", err);
+                    }
+
+                  }}
+                  className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700"
+                >
+                  Guardar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+

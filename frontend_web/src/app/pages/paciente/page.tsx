@@ -124,7 +124,7 @@ export default function PacientePage() {
       console.log("Paciente ID:", pacienteSeleccionado.pacienteId);
 
       if (professional) {  // Verifica si professional está disponible
-        console.log("Profesional ID:", professional.profesionalId);  // Debería mostrar el ID correctamente
+        console.log("Profesional ID:", professional.id);  // Debería mostrar el ID correctamente
         router.push(`/pages/articulacion/${pacienteSeleccionado.pacienteId}`);  // Navegar solo si professional existe
       } else {
         console.error("El contexto del profesional no está disponible. No se puede continuar.");
