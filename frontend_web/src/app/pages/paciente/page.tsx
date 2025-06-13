@@ -46,9 +46,6 @@ export default function PacientePage() {
     setIsEditModalOpen(true);
   };
 
-
-
-
   const router = useRouter();  // Aquí se usa useRouter dentro de un componente cliente
 
   useEffect(() => {

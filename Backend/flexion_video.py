@@ -93,8 +93,8 @@ def flexion_video(path: str, lado: str):
                 max_angle = max(max_angle, angle)
                 min_angle = min(min_angle, angle)
 
-                # Mostrar ángulo cerca del codo
-                cv2.putText(frame, f'{lado.capitalize()} Angle: {int(angle)}°', text_pos,cv2.FONT_HERSHEY_PLAIN, 2, color, 2)
+                # Mostrar ángulo
+                cv2.putText(frame, f'Angulo {lado.capitalize()}: {int(angle)}', text_pos, cv2.FONT_HERSHEY_PLAIN, 2, color, 2)
 
                 mp_drawing.draw_landmarks(
                     frame,

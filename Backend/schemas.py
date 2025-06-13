@@ -286,7 +286,6 @@ class ProfesionalWithUsuario(BaseModel):
             raise ValueError("Formato de RUT inválido. Ejemplo válido: 12345678-9")
         return v
 
-
 class ProfesionalUsuarioOut(BaseModel):
     profesionalId: Optional[int] = None
     nombre: Optional[str] = None
