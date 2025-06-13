@@ -47,6 +47,8 @@ export default function PacientePage() {
   };
 
 
+
+
   const router = useRouter();  // Aquí se usa useRouter dentro de un componente cliente
 
   useEffect(() => {
@@ -67,11 +69,89 @@ export default function PacientePage() {
   );
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+
+    switch (name) {
+      case "nombre":
+      case "genero":
+        if (!/^[a-zA-Z\s]*$/.test(value)) {
+          alert("El campo solo debe contener letras");
+          return;
+        }
+        break;
+
+      case "telefono":
+        if (!/^\d{0,9}$/.test(value)) {
+          alert("El teléfono debe tener solo números y máximo 9 dígitos");
+          return;
+        }
+        break;
+
+      case "edad":
+        if (!/^\d*$/.test(value) || (value !== "" && parseInt(value, 10) < 0)) {
+          alert("La edad debe ser un número positivo");
+          return;
+        }
+        break;
+
+      case "rut":
+        if (!/^[0-9]{0,10}-?[0-9kK]?$/.test(value)) {
+          alert("RUT inválido. Use solo números y un guion seguido de un dígito o 'K'");
+          return;
+        }
+        break;
+    }
+
+    setForm({ ...form, [name]: value });
+  };
+
+  const handleEditInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+
+    switch (name) {
+      case "nombre":
+      case "genero":
+        if (!/^[a-zA-Z\s]*$/.test(value)) {
+          alert("El campo solo debe contener letras");
+          return;
+        }
+        break;
+
+      case "telefono":
+        if (!/^\d{0,9}$/.test(value)) {
+          alert("El teléfono debe tener solo números y máximo 9 dígitos");
+          return;
+        }
+        break;
+
+      case "edad":
+        if (!/^\d*$/.test(value) || (value !== "" && parseInt(value, 10) < 0)) {
+          alert("La edad debe ser un número positivo");
+          return;
+        }
+        break;
+
+      case "rut":
+        if (!/^[0-9]{0,8}-?[0-9kK]?$/.test(value)) {
+          alert("RUT inválido. Use solo números y un guion seguido de un dígito o 'K'");
+          return;
+        }
+        break;
+    }
+
+    setEditForm({ ...editForm, [name]: value });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    for (const key in form) {
+      if (form[key as keyof typeof form].trim() === "") {
+        alert(`Por favor, completa el campo ${key}`);
+        return; // Para que no siga y no intente guardar
+      }
+    }
+
     try {
       const response = await createPaciente(form);
       console.log("Paciente creado:", response);
@@ -241,9 +321,7 @@ export default function PacientePage() {
                     type={field === "edad" ? "number" : "text"}
                     name={field}
                     value={editForm[field] || ""}
-                    onChange={(e) =>
-                      setEditForm({ ...editForm, [e.target.name]: e.target.value })
-                    }
+                    onChange={handleEditInputChange}
                     className="border border-gray-300 rounded-md px-4 py-2 w-full"
                   />
                 </div>

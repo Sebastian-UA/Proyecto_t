@@ -1,6 +1,7 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from typing import Optional
 from datetime import date, time
+import re
 
 # ===========================
 # USUARIO
@@ -182,6 +183,34 @@ class PacienteWithUsuario(BaseModel):
     genero: str
     rut :str
 
+    @field_validator("nombre", "genero")
+    @classmethod
+    def solo_letras(cls, v, info):
+        if not v.replace(" ", "").isalpha():
+            raise ValueError(f"{info.field_name.capitalize()} solo debe contener letras")
+        return v
+
+    @field_validator("telefono")
+    @classmethod
+    def validar_telefono(cls, v):
+        if v <= 0 or len(str(v)) > 9:
+            raise ValueError("Teléfono debe ser un número positivo de máximo 9 dígitos")
+        return v
+
+    @field_validator("edad")
+    @classmethod
+    def validar_edad(cls, v):
+        if v <= 0:
+            raise ValueError("Edad debe ser un número positivo")
+        return v
+
+    @field_validator("rut")
+    @classmethod
+    def validar_rut(cls, v):
+        if not re.match(r"^\d{7,8}-[\dkK]$", v):
+            raise ValueError("Formato de RUT inválido. Ejemplo válido: 12345678-9")
+        return v
+
 class PacienteWithUsuarioUpdate(BaseModel):
     nombre: Optional[str] = None
     correo: Optional[str] = None
@@ -191,6 +220,34 @@ class PacienteWithUsuarioUpdate(BaseModel):
     genero: Optional[str] = None
     rut: Optional[str] = None
     contrasena: Optional[str] = None
+
+    @field_validator("nombre", "genero")
+    @classmethod
+    def solo_letras(cls, v, info):
+        if v is not None and not v.replace(" ", "").isalpha():
+            raise ValueError(f"{info.field_name.capitalize()} solo debe contener letras")
+        return v
+
+    @field_validator("telefono")
+    @classmethod
+    def validar_telefono(cls, v):
+        if v is not None and (v <= 0 or len(str(v)) > 9):
+            raise ValueError("Teléfono debe ser un número positivo de máximo 9 dígitos")
+        return v
+
+    @field_validator("edad")
+    @classmethod
+    def validar_edad(cls, v):
+        if v is not None and v <= 0:
+            raise ValueError("Edad debe ser un número positivo")
+        return v
+
+    @field_validator("rut")
+    @classmethod
+    def validar_rut(cls, v):
+        if v is not None and not re.match(r"^\d{7,8}-[\dkK]$", v):
+            raise ValueError("Formato de RUT inválido. Ejemplo válido: 12345678-9")
+        return v
 
 class PacienteUsuarioOut(BaseModel):
     pacienteId: int
@@ -214,6 +271,21 @@ class ProfesionalWithUsuario(BaseModel):
 
     class Config:
         orm_mode = True
+
+    @field_validator("nombre")
+    @classmethod
+    def solo_letras(cls, v):
+        if not v.replace(" ", "").isalpha():
+            raise ValueError("Nombre solo debe contener letras")
+        return v
+
+    @field_validator("rut")
+    @classmethod
+    def validar_rut(cls, v):
+        if not re.match(r"^\d{7,8}-[\dkK]$", v):
+            raise ValueError("Formato de RUT inválido. Ejemplo válido: 12345678-9")
+        return v
+
 
 class ProfesionalUsuarioOut(BaseModel):
     profesionalId: Optional[int] = None

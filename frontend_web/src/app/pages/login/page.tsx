@@ -19,6 +19,7 @@ const LoginPage = () => {
     const [contrasena, setContrasena] = useState('');
     const [error, setError] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);  // Estado para controlar la apertura del modal
+
     const [formRegistro, setFormRegistro] = useState({
         nombre: '',
         rut: '',
@@ -26,6 +27,8 @@ const LoginPage = () => {
         contrasena: '',
         especialidad: ''
     });
+    const [registroError, setRegistroError] = useState('');
+
     const { setPatient } = usePatient();
     const { setUsuario } = useAuth(); // 👈 usar setUsuario
 
@@ -40,7 +43,28 @@ const LoginPage = () => {
     };
 
     const handleRegistroInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setFormRegistro({ ...formRegistro, [e.target.name]: e.target.value });
+        const { name, value } = e.target;
+
+        if (name === 'rut') {
+            // 1. Elimina puntos
+            let cleanValue = value.replace(/\./g, '');
+
+            // 2. Solo permitir números, guion y k/K
+            cleanValue = cleanValue.replace(/[^0-9kK-]/g, '');
+
+            // 3. Asegura que solo haya un guion y esté antes del dígito verificador
+            const parts = cleanValue.split('-');
+
+            if (parts.length > 2) {
+                // Más de un guion: quita todos los guiones y rehace la separación
+                const joined = parts.join('');
+                cleanValue = joined.slice(0, -1) + '-' + joined.slice(-1);
+            }
+
+            setFormRegistro({ ...formRegistro, [name]: cleanValue });
+        } else {
+            setFormRegistro({ ...formRegistro, [name]: value });
+        }
     };
 
     const handleSubmit = async (event: React.FormEvent) => {
@@ -118,6 +142,12 @@ const LoginPage = () => {
     const handleRegistroSubmit = async (event: React.FormEvent) => {
         event.preventDefault();
 
+        const nombreValido = /^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$/.test(formRegistro.nombre);
+        if (!nombreValido) {
+            alert('El nombre solo debe contener letras');
+            return;
+        }
+
         try {
             await createProfesionalConUsuario({
                 nombre: formRegistro.nombre,
@@ -130,10 +160,35 @@ const LoginPage = () => {
 
             setIsModalOpen(false);  // Cierra el modal
             setFormRegistro({ nombre: '', rut: '', correo: '', contrasena: '', especialidad: '' }); // Limpia el formulario
+            setRegistroError('');
+
         } catch (err) {
             console.error("Error en el registro:", err);
             alert("Error al registrar el profesional");
         }
+    };
+
+    const validarRegistro = () => {
+        const soloLetras = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/;
+        const rutFormato = /^[0-9]+-[0-9kK]$/;
+
+        if (!soloLetras.test(formRegistro.nombre)) {
+            setError("El nombre solo debe contener letras");
+            return false;
+        }
+
+        if (!rutFormato.test(formRegistro.rut)) {
+            setError("El RUT debe tener el formato correcto: sin puntos, con guion (Ej: 12345678-9)");
+            return false;
+        }
+
+        if (!soloLetras.test(formRegistro.especialidad)) {
+            setError("La especialidad solo debe contener letras");
+            return false;
+        }
+
+        setError(""); // Limpia cualquier error anterior
+        return true;
     };
 
 
@@ -183,6 +238,8 @@ const LoginPage = () => {
 
             {/* Modal de registro */}
             <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+                {error && <p className="text-red-500 text-sm">{error}</p>}
+
                 <DialogContent className="max-w-md w-full">
                     <DialogHeader>
                         <DialogTitle>Registro</DialogTitle>
@@ -250,6 +307,7 @@ const LoginPage = () => {
                                 />
                             </div>
                             <div className="mt-4 flex justify-end">
+
                                 <button
                                     type="submit"
                                     className="px-6 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-md"
