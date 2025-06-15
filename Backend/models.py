@@ -15,6 +15,7 @@ class paciente(Base):
     __tablename__ ='paciente'
     pacienteId = Column(Integer, primary_key=True, index=True)
     usuarioId = Column(Integer, ForeignKey("usuario.usuarioId"), index=True)
+    profesionalId = Column(Integer, ForeignKey("profesional.profesionalId"), index=True)
     edad= Column(Integer, index=True)
     telefono= Column(Integer, index=True)
     genero= Column(String(30), index=True)

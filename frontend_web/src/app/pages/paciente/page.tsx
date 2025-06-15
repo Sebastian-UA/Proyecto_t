@@ -10,7 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { createPaciente, getPacientesInfo, updatePacienteConUsuario } from "@/app/services/paciente.api";
+import { createPaciente, getPacientesPorProfesional, updatePacienteConUsuario } from "@/app/services/paciente.api";
 
 export default function PacientePage() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -47,24 +47,31 @@ export default function PacientePage() {
   };
 
   const router = useRouter();  // Aquí se usa useRouter dentro de un componente cliente
+  const { professional } = useProfessional();
 
   useEffect(() => {
-    const fetchPacientes = async () => {
-      try {
-        const data = await getPacientesInfo();
-        setPacientes(data);
-      } catch (error) {
-        console.error("Error al cargar pacientes:", error);
-      }
-    };
-    fetchPacientes();
-  }, []);
+  console.log("useEffect disparado, professional:", professional);
+  if (!professional) return;
 
-  const filteredPacientes = pacientes.filter((p) =>
-    p.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    p.rut.includes(searchTerm)
-  );
+  const fetchPacientes = async () => {
+    try {
+      const data = await getPacientesPorProfesional(professional.id);
+      console.log("Pacientes recibidos:", data);
+      setPacientes(data);
+    } catch (error) {
+      console.error("Error al cargar pacientes:", error);
+    }
+  };
 
+  fetchPacientes();
+}, [professional]);
+  // <- importante que dependa del professional
+
+  const safeSearchTerm = searchTerm?.toLowerCase() || "";
+  const pacientesFiltrados = (pacientes || []).filter(paciente => {
+    if (!paciente.nombre) return false;
+    return paciente.nombre.toLowerCase().includes(safeSearchTerm);
+  });
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
@@ -145,7 +152,7 @@ export default function PacientePage() {
     for (const key in form) {
       if (form[key as keyof typeof form].trim() === "") {
         alert(`Por favor, completa el campo ${key}`);
-        return; // Para que no siga y no intente guardar
+        return;
       }
     }
 
@@ -153,7 +160,12 @@ export default function PacientePage() {
       const response = await createPaciente(form);
       console.log("Paciente creado:", response);
 
-      const data = await getPacientesInfo();
+      if (!professional) {
+        console.error("No hay profesional autenticado");
+        return;
+      }
+
+      const data = await getPacientesPorProfesional(professional.id); // ✅ PASAR EL ID
       setPacientes(data);
 
       setIsModalOpen(false);
@@ -172,10 +184,10 @@ export default function PacientePage() {
     }
   };
 
+
   const { setPatient } = usePatient();  // Desestructurar setPatient desde el contexto
-  const { professional } = useProfessional();
   useEffect(() => {
-    console.log("Professional context:", professional);
+    console.log("Professional contextt:", professional);
   }, [professional]);
 
   if (!professional) {
@@ -238,7 +250,7 @@ export default function PacientePage() {
             </tr>
           </thead>
           <tbody>
-            {filteredPacientes.map((paciente, index) => (
+            {pacientesFiltrados.map((paciente, index) => (
               <tr
                 key={index}
                 className={`hover:bg-gray-50 ${selectedIndex === index ? "bg-blue-100" : ""}`}
@@ -301,13 +313,20 @@ export default function PacientePage() {
                 e.preventDefault();
                 try {
                   await updatePacienteConUsuario(editingPacienteId!, editForm);
-                  const data = await getPacientesInfo();
+
+                  if (!professional) {
+                    console.error("No hay profesional autenticado");
+                    return;
+                  }
+
+                  const data = await getPacientesPorProfesional(professional.id); // ✅ aquí pasas el ID
                   setPacientes(data);
                   setIsEditModalOpen(false);
                 } catch (error) {
                   console.error("Error al actualizar paciente:", error);
                 }
               }}
+
             >
               {["nombre", "rut", "edad", "telefono", "correo", "genero"].map((field) => (
                 <div key={field} className="space-y-1">

@@ -35,6 +35,7 @@ class usuarioId(usuarioData):
 # ===========================
 class PacienteData(BaseModel):
     usuarioId: int
+    profesionalId: int 
     edad: int
     telefono: int
     genero: str
@@ -257,6 +258,7 @@ class PacienteUsuarioOut(BaseModel):
     telefono: int
     genero: str
     correo: str
+    profesionalId: Optional[int]
 
     class Config:
         orm_mode = True

@@ -176,7 +176,8 @@ def update_paciente_with_usuario(db: Session, paciente_id: int, data: PacienteWi
         correo=usuario.correo,
         edad=paciente.edad,
         telefono=paciente.telefono,
-        genero=paciente.genero
+        genero=paciente.genero,
+        profesionalId=paciente.profesionalId 
     )
 
 
@@ -198,7 +199,8 @@ def create_paciente_with_usuario(db: Session, data: PacienteWithUsuario):
         usuarioId=nuevo_usuario.usuarioId,
         edad=data.edad,
         telefono=data.telefono,
-        genero=data.genero
+        genero=data.genero,
+        profesionalId=data.profesionalId
     )
     db.add(nuevo_paciente)
     db.commit()
@@ -209,6 +211,23 @@ def create_paciente_with_usuario(db: Session, data: PacienteWithUsuario):
         "paciente": nuevo_paciente
     }
 
+
+def get_pacientes_por_profesional_con_usuario(db: Session, profesional_id: int):
+    return (
+        db.query(
+            PacienteDB.pacienteId,
+            UsuarioDB.nombre,
+            UsuarioDB.rut,
+            UsuarioDB.correo,
+            PacienteDB.edad,
+            PacienteDB.telefono,
+            PacienteDB.genero
+        )
+        .join(UsuarioDB, UsuarioDB.usuarioId == PacienteDB.usuarioId)
+        .filter(PacienteDB.profesionalId == profesional_id)
+        .all()
+    )
+
 def delete_articulacion(db: Session, articulacion_id: int):
     articulacion = db.query(models.articulacion).filter(models.articulacion.articulacionId == articulacion_id).first()
     if articulacion:
@@ -217,6 +236,41 @@ def delete_articulacion(db: Session, articulacion_id: int):
         return {"message": "Articulación eliminada exitosamente"}
     else:
         return {"error": "Articulación no encontrada"}
+
+def get_pacientes_por_profesional(db: Session, profesional_id: int):
+    resultados = (
+        db.query(
+            models.paciente.pacienteId,
+            models.usuario.nombre,
+            models.usuario.rut,
+            models.usuario.correo,
+            models.paciente.edad,
+            models.paciente.telefono,
+            models.paciente.genero,
+            models.paciente.profesionalId,
+        )
+        .join(models.usuario, models.usuario.usuarioId == models.paciente.usuarioId)
+        .filter(models.paciente.profesionalId == profesional_id)
+        .filter(models.usuario.rol == "paciente")
+        .all()
+    )
+    
+    # convertir tuplas a dicts para que FastAPI pueda serializar
+    pacientes = []
+    for r in resultados:
+        paciente = {
+            "pacienteId": r.pacienteId,
+            "nombre": r.nombre,
+            "rut": r.rut,
+            "correo": r.correo,
+            "edad": r.edad,
+            "telefono": r.telefono,
+            "genero": r.genero,
+            "profesionalId": r.profesionalId,
+        }
+        pacientes.append(paciente)
+    return pacientes
+
 
 
 def get_pacientes_con_datos_usuario(db: Session):
@@ -228,7 +282,8 @@ def get_pacientes_con_datos_usuario(db: Session):
             models.usuario.correo,
             models.paciente.edad,
             models.paciente.telefono,
-            models.paciente.genero
+            models.paciente.genero,
+            models.paciente.profesionalId
         )
         .join(models.paciente, models.usuario.usuarioId == models.paciente.usuarioId)
         .filter(models.usuario.rol == "paciente")

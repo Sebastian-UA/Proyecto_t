@@ -197,6 +197,13 @@ def crear_paciente(paciente: schemas.PacienteCreate, db: Session = Depends(get_d
 def listar_pacientes(db: Session = Depends(get_db)):
     return crud.get_pacientes(db)
 
+@app.get("/pacientes/profesional/{profesional_id}")
+def obtener_pacientes_por_profesional(profesional_id: int, db: Session = Depends(get_db)):
+    pacientes = crud.get_pacientes_por_profesional(db, profesional_id)
+    if not pacientes:
+        raise HTTPException(status_code=404, detail="No se encontraron pacientes para ese profesional")
+    return pacientes
+
 @app.get("/pacientes/detalle", response_model=list[schemas.PacienteUsuarioOut])
 def obtener_detalle_pacientes(db: Session = Depends(get_db)):
     return crud.get_pacientes_con_datos_usuario(db)

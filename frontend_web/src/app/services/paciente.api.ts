@@ -65,3 +65,20 @@ export const getPacientesInfo = async () => {
     throw error;
   }
 };
+
+export const getPacientesPorProfesional = async (profesionalId: number) => {
+  try {
+    const response = await fetch(`${API_URL}/pacientes/profesional/${profesionalId}`, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+    });
+    if (!response.ok) {
+      throw new Error("Error al obtener pacientes por profesional");
+    }
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
+};
