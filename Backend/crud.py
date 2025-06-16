@@ -603,6 +603,8 @@ def get_mediciones_por_paciente_completas(db: Session, paciente_id: int):
                 "edad": paciente.edad,
                 "telefono": paciente.telefono,
                 "genero":paciente.genero,
+                "correo": usuario_paciente.correo,
+                "profesionalId": paciente.profesionalId,
             },
 
             "profesional": {

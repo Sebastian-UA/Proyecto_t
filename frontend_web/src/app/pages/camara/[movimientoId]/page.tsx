@@ -49,6 +49,8 @@ export default function CameraRecorder() {
     }
   }, [movimientoId]);
 
+  
+
   const handleStartCamera = async () => {
     try {
       const mediaStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
@@ -139,7 +141,7 @@ export default function CameraRecorder() {
   };
 
   const handleGuardarAnalisis = async () => {
-    if (!resultadoAnalisis || !movimientoId || !patient ) {
+    if (!resultadoAnalisis || !movimientoId || !patient) {
       alert("Faltan datos para guardar el análisis");
       return;
     }
@@ -148,7 +150,7 @@ export default function CameraRecorder() {
 
     // Datos comunes a cualquier medición
     const sesionData = {
-      PacienteId: patient.id,
+      PacienteId: patient?.id,
       ProfesionalId: professional?.id ?? null,
       fecha: now.toISOString().slice(0, 10),
       hora: now.toISOString().slice(11, 19),
@@ -165,7 +167,7 @@ export default function CameraRecorder() {
           anguloMax: resultadoAnalisis.max_angle,
           lado: resultadoAnalisis.lado, // "derecha" o "izquierda"
         };
-
+        console.log("Datos a enviar:", dataToSend);
         await createSesionWithMedicion(dataToSend);
 
       } else if (resultadoAnalisis.tipo === 'ps') {
@@ -191,6 +193,7 @@ export default function CameraRecorder() {
 
         // Guardar ambas mediciones
         for (const dataToSend of mediciones) {
+          console.log("Datos a enviar:", dataToSend);
           await createSesionWithMedicion(dataToSend);
         }
       }
