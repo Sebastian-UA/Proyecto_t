@@ -15,11 +15,22 @@ type Profesional = {
   correo: string;
   rut: string;
   rol: string;
+  pacienteSeleccionado?: {
+    pacienteId: number;
+    nombre: string;
+    rut: string;
+    edad: number;
+    telefono: string;
+    correo: string;
+    genero: string;
+    id_profesional: number | null;
+  } | null;
 };
 
 type ProfessionalContextType = {
   professional: Profesional | null;
   setProfessional: (profesional: Profesional) => void;
+  setPacienteSeleccionado: (paciente: Profesional['pacienteSeleccionado']) => void;
 };
 
 // Crear el contexto
@@ -36,6 +47,22 @@ export const ProfessionalProvider = ({ children }: { children: ReactNode }) => {
       await AsyncStorage.setItem("profesional", JSON.stringify(profesional));
     } catch (error) {
       console.error("Error al guardar profesional en AsyncStorage:", error);
+    }
+  };
+
+  // Función para actualizar el paciente seleccionado
+  const setPacienteSeleccionado = async (paciente: Profesional['pacienteSeleccionado']) => {
+    if (professional) {
+      const updatedProfessional = {
+        ...professional,
+        pacienteSeleccionado: paciente
+      };
+      setProfessionalState(updatedProfessional);
+      try {
+        await AsyncStorage.setItem("profesional", JSON.stringify(updatedProfessional));
+      } catch (error) {
+        console.error("Error al guardar paciente seleccionado en AsyncStorage:", error);
+      }
     }
   };
 
@@ -58,7 +85,7 @@ export const ProfessionalProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   return (
-    <ProfessionalContext.Provider value={{ professional, setProfessional }}>
+    <ProfessionalContext.Provider value={{ professional, setProfessional, setPacienteSeleccionado }}>
       {children}
     </ProfessionalContext.Provider>
   );

@@ -12,6 +12,8 @@ interface Patient {
   correo: string;
   contrasena: string;
   rol: string;
+  genero: string;
+  id_profesional: number | null;
 }
 
 // Tipo del contexto
