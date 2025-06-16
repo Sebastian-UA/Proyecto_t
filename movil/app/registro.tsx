@@ -6,14 +6,33 @@ import {
   Alert,
   Button,
   ActivityIndicator,
+  TextInput,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { MaskedTextInput } from 'react-native-mask-text';
 import { createProfesionalConUsuario } from '@/services/profesional.api';
 
+// Funciones de validación
+const validarNombre = (nombre: string) => {
+  return /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(nombre);
+};
+
+const validarRut = (rut: string) => {
+  return /^\d{1,8}-[\dkK]$/.test(rut);
+};
+
+const validarCorreo = (correo: string) => {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo);
+};
+
+const validarContrasena = (contrasena: string) => {
+  return contrasena.length >= 6;
+};
+
 const RegistroScreen = () => {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const [form, setForm] = useState({
     nombre: '',
@@ -25,27 +44,49 @@ const RegistroScreen = () => {
 
   const handleChange = (key: keyof typeof form, value: string) => {
     setForm((prev) => ({ ...prev, [key]: value }));
+    if (errors[key]) {
+      setErrors(prev => ({ ...prev, [key]: '' }));
+    }
+  };
+
+  const validarFormulario = () => {
+    const nuevosErrores: Record<string, string> = {};
+
+    if (!validarNombre(form.nombre)) {
+      nuevosErrores.nombre = 'El nombre solo debe contener letras';
+    }
+
+    if (!validarRut(form.rut)) {
+      nuevosErrores.rut = 'El RUT debe tener formato: 12345678-9';
+    }
+
+    if (!validarCorreo(form.correo)) {
+      nuevosErrores.correo = 'Ingrese un correo electrónico válido';
+    }
+
+    if (!validarContrasena(form.contrasena)) {
+      nuevosErrores.contrasena = 'La contraseña debe tener al menos 6 caracteres';
+    }
+
+    if (!form.especialidad) {
+      nuevosErrores.especialidad = 'La especialidad es obligatoria';
+    }
+
+    setErrors(nuevosErrores);
+    return Object.keys(nuevosErrores).length === 0;
   };
 
   const handleSubmit = async () => {
-    if (!form.nombre || !form.rut || !form.correo || !form.contrasena || !form.especialidad) {
-      Alert.alert('Error', 'Completa todos los campos');
+    if (!validarFormulario()) {
+      Alert.alert('Error', 'Por favor corrija los errores en el formulario');
       return;
     }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(form.correo)) {
-      Alert.alert('Correo inválido', 'Ingresa un correo válido');
-      return;
-    }
-
-    const rutLimpio = form.rut.replace(/[.-]/g, '');
 
     setLoading(true);
     try {
       await createProfesionalConUsuario({
         ...form,
-        rut: rutLimpio,
+        rut: form.rut.replace(/[.-]/g, ''),
         rol: 'profesional',
       });
 
@@ -63,45 +104,50 @@ const RegistroScreen = () => {
     <View style={styles.container}>
       <Text style={styles.title}>Registro Profesional</Text>
 
-      <MaskedTextInput
-        style={styles.input}
+      <TextInput
+        style={[styles.input, errors.nombre && styles.inputError]}
         placeholder="Nombre"
         value={form.nombre}
         onChangeText={(text) => handleChange('nombre', text)}
       />
+      {errors.nombre && <Text style={styles.errorText}>{errors.nombre}</Text>}
 
       <MaskedTextInput
-        style={styles.input}
-        placeholder="RUT"
-        mask="99.999.999-999"
+        style={[styles.input, errors.rut && styles.inputError]}
+        placeholder="RUT (12345678-9)"
+        mask="99999999-9"
         value={form.rut}
         onChangeText={(text) => handleChange('rut', text)}
-        keyboardType="default"
+        keyboardType="numeric"
       />
+      {errors.rut && <Text style={styles.errorText}>{errors.rut}</Text>}
 
-      <MaskedTextInput
-        style={styles.input}
-        placeholder="Correo"
-        keyboardType="email-address"
-        autoCapitalize="none"
+      <TextInput
+        style={[styles.input, errors.correo && styles.inputError]}
+        placeholder="Correo electrónico"
         value={form.correo}
         onChangeText={(text) => handleChange('correo', text)}
+        keyboardType="email-address"
+        autoCapitalize="none"
       />
+      {errors.correo && <Text style={styles.errorText}>{errors.correo}</Text>}
 
-      <MaskedTextInput
-        style={styles.input}
+      <TextInput
+        style={[styles.input, errors.contrasena && styles.inputError]}
         placeholder="Contraseña"
-        secureTextEntry
         value={form.contrasena}
         onChangeText={(text) => handleChange('contrasena', text)}
+        secureTextEntry
       />
+      {errors.contrasena && <Text style={styles.errorText}>{errors.contrasena}</Text>}
 
-      <MaskedTextInput
-        style={styles.input}
+      <TextInput
+        style={[styles.input, errors.especialidad && styles.inputError]}
         placeholder="Especialidad"
         value={form.especialidad}
         onChangeText={(text) => handleChange('especialidad', text)}
       />
+      {errors.especialidad && <Text style={styles.errorText}>{errors.especialidad}</Text>}
 
       {loading ? (
         <ActivityIndicator size="large" color="#007bff" style={{ marginVertical: 10 }} />
@@ -117,16 +163,34 @@ const RegistroScreen = () => {
   );
 };
 
-export default RegistroScreen;
-
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, justifyContent: 'center', backgroundColor: '#fff' },
-  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 20, textAlign: 'center' },
+  container: {
+    flex: 1,
+    padding: 20,
+    justifyContent: 'center',
+    backgroundColor: '#fff',
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
   input: {
     borderWidth: 1,
     borderColor: '#ccc',
     padding: 10,
-    marginBottom: 15,
+    marginBottom: 10,
     borderRadius: 5,
   },
+  inputError: {
+    borderColor: 'red',
+  },
+  errorText: {
+    color: 'red',
+    fontSize: 12,
+    marginBottom: 10,
+  },
 });
+
+export default RegistroScreen;

@@ -165,59 +165,62 @@ export default function MedicionPage() {
 
     try {
       const now = new Date();
-      let anguloMin, anguloMax;
+      let sesiones = [];
 
       // Determinar los ángulos según el tipo de movimiento
       if (movimientoData.nombre.toLowerCase() === "pronación y supinación") {
-        // Para pronación y supinación, usamos los ángulos de pronación
-        anguloMin = resultado.pronacion?.min_angle || 0;
-        anguloMax = resultado.pronacion?.max_angle || 0;
+        // Crear dos sesiones para movimientos compuestos
+        sesiones = [
+          {
+            PacienteId: patient?.pacienteId || professional?.pacienteSeleccionado?.pacienteId,
+            ProfesionalId: professional?.profesionalId || patient?.id_profesional,
+            fecha: now.toISOString().split('T')[0],
+            hora: now.toTimeString().split(' ')[0],
+            notas: '',
+            EjercicioId: null,
+            MovimientoId: Number(movimiento),
+            anguloMin: resultado.pronacion?.min_angle || 0,
+            anguloMax: resultado.pronacion?.max_angle || 0,
+            lado: `${lado} - pronación`,
+          },
+          {
+            PacienteId: patient?.pacienteId || professional?.pacienteSeleccionado?.pacienteId,
+            ProfesionalId: professional?.profesionalId || patient?.id_profesional,
+            fecha: now.toISOString().split('T')[0],
+            hora: now.toTimeString().split(' ')[0],
+            notas: '',
+            EjercicioId: null,
+            MovimientoId: Number(movimiento),
+            anguloMin: resultado.supinacion?.min_angle || 0,
+            anguloMax: resultado.supinacion?.max_angle || 0,
+            lado: `${lado} - supinación`,
+          }
+        ];
       } else {
-        // Para abducción y flexión
-        anguloMin = resultado.min_angle || 0;
-        anguloMax = resultado.max_angle || 0;
+        // Para movimientos simples
+        sesiones = [{
+          PacienteId: patient?.pacienteId || professional?.pacienteSeleccionado?.pacienteId,
+          ProfesionalId: professional?.profesionalId || patient?.id_profesional,
+          fecha: now.toISOString().split('T')[0],
+          hora: now.toTimeString().split(' ')[0],
+          notas: '',
+          EjercicioId: null,
+          MovimientoId: Number(movimiento),
+          anguloMin: resultado.min_angle || 0,
+          anguloMax: resultado.max_angle || 0,
+          lado: lado,
+        }];
       }
 
-      // Determinar el ID del paciente y profesional según el contexto
-      let pacienteId;
-      let profesionalId = null;
-
-      if (professional) {
-        // Si hay un profesional autenticado
-        if (professional.pacienteSeleccionado) {
-          // Si hay un paciente seleccionado por el profesional
-          pacienteId = professional.pacienteSeleccionado.pacienteId;
-          profesionalId = professional.profesionalId;
-        } else if (patient) {
-          // Si el profesional está viendo su propio perfil
-          pacienteId = patient.pacienteId;
-          profesionalId = professional.profesionalId;
+      // Guardar todas las sesiones
+      for (const sesion of sesiones) {
+        if (!sesion.PacienteId) {
+          throw new Error('No se pudo determinar el ID del paciente');
         }
-      } else if (patient) {
-        // Si es un paciente autenticado directamente
-        pacienteId = patient.pacienteId;
-        profesionalId = patient.id_profesional;
+        await createSesionWithMedicion(sesion);
       }
 
-      if (!pacienteId) {
-        throw new Error('No se pudo determinar el ID del paciente');
-      }
-
-      const sesion = {
-        PacienteId: pacienteId,
-        ProfesionalId: profesionalId,
-        fecha: now.toISOString().split('T')[0],
-        hora: now.toTimeString().split(' ')[0],
-        notas: '',
-        EjercicioId: null,
-        MovimientoId: Number(movimiento),
-        anguloMin: anguloMin,
-        anguloMax: anguloMax,
-        lado: resultado.lado,
-      };
-
-      await createSesionWithMedicion(sesion);
-      Alert.alert('Éxito', 'Sesión guardada correctamente');
+      Alert.alert('Éxito', 'Sesión(es) guardada(s) correctamente');
     } catch (error) {
       console.error('Error al guardar sesión:', error);
       Alert.alert('Error', 'No se pudo guardar la sesión');
