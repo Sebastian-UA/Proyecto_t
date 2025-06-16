@@ -4,20 +4,20 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 
 // Tipo del paciente
 interface Patient {
-  pacienteId: number;
+  id: number;
   nombre: string;
   rut: string;
   edad: number;
   telefono: string;
   correo: string;
-  contrasena: string;
+  contrasena?: string;
   rol: string;
 }
 
 // Tipo del contexto
 interface PatientContextType {
   patient: Patient | null;
-  setPatient: (patient: Patient) => void;
+  setPatient: (patient: Patient | null) => void;
 }
 
 // Crear el contexto
@@ -28,12 +28,17 @@ export const PatientProvider = ({ children }: { children: ReactNode }) => {
   const [patient, setPatientState] = useState<Patient | null>(null);
 
   // Envolver setPatient para guardar en localStorage
-  const setPatient = (patient: Patient) => {
+  const setPatient = (patient: Patient | null) => {
     setPatientState(patient);
     if (typeof window !== "undefined") {
-      localStorage.setItem("paciente", JSON.stringify(patient));
+      if (patient) {
+        localStorage.setItem("paciente", JSON.stringify(patient));
+      } else {
+        localStorage.removeItem("paciente");
+      }
     }
   };
+
 
   // Restaurar desde localStorage al montar
   useEffect(() => {

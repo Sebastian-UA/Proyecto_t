@@ -32,7 +32,7 @@ export default function ArticulacionPage() {
     }, []);
 
     const handleSelectArticulacion = (articulacion: Articulacion) => {
-        console.log(`Paciente ID desde Contexto: ${patient?.pacienteId}`);
+        console.log(`Paciente ID desde Contexto: ${patient?.id}`);
         console.log(`Articulación seleccionada: ${articulacion.nombre}`);
         router.push(`/pages/movimientos/articulacion/${articulacion.articulacionId}`);
     };
@@ -43,7 +43,7 @@ export default function ArticulacionPage() {
 
             {/* Mostrar los IDs */}
             <div className="text-center mb-6">
-                <p className="text-lg">Paciente ID desde Contexto: {patient?.pacienteId ?? "No disponible"}</p>
+                <p className="text-lg">Paciente ID desde Contexto: {patient?.id ?? "No disponible"}</p>
             </div>
 
             {articulaciones.length > 0 ? (

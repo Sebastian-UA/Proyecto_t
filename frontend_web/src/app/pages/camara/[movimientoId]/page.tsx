@@ -139,7 +139,7 @@ export default function CameraRecorder() {
   };
 
   const handleGuardarAnalisis = async () => {
-    if (!resultadoAnalisis || !movimientoId || !patient || !professional) {
+    if (!resultadoAnalisis || !movimientoId || !patient ) {
       alert("Faltan datos para guardar el análisis");
       return;
     }
@@ -148,8 +148,8 @@ export default function CameraRecorder() {
 
     // Datos comunes a cualquier medición
     const sesionData = {
-      PacienteId: patient.pacienteId,
-      ProfesionalId: professional.profesionalId,
+      PacienteId: patient.id,
+      ProfesionalId: professional?.id ?? null,
       fecha: now.toISOString().slice(0, 10),
       hora: now.toISOString().slice(11, 19),
       notas: "",

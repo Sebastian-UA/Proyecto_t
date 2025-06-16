@@ -3,7 +3,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 
 // Modelo
 interface Professional {
-    profesionalId: number;
+    id: number;
     nombre: string;
     rut: string;
     correo: string;
@@ -13,7 +13,7 @@ interface Professional {
 // Tipo de contexto
 interface ProfessionalContextType {
     professional: Professional | null;
-    setProfessional: (professional: Professional) => void;
+    setProfessional: (professional: Professional | null) => void;
 }
 
 // Crear el contexto

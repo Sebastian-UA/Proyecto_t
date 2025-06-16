@@ -4,9 +4,10 @@ import { useRouter, useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { getArticulaciones } from "@/app/services/articulacion.api";
 import { getMovimientos } from "@/app/services/movimiento.api";
-import { getPacientesInfo } from "@/app/services/paciente.api";
+import { getPacientesInfo, updatePacienteConUsuario } from "@/app/services/paciente.api";
 import { getMedicionesCompletasPorPaciente } from "@/app/services/sesion.api";
 import type { ScriptableContext } from "chart.js";
+import { useAuth } from "@/app/context/entro";
 
 import {
   Chart as ChartJS,
@@ -62,11 +63,17 @@ export default function PerfilPaciente() {
   const router = useRouter();
   const params = useParams();
   const pacienteId = params.pacienteId;
+  const { usuario } = useAuth();
 
   const [paciente, setPaciente] = useState<Paciente | null>(null);
   const [datosAgrupados, setDatosAgrupados] = useState<ArticulacionConMovimientos[]>([]);
   const [vista, setVista] = useState<"movimientos" | "analisis">("movimientos");
   const [medicionesCompletas, setMedicionesCompletas] = useState<any[]>([]);
+
+  const [mostrarModalPassword, setMostrarModalPassword] = useState(false);
+  const [nuevaPassword, setNuevaPassword] = useState("");
+  const [confirmarPassword, setConfirmarPassword] = useState("");
+  const [errorPassword, setErrorPassword] = useState("");
 
   // Opciones para lado cuando NO es pron/sup
   const opcionesLadoSimple = [
@@ -153,6 +160,8 @@ export default function PerfilPaciente() {
     }
   }, [pacienteId]);
 
+
+
   if (!paciente) return <div className="p-4">Cargando perfil...</div>;
 
   const medicionesFiltradas = medicionesCompletas.filter((med) => {
@@ -200,10 +209,10 @@ export default function PerfilPaciente() {
       : "rgba(255,165,0,1)"         // naranja cuando no hay profesional
   );
 
-
   const anguloMaxData = medicionesOrdenadas.map((med) =>
     med.anguloMax !== null && med.anguloMax !== undefined ? med.anguloMax : 0
   );
+
 
   // PARA EL GRAFICO
   const data = {
@@ -214,30 +223,45 @@ export default function PerfilPaciente() {
         data: medicionesOrdenadas.map((med) => med.anguloMin ?? null),
         spanGaps: true,
         borderWidth: 3,
-        backgroundColor: "transparent",
+        backgroundColor: "rgb(0, 255, 136)", // relleno bajo la línea
         tension: 0.3,
         pointBackgroundColor: medicionesOrdenadas.map((med) =>
           med.profesional?.profesionalId
-            ? "rgba(75,192,192,1)"
-            : "rgba(255,165,0,1)"
+            ? "rgb(0, 255, 136)"
+            : "rgb(255, 85, 0)"
         ),
         segment: {
           borderColor: (ctx: any) => {
             const med = medicionesOrdenadas[ctx.p0DataIndex];
             return med.profesional?.profesionalId
-              ? "rgba(75,192,192,1)"
-              : "rgba(255,165,0,1)";
+              ? "rgb(0, 255, 136)"
+              : "rgb(255, 85, 0)"
           }
         }
       },
       {
         label: "Ángulo Máximo",
         data: anguloMaxData,
-        borderColor: "rgba(255,99,132,1)",
-        backgroundColor: "rgba(255,99,132,0.2)",
+        backgroundColor: "rgb(54, 137, 67)", // relleno bajo la línea
         fill: true,
         tension: 0.3,
-      },
+        // Color de cada punto según profesionalId (igual que para mínimo)
+        pointBackgroundColor: medicionesOrdenadas.map((med) =>
+          med.profesional?.profesionalId
+            ? "rgb(54, 137, 67)"
+            : "rgba(255,165,0,1)"
+        ),
+
+        // Color de segmento entre puntos, igual que mínimo
+        segment: {
+          borderColor: (ctx: any) => {
+            const med = medicionesOrdenadas[ctx.p0DataIndex];
+            return med.profesional?.profesionalId
+              ? "rgb(54, 137, 67)"
+              : "rgba(255,165,0,1)";
+          }
+        }
+      }
     ],
   };
 
@@ -247,6 +271,44 @@ export default function PerfilPaciente() {
     plugins: {
       legend: {
         position: "top" as const,
+        labels: {
+          generateLabels: () => {
+            return [
+              {
+                text: "Ángulo Mínimo por Profesional",
+                fillStyle: "rgb(0, 255, 136)",
+                strokeStyle: "rgb(0, 255, 136)",
+                lineWidth: 3,
+                hidden: false,
+                datasetIndex: 0,
+              },
+              {
+                text: "Ángulo Mínimo Por Paciente",
+                fillStyle: "rgb(255, 85, 0)",
+                strokeStyle: "rgb(255, 85, 0)",
+                lineWidth: 3,
+                hidden: false,
+                datasetIndex: 0,
+              },
+              {
+                text: "Ángulo Máximo por Profesional",
+                fillStyle: "rgb(54, 137, 67)",
+                strokeStyle: "rgb(54, 137, 67)",
+                lineWidth: 3,
+                hidden: false,
+                datasetIndex: 1,
+              },
+              {
+                text: "Ángulo Máximo Por Paciente",
+                fillStyle: "rgba(255,165,0,1)",
+                strokeStyle: "rgba(255,165,0,1)",
+                lineWidth: 3,
+                hidden: false,
+                datasetIndex: 1,
+              },
+            ];
+          },
+        },
       },
       title: {
         display: true,
@@ -257,7 +319,6 @@ export default function PerfilPaciente() {
       },
     },
   };
-
 
   return (
     <div className="p-6 space-y-8">
@@ -279,6 +340,18 @@ export default function PerfilPaciente() {
         <p>
           <strong>Género:</strong> {paciente.genero}
         </p>
+
+        {usuario?.rol === "paciente" && usuario.rut === paciente.rut && (
+          <div className="mt-4 text-right">
+            <button
+              onClick={() => setMostrarModalPassword(true)}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
+            >
+              Editar Contraseña
+            </button>
+          </div>
+        )}
+
       </div>
 
       {/* Botones de navegación */}
@@ -394,7 +467,7 @@ export default function PerfilPaciente() {
                     <th className="p-2 border">Ángulo Minimo Esperado</th>
                     <th className="p-2 border">Fecha</th>
                     <th className="p-2 border">Paciente</th>
-                    <th className="p-2 border">Profesional</th>
+                    <th className="p-2 border">Fecha</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -411,7 +484,7 @@ export default function PerfilPaciente() {
                       </td>
                       <td className="p-2 border">{med.sesion?.fecha ?? "N/A"}</td>
                       <td className="p-2 border">{med.paciente?.nombre ?? "N/A"}</td>
-                      <td className="p-2 border">{med.lado ?? "N/A"}</td>
+                      <td className="p-2 border">{med.sesion?.fecha ?? "N/A"}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -427,6 +500,67 @@ export default function PerfilPaciente() {
           )}
         </div>
       )}
+      {mostrarModalPassword && (
+        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-lg">
+            <h3 className="text-xl font-bold mb-4">Cambiar Contraseña</h3>
+            <div className="space-y-4">
+              <input
+                type="password"
+                placeholder="Nueva contraseña"
+                value={nuevaPassword}
+                onChange={(e) => setNuevaPassword(e.target.value)}
+                className="w-full p-2 border rounded"
+              />
+              <input
+                type="password"
+                placeholder="Confirmar contraseña"
+                value={confirmarPassword}
+                onChange={(e) => setConfirmarPassword(e.target.value)}
+                className="w-full p-2 border rounded"
+              />
+              {errorPassword && (
+                <p className="text-red-600 text-sm">{errorPassword}</p>
+              )}
+              <div className="flex justify-end space-x-4">
+                <button
+                  onClick={() => {
+                    setMostrarModalPassword(false);
+                    setNuevaPassword("");
+                    setConfirmarPassword("");
+                    setErrorPassword("");
+                  }}
+                  className="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={async () => {
+                    if (nuevaPassword !== confirmarPassword) {
+                      setErrorPassword("Las contraseñas no coinciden");
+                      return;
+                    }
+
+                    try {
+                      await updatePacienteConUsuario(paciente.pacienteId, {
+                        contrasena: nuevaPassword,
+                      });
+                      console.log("Contraseña cambiada correctamente");
+                    } catch (err) {
+                      console.error("Error en updatePacienteConUsuario:", err);
+                    }
+
+                  }}
+                  className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700"
+                >
+                  Guardar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
