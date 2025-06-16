@@ -4,20 +4,21 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 
 // Tipo del paciente
 interface Patient {
-  pacienteId: number;
+  id: number;
   nombre: string;
   rut: string;
   edad: number;
   telefono: string;
   correo: string;
-  contrasena: string;
+  contrasena?: string;
   rol: string;
 }
 
 // Tipo del contexto
 interface PatientContextType {
   patient: Patient | null;
-  setPatient: (patient: Patient) => void;
+  setPatient: (patient: Patient | null) => void;
+    loading: boolean;
 }
 
 // Crear el contexto
@@ -26,14 +27,20 @@ const PatientContext = createContext<PatientContextType | undefined>(undefined);
 // Provider
 export const PatientProvider = ({ children }: { children: ReactNode }) => {
   const [patient, setPatientState] = useState<Patient | null>(null);
+  const [loading, setLoading] = useState(true); // <- estado loading
 
   // Envolver setPatient para guardar en localStorage
-  const setPatient = (patient: Patient) => {
+  const setPatient = (patient: Patient | null) => {
     setPatientState(patient);
     if (typeof window !== "undefined") {
-      localStorage.setItem("paciente", JSON.stringify(patient));
+      if (patient) {
+        localStorage.setItem("paciente", JSON.stringify(patient));
+      } else {
+        localStorage.removeItem("paciente");
+      }
     }
   };
+
 
   // Restaurar desde localStorage al montar
   useEffect(() => {
@@ -43,11 +50,12 @@ export const PatientProvider = ({ children }: { children: ReactNode }) => {
         console.log("Paciente restaurado desde localStorage:", JSON.parse(stored));
         setPatientState(JSON.parse(stored));
       }
+      setLoading(false); // <- ya cargó, sea con o sin paciente
     }
   }, []);
 
   return (
-    <PatientContext.Provider value={{ patient, setPatient }}>
+    <PatientContext.Provider value={{ patient, setPatient, loading  }}>
       {children}
     </PatientContext.Provider>
   );

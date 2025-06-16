@@ -2,14 +2,58 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useAuth } from "@/app/context/entro";
+import { useEffect, useState } from "react";
+import { getPacientesInfo } from "@/app/services/paciente.api";
+
+// Define el tipo para un paciente
+type Paciente = {
+  pacienteId: number;
+  rut: string;
+  nombre: string;
+  // puedes agregar más campos si los necesitas
+};
 
 const BottomNav = () => {
   const pathname = usePathname();
+  const { usuario } = useAuth(); // Obtenemos el usuario logueado
+  const [pacienteId, setPacienteId] = useState<number | null>(null);
+
+  // Obtener pacienteId si el usuario es paciente
+  useEffect(() => {
+    const obtenerPacienteId = async () => {
+      if (usuario?.rol === "paciente") {
+        try {
+          const pacientes: Paciente[] = await getPacientesInfo();
+          const pacienteEncontrado = pacientes.find(
+            (p: Paciente) => p.rut === usuario.rut
+          );
+          if (pacienteEncontrado) {
+            setPacienteId(pacienteEncontrado.pacienteId);
+          }
+        } catch (error) {
+          console.error("Error al obtener pacientes:", error);
+        }
+      }
+    };
+
+    obtenerPacienteId();
+  }, [usuario]);
+
+  // Si no hay usuario, no renderizar la barra
+  if (!usuario) return null;
+
+  // Ruta dinámica según el rol
+  const rutaInicio =
+    usuario.rol === "profesional"
+      ? "/pages/paciente"
+      : pacienteId
+      ? `/pages/perfil/${pacienteId}`
+      : "/pages/perfil/";
 
   const navItems = [
-    { name: "Medición", path: "/pages/paciente" },  // Ruta para 'medicion_p'
-    { name: "Reporte", path: "/pages/reporte" },      // Ruta para 'reporte'
-    { name: "Historial", path: "/pages/historial" },  // Ruta para 'historial'
+    { name: "Inicio", path: rutaInicio },
+    { name: "Cerrar", path: "/pages/login" },
   ];
 
   return (
@@ -29,7 +73,7 @@ const BottomNav = () => {
       {navItems.map((item) => (
         <Link
           key={item.path}
-          href={item.path} // Aquí usamos las rutas absolutas correctas
+          href={item.path}
           style={{
             textDecoration: "none",
             color: pathname === item.path ? "#007bff" : "#333",
