@@ -36,6 +36,7 @@ export default function PacientePage() {
     contrasena: "",
     genero: "",
     rol: "paciente",
+    
   });
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);

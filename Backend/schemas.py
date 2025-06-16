@@ -183,6 +183,7 @@ class PacienteWithUsuario(BaseModel):
     telefono: int
     genero: str
     rut :str
+    profesionalId: int  
 
     @field_validator("nombre", "genero")
     @classmethod
