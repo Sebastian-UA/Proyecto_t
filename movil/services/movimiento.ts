@@ -1,4 +1,4 @@
-const API_URL = 'http://192.168.1.19:8000'; // cambia si usas IP real
+const API_URL = 'http://192.168.178.29:8000'; // cambia si usas IP real
 
 export const getMovimientoById = async (movimientoId: number) => {
   try {

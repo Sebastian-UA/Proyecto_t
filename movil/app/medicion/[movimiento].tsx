@@ -159,7 +159,7 @@ export default function MedicionPage() {
   };
 
   const guardarSesion = async () => {
-    if (!resultado || !patient || !professional) {
+    if (!resultado) {
       return Alert.alert('Faltan datos para guardar la sesión');
     }
 
@@ -178,9 +178,34 @@ export default function MedicionPage() {
         anguloMax = resultado.max_angle || 0;
       }
 
+      // Determinar el ID del paciente y profesional según el contexto
+      let pacienteId;
+      let profesionalId = null;
+
+      if (professional) {
+        // Si hay un profesional autenticado
+        if (professional.pacienteSeleccionado) {
+          // Si hay un paciente seleccionado por el profesional
+          pacienteId = professional.pacienteSeleccionado.pacienteId;
+          profesionalId = professional.profesionalId;
+        } else if (patient) {
+          // Si el profesional está viendo su propio perfil
+          pacienteId = patient.pacienteId;
+          profesionalId = professional.profesionalId;
+        }
+      } else if (patient) {
+        // Si es un paciente autenticado directamente
+        pacienteId = patient.pacienteId;
+        profesionalId = patient.id_profesional;
+      }
+
+      if (!pacienteId) {
+        throw new Error('No se pudo determinar el ID del paciente');
+      }
+
       const sesion = {
-        PacienteId: patient.pacienteId,
-        ProfesionalId: professional.profesionalId,
+        PacienteId: pacienteId,
+        ProfesionalId: profesionalId,
         fecha: now.toISOString().split('T')[0],
         hora: now.toTimeString().split(' ')[0],
         notas: '',

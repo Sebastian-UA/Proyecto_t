@@ -1,4 +1,4 @@
-const API_URL = 'http://192.168.1.19:8000'; // O la URL que uses en el móvil
+const API_URL = 'http://192.168.178.29:8000'; // O la URL que uses en el móvil
 
 export const createSesionWithMedicion = async (data: any) => {
   try {

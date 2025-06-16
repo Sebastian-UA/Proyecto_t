@@ -191,8 +191,6 @@ export default function PacientePage() {
     }
   };
 
-
-
   const { setPatient } = usePatient();  // Desestructurar setPatient desde el contexto
   useEffect(() => {
     console.log("Professional contextt:", professional);

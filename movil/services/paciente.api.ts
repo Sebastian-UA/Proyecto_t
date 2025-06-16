@@ -1,6 +1,6 @@
 import Constants from 'expo-constants';
 
-const API_URL = 'http://192.168.1.19:8000';
+const API_URL = 'http://192.168.178.29:8000';
 
 
 interface ProfesionalData {
