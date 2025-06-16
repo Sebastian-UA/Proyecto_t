@@ -18,6 +18,7 @@ interface Patient {
 interface PatientContextType {
   patient: Patient | null;
   setPatient: (patient: Patient | null) => void;
+    loading: boolean;
 }
 
 // Crear el contexto
@@ -26,6 +27,7 @@ const PatientContext = createContext<PatientContextType | undefined>(undefined);
 // Provider
 export const PatientProvider = ({ children }: { children: ReactNode }) => {
   const [patient, setPatientState] = useState<Patient | null>(null);
+  const [loading, setLoading] = useState(true); // <- estado loading
 
   // Envolver setPatient para guardar en localStorage
   const setPatient = (patient: Patient | null) => {
@@ -48,11 +50,12 @@ export const PatientProvider = ({ children }: { children: ReactNode }) => {
         console.log("Paciente restaurado desde localStorage:", JSON.parse(stored));
         setPatientState(JSON.parse(stored));
       }
+      setLoading(false); // <- ya cargó, sea con o sin paciente
     }
   }, []);
 
   return (
-    <PatientContext.Provider value={{ patient, setPatient }}>
+    <PatientContext.Provider value={{ patient, setPatient, loading  }}>
       {children}
     </PatientContext.Provider>
   );

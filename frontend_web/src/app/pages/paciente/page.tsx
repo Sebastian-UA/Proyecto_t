@@ -205,12 +205,21 @@ export default function PacientePage() {
   const handleRowClick = (index: number) => {
     if (index !== null && pacientes[index]) {
       const pacienteSeleccionado = pacientes[index];
-      setPatient(pacienteSeleccionado);  // Guardar en contexto
-
-      // Redirigir inmediatamente a la página de perfil con el ID del paciente
-      router.push(`/pages/perfil/${pacienteSeleccionado.pacienteId}`); // O .pacienteId si tu API usa ese nombre
+      const pacienteFormateado = {
+        id: pacienteSeleccionado.pacienteId,
+        nombre: pacienteSeleccionado.nombre,
+        rut: pacienteSeleccionado.rut,
+        edad: pacienteSeleccionado.edad,
+        telefono: pacienteSeleccionado.telefono,
+        correo: pacienteSeleccionado.correo,
+        contrasena: pacienteSeleccionado.contrasena,
+        rol: pacienteSeleccionado.rol,
+      };
+      setPatient(pacienteFormateado);
+      router.push(`/pages/perfil/${pacienteFormateado.id}`);
     }
   };
+
 
 
 

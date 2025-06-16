@@ -321,6 +321,7 @@ export default function PerfilPaciente() {
   };
 
   return (
+    
     <div className="p-6 space-y-8">
       {/* Info del Paciente */}
       <div className="bg-white shadow-md rounded-2xl p-6">
