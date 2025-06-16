@@ -36,7 +36,7 @@ export default function PacientePage() {
     contrasena: "",
     genero: "",
     rol: "paciente",
-    
+
   });
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -51,21 +51,21 @@ export default function PacientePage() {
   const { professional } = useProfessional();
 
   useEffect(() => {
-  console.log("useEffect disparado, professional:", professional);
-  if (!professional) return;
+    console.log("useEffect disparado, professional:", professional);
+    if (!professional) return;
 
-  const fetchPacientes = async () => {
-    try {
-      const data = await getPacientesPorProfesional(professional.id);
-      console.log("Pacientes recibidos:", data);
-      setPacientes(data);
-    } catch (error) {
-      console.error("Error al cargar pacientes:", error);
-    }
-  };
+    const fetchPacientes = async () => {
+      try {
+        const data = await getPacientesPorProfesional(professional.id);
+        console.log("Pacientes recibidos:", data);
+        setPacientes(data);
+      } catch (error) {
+        console.error("Error al cargar pacientes:", error);
+      }
+    };
 
-  fetchPacientes();
-}, [professional]);
+    fetchPacientes();
+  }, [professional]);
   // <- importante que dependa del professional
 
   const safeSearchTerm = searchTerm?.toLowerCase() || "";
@@ -157,16 +157,22 @@ export default function PacientePage() {
       }
     }
 
+    if (!professional) {
+      console.error("No hay profesional autenticado");
+      return;
+    }
+
     try {
-      const response = await createPaciente(form);
+      // Agrega el ID del profesional al payload
+      const pacienteConProfesional = {
+        ...form,
+        profesionalId: professional.id,
+      };
+
+      const response = await createPaciente(pacienteConProfesional); // ✅ Ahora con el ID incluido
       console.log("Paciente creado:", response);
 
-      if (!professional) {
-        console.error("No hay profesional autenticado");
-        return;
-      }
-
-      const data = await getPacientesPorProfesional(professional.id); // ✅ PASAR EL ID
+      const data = await getPacientesPorProfesional(professional.id);
       setPacientes(data);
 
       setIsModalOpen(false);
@@ -184,6 +190,7 @@ export default function PacientePage() {
       console.error("Error al crear paciente:", error);
     }
   };
+
 
 
   const { setPatient } = usePatient();  // Desestructurar setPatient desde el contexto
