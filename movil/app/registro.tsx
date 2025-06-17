@@ -2,14 +2,16 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
+  TextInput,
   StyleSheet,
   Alert,
-  Button,
   ActivityIndicator,
-  TextInput,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  TouchableOpacity,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { MaskedTextInput } from 'react-native-mask-text';
 import { createProfesionalConUsuario } from '@/services/profesional.api';
 
 // Funciones de validación
@@ -32,8 +34,6 @@ const validarContrasena = (contrasena: string) => {
 const RegistroScreen = () => {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [errors, setErrors] = useState<Record<string, string>>({});
-
   const [form, setForm] = useState({
     nombre: '',
     rut: '',
@@ -41,13 +41,7 @@ const RegistroScreen = () => {
     contrasena: '',
     especialidad: '',
   });
-
-  const handleChange = (key: keyof typeof form, value: string) => {
-    setForm((prev) => ({ ...prev, [key]: value }));
-    if (errors[key]) {
-      setErrors(prev => ({ ...prev, [key]: '' }));
-    }
-  };
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const validarFormulario = () => {
     const nuevosErrores: Record<string, string> = {};
@@ -69,11 +63,18 @@ const RegistroScreen = () => {
     }
 
     if (!form.especialidad) {
-      nuevosErrores.especialidad = 'La especialidad es obligatoria';
+      nuevosErrores.especialidad = 'La especialidad es requerida';
     }
 
     setErrors(nuevosErrores);
     return Object.keys(nuevosErrores).length === 0;
+  };
+
+  const handleChange = (key: keyof typeof form, value: string) => {
+    setForm(prev => ({ ...prev, [key]: value }));
+    if (errors[key]) {
+      setErrors(prev => ({ ...prev, [key]: '' }));
+    }
   };
 
   const handleSubmit = async () => {
@@ -85,8 +86,11 @@ const RegistroScreen = () => {
     setLoading(true);
     try {
       await createProfesionalConUsuario({
-        ...form,
-        rut: form.rut.replace(/[.-]/g, ''),
+        nombre: form.nombre,
+        rut: form.rut.replace(/\./g, ''),
+        correo: form.correo,
+        contrasena: form.contrasena,
+        especialidad: form.especialidad,
         rol: 'profesional',
       });
 
@@ -101,87 +105,91 @@ const RegistroScreen = () => {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Registro Profesional</Text>
-
-      <TextInput
-        style={[styles.input, errors.nombre && styles.inputError]}
-        placeholder="Nombre"
-        value={form.nombre}
-        onChangeText={(text) => handleChange('nombre', text)}
-      />
-      {errors.nombre && <Text style={styles.errorText}>{errors.nombre}</Text>}
-
-      <MaskedTextInput
-        style={[styles.input, errors.rut && styles.inputError]}
-        placeholder="RUT (12345678-9)"
-        mask="99999999-9"
-        value={form.rut}
-        onChangeText={(text) => handleChange('rut', text)}
-        keyboardType="numeric"
-      />
-      {errors.rut && <Text style={styles.errorText}>{errors.rut}</Text>}
-
-      <TextInput
-        style={[styles.input, errors.correo && styles.inputError]}
-        placeholder="Correo electrónico"
-        value={form.correo}
-        onChangeText={(text) => handleChange('correo', text)}
-        keyboardType="email-address"
-        autoCapitalize="none"
-      />
-      {errors.correo && <Text style={styles.errorText}>{errors.correo}</Text>}
-
-      <TextInput
-        style={[styles.input, errors.contrasena && styles.inputError]}
-        placeholder="Contraseña"
-        value={form.contrasena}
-        onChangeText={(text) => handleChange('contrasena', text)}
-        secureTextEntry
-      />
-      {errors.contrasena && <Text style={styles.errorText}>{errors.contrasena}</Text>}
-
-      <TextInput
-        style={[styles.input, errors.especialidad && styles.inputError]}
-        placeholder="Especialidad"
-        value={form.especialidad}
-        onChangeText={(text) => handleChange('especialidad', text)}
-      />
-      {errors.especialidad && <Text style={styles.errorText}>{errors.especialidad}</Text>}
-
-      {loading ? (
-        <ActivityIndicator size="large" color="#007bff" style={{ marginVertical: 10 }} />
-      ) : (
-        <>
-          <Button title="Registrar" onPress={handleSubmit} color="#007bff" />
-          <View style={{ marginTop: 20 }}>
-            <Button title="Volver al Login" onPress={() => router.back()} color="gray" />
-          </View>
-        </>
-      )}
-    </View>
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 0}
+    >
+      <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }} keyboardShouldPersistTaps="handled">
+        <View style={styles.container}>
+          <Text style={styles.title}>Registro Profesional</Text>
+          <TextInput
+            style={[styles.input, errors.nombre && styles.inputError]}
+            placeholder="Nombre"
+            value={form.nombre}
+            onChangeText={(text) => handleChange('nombre', text)}
+          />
+          {errors.nombre && <Text style={styles.errorText}>{errors.nombre}</Text>}
+          <TextInput
+            style={[styles.input, errors.rut && styles.inputError]}
+            placeholder="RUT (12345678-9)"
+            value={form.rut}
+            onChangeText={(text) => handleChange('rut', text)}
+            keyboardType="numeric"
+          />
+          {errors.rut && <Text style={styles.errorText}>{errors.rut}</Text>}
+          <TextInput
+            style={[styles.input, errors.correo && styles.inputError]}
+            placeholder="Correo electrónico"
+            value={form.correo}
+            onChangeText={(text) => handleChange('correo', text)}
+            keyboardType="email-address"
+            autoCapitalize="none"
+          />
+          {errors.correo && <Text style={styles.errorText}>{errors.correo}</Text>}
+          <TextInput
+            style={[styles.input, errors.contrasena && styles.inputError]}
+            placeholder="Contraseña"
+            value={form.contrasena}
+            onChangeText={(text) => handleChange('contrasena', text)}
+            secureTextEntry
+          />
+          {errors.contrasena && <Text style={styles.errorText}>{errors.contrasena}</Text>}
+          <TextInput
+            style={[styles.input, errors.especialidad && styles.inputError]}
+            placeholder="Especialidad"
+            value={form.especialidad}
+            onChangeText={(text) => handleChange('especialidad', text)}
+          />
+          {errors.especialidad && <Text style={styles.errorText}>{errors.especialidad}</Text>}
+          <TouchableOpacity
+            style={[styles.submitButton, loading && styles.submitButtonDisabled]}
+            onPress={handleSubmit}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.submitButtonText}>Registrar</Text>
+            )}
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
     justifyContent: 'center',
-    backgroundColor: '#fff',
+    padding: 20,
+    backgroundColor: '#f7f9fc',
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 20,
     textAlign: 'center',
+    color: '#333',
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ccc',
-    padding: 10,
-    marginBottom: 10,
-    borderRadius: 5,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 15,
+    fontSize: 16,
   },
   inputError: {
     borderColor: 'red',
@@ -190,6 +198,21 @@ const styles = StyleSheet.create({
     color: 'red',
     fontSize: 12,
     marginBottom: 10,
+  },
+  submitButton: {
+    backgroundColor: '#28a745',
+    padding: 15,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  submitButtonDisabled: {
+    backgroundColor: '#6c757d',
+  },
+  submitButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });
 

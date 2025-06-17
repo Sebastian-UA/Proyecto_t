@@ -1,17 +1,23 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
-  FlatList,
-  TextInput,
-  TouchableOpacity,
   StyleSheet,
   Alert,
+  Button,
+  ActivityIndicator,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  TouchableOpacity,
+  Modal,
 } from 'react-native';
 import { useRouter, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { getPacientesInfo } from '@/services/paciente.api';
 import { usePatient } from '@/context/paciente';
 import { useProfessional } from '@/context/profesional';
+import { MaskedTextInput } from 'react-native-mask-text';
 
 // Funciones de validación
 const validarNombre = (nombre: string) => {
@@ -23,17 +29,25 @@ const validarRut = (rut: string) => {
 };
 
 const validarTelefono = (telefono: string) => {
-  return /^\d{9}$/.test(telefono);
+  return /^9\d{8}$/.test(telefono);
 };
 
 const validarEdad = (edad: string) => {
   const numEdad = parseInt(edad);
-  return !isNaN(numEdad) && numEdad > 0 && numEdad < 120;
+  return !isNaN(numEdad) && numEdad >= 0 && numEdad <= 120;
+};
+
+const validarCorreo = (correo: string) => {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo);
+};
+
+const validarContrasena = (contrasena: string) => {
+  return contrasena.length >= 6;
 };
 
 const PacienteScreen = () => {
   const router = useRouter();
-  const { setPatient } = usePatient();
+  const { setPatient, registrarPaciente } = usePatient();
   const { professional } = useProfessional();
   const params = useLocalSearchParams();
 
@@ -50,6 +64,8 @@ const PacienteScreen = () => {
     genero: '',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const validarFormulario = () => {
     const nuevosErrores: Record<string, string> = {};
@@ -63,18 +79,18 @@ const PacienteScreen = () => {
     }
 
     if (!validarTelefono(form.telefono)) {
-      nuevosErrores.telefono = 'El teléfono debe tener 9 dígitos';
+      nuevosErrores.telefono = 'El teléfono debe comenzar con 9 y tener 9 dígitos';
     }
 
     if (!validarEdad(form.edad)) {
-      nuevosErrores.edad = 'La edad debe ser un número positivo válido';
+      nuevosErrores.edad = 'La edad debe ser un número entre 0 y 120';
     }
 
-    if (!form.correo || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.correo)) {
+    if (!validarCorreo(form.correo)) {
       nuevosErrores.correo = 'Ingrese un correo electrónico válido';
     }
 
-    if (!form.contrasena || form.contrasena.length < 6) {
+    if (!validarContrasena(form.contrasena)) {
       nuevosErrores.contrasena = 'La contraseña debe tener al menos 6 caracteres';
     }
 
@@ -84,7 +100,6 @@ const PacienteScreen = () => {
 
   const handleChange = (key: keyof typeof form, value: string) => {
     setForm(prev => ({ ...prev, [key]: value }));
-    // Limpiar el error cuando el usuario comienza a escribir
     if (errors[key]) {
       setErrors(prev => ({ ...prev, [key]: '' }));
     }
@@ -96,19 +111,37 @@ const PacienteScreen = () => {
       return;
     }
 
+    if (!professional) {
+      Alert.alert('Error', 'No hay un profesional autenticado');
+      return;
+    }
+
     try {
-      // Aquí iría la lógica para enviar el formulario al backend
+      setLoading(true);
+      const pacienteData = {
+        ...form,
+        profesionalId: professional?.profesionalId,
+        rol: 'paciente'
+      };
+      await registrarPaciente(pacienteData as any);
       Alert.alert('Éxito', 'Paciente registrado correctamente');
-      router.back();
+      router.push('/');
     } catch (error) {
       console.error('Error al registrar paciente:', error);
       Alert.alert('Error', 'No se pudo registrar el paciente');
+    } finally {
+      setLoading(false);
     }
   };
 
   const fetchPacientes = async () => {
     try {
-      const data = await getPacientesInfo();
+      if (!professional) {
+        console.error('❌ No hay profesional autenticado');
+        return;
+      }
+
+      const data = await getPacientesInfo(professional.profesionalId);
       setPacientes(data);
 
       // Mostrar alerta si se registró un nuevo paciente
@@ -116,7 +149,8 @@ const PacienteScreen = () => {
         Alert.alert('Éxito', 'Paciente registrado correctamente');
       }
     } catch (error) {
-      console.error('Error al cargar pacientes:', error);
+      console.error('❌ Error al cargar pacientes:', error);
+      Alert.alert('Error', 'No se pudieron cargar los pacientes');
     }
   };
 
@@ -155,92 +189,112 @@ const PacienteScreen = () => {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Registro de Paciente</Text>
-
-      <TextInput
-        style={[styles.input, errors.nombre && styles.inputError]}
-        placeholder="Nombre"
-        value={form.nombre}
-        onChangeText={(text) => handleChange('nombre', text)}
-      />
-      {errors.nombre && <Text style={styles.errorText}>{errors.nombre}</Text>}
-
-      <TextInput
-        style={[styles.input, errors.rut && styles.inputError]}
-        placeholder="RUT (12345678-9)"
-        value={form.rut}
-        onChangeText={(text) => handleChange('rut', text)}
-        keyboardType="numeric"
-      />
-      {errors.rut && <Text style={styles.errorText}>{errors.rut}</Text>}
-
-      <TextInput
-        style={[styles.input, errors.edad && styles.inputError]}
-        placeholder="Edad"
-        value={form.edad}
-        onChangeText={(text) => handleChange('edad', text)}
-        keyboardType="numeric"
-      />
-      {errors.edad && <Text style={styles.errorText}>{errors.edad}</Text>}
-
-      <TextInput
-        style={[styles.input, errors.telefono && styles.inputError]}
-        placeholder="Teléfono (9 dígitos)"
-        value={form.telefono}
-        onChangeText={(text) => handleChange('telefono', text)}
-        keyboardType="phone-pad"
-        maxLength={9}
-      />
-      {errors.telefono && <Text style={styles.errorText}>{errors.telefono}</Text>}
-
-      <TextInput
-        style={[styles.input, errors.correo && styles.inputError]}
-        placeholder="Correo electrónico"
-        value={form.correo}
-        onChangeText={(text) => handleChange('correo', text)}
-        keyboardType="email-address"
-        autoCapitalize="none"
-      />
-      {errors.correo && <Text style={styles.errorText}>{errors.correo}</Text>}
-
-      <TextInput
-        style={[styles.input, errors.contrasena && styles.inputError]}
-        placeholder="Contraseña"
-        value={form.contrasena}
-        onChangeText={(text) => handleChange('contrasena', text)}
-        secureTextEntry
-      />
-      {errors.contrasena && <Text style={styles.errorText}>{errors.contrasena}</Text>}
-
-      <TouchableOpacity
-        style={styles.button}
-        onPress={handleSubmit}
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 0}
+    >
+      <ScrollView
+        contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}
+        keyboardShouldPersistTaps="handled"
       >
-        <Text style={styles.buttonText}>Registrar Paciente</Text>
-      </TouchableOpacity>
-    </View>
+        <View style={styles.container}>
+          <Text style={styles.title}>Registro de Paciente</Text>
+          <TextInput
+            style={[styles.input, errors.nombre && styles.inputError]}
+            placeholder="Nombre"
+            value={form.nombre}
+            onChangeText={(text) => handleChange('nombre', text)}
+          />
+          {errors.nombre && <Text style={styles.errorText}>{errors.nombre}</Text>}
+          <MaskedTextInput
+            style={[styles.input, errors.rut && styles.inputError]}
+            placeholder="RUT (12345678-9)"
+            mask="99999999-9"
+            value={form.rut}
+            onChangeText={(text: string) => handleChange('rut', text)}
+            keyboardType="numeric"
+          />
+          {errors.rut && <Text style={styles.errorText}>{errors.rut}</Text>}
+          <TextInput
+            style={[styles.input, errors.edad && styles.inputError]}
+            placeholder="Edad"
+            value={form.edad}
+            onChangeText={(text) => handleChange('edad', text)}
+            keyboardType="numeric"
+          />
+          {errors.edad && <Text style={styles.errorText}>{errors.edad}</Text>}
+          <TextInput
+            style={[styles.input, errors.telefono && styles.inputError]}
+            placeholder="Teléfono"
+            value={form.telefono}
+            onChangeText={(text) => handleChange('telefono', text)}
+            keyboardType="phone-pad"
+            maxLength={9}
+          />
+          {errors.telefono && <Text style={styles.errorText}>{errors.telefono}</Text>}
+          <TextInput
+            style={[styles.input, errors.correo && styles.inputError]}
+            placeholder="Correo electrónico"
+            value={form.correo}
+            onChangeText={(text) => handleChange('correo', text)}
+            keyboardType="email-address"
+            autoCapitalize="none"
+          />
+          {errors.correo && <Text style={styles.errorText}>{errors.correo}</Text>}
+          <TextInput
+            style={[styles.input, errors.contrasena && styles.inputError]}
+            placeholder="Contraseña"
+            value={form.contrasena}
+            onChangeText={(text) => handleChange('contrasena', text)}
+            secureTextEntry
+          />
+          {errors.contrasena && <Text style={styles.errorText}>{errors.contrasena}</Text>}
+          <TextInput
+            style={[styles.input, errors.genero && styles.inputError]}
+            placeholder="Género"
+            value={form.genero}
+            onChangeText={(text) => handleChange('genero', text)}
+          />
+          {errors.genero && <Text style={styles.errorText}>{errors.genero}</Text>}
+          <TouchableOpacity
+            style={[styles.submitButton, loading && styles.submitButtonDisabled]}
+            onPress={handleSubmit}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.submitButtonText}>Registrar</Text>
+            )}
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    justifyContent: 'center',
     padding: 20,
-    backgroundColor: '#fff',
+    backgroundColor: '#f7f9fc',
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 20,
     textAlign: 'center',
+    color: '#333',
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 6,
-    padding: 10,
-    marginBottom: 10,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 15,
+    fontSize: 16,
   },
   inputError: {
     borderColor: 'red',
@@ -250,15 +304,19 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginBottom: 10,
   },
-  button: {
+  submitButton: {
     backgroundColor: '#007bff',
     padding: 15,
-    borderRadius: 6,
+    borderRadius: 8,
     alignItems: 'center',
-    marginTop: 20,
+    marginTop: 10,
   },
-  buttonText: {
+  submitButtonDisabled: {
+    backgroundColor: '#6c757d',
+  },
+  submitButtonText: {
     color: '#fff',
+    fontSize: 16,
     fontWeight: 'bold',
   },
 });

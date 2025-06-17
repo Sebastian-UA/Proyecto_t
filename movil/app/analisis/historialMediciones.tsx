@@ -8,6 +8,7 @@ import {
   Dimensions,
   ActivityIndicator,
 } from 'react-native';
+import { Picker } from '@react-native-picker/picker';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { LineChart } from 'react-native-chart-kit';
 import { usePatient } from '@/context/paciente';
@@ -32,19 +33,26 @@ const HistorialMedicionesScreen = () => {
   const [mediciones, setMediciones] = useState<Medicion[]>([]);
   const [movimientoSeleccionado, setMovimientoSeleccionado] = useState<string>('todos');
   const [ladoSeleccionado, setLadoSeleccionado] = useState<string>('todos');
+  const [movimientosUnicos, setMovimientosUnicos] = useState<string[]>([]);
+  const [ladosUnicos, setLadosUnicos] = useState<string[]>([]);
 
   useEffect(() => {
     cargarMediciones();
-  }, [movimientoSeleccionado, ladoSeleccionado]);
+  }, []);
 
   const cargarMediciones = async () => {
     setLoading(true);
     try {
       const response = await fetch(
-        `http://192.168.1.19:8000/mediciones/${patient?.pacienteId}?movimiento=${movimientoSeleccionado}&lado=${ladoSeleccionado}`
+        `http://192.168.1.19:8000/mediciones/${patient?.pacienteId}`
       );
       const data = await response.json();
       setMediciones(data);
+      // Obtener movimientos y lados únicos
+      const movimientos = Array.from(new Set(data.map((m: Medicion) => m.movimiento)));
+      setMovimientosUnicos(movimientos as string[]);
+      const lados = Array.from(new Set(data.map((m: Medicion) => m.lado)));
+      setLadosUnicos(lados as string[]);
     } catch (error) {
       console.error('Error al cargar mediciones:', error);
     } finally {
@@ -178,24 +186,32 @@ const HistorialMedicionesScreen = () => {
       <Text style={styles.title}>Historial de Mediciones</Text>
 
       <View style={styles.filtros}>
-        <TouchableOpacity
-          style={[
-            styles.filtroButton,
-            movimientoSeleccionado === 'todos' && styles.filtroButtonActive,
-          ]}
-          onPress={() => setMovimientoSeleccionado('todos')}
-        >
-          <Text style={styles.filtroButtonText}>Todos los Movimientos</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[
-            styles.filtroButton,
-            ladoSeleccionado === 'todos' && styles.filtroButtonActive,
-          ]}
-          onPress={() => setLadoSeleccionado('todos')}
-        >
-          <Text style={styles.filtroButtonText}>Ambos Lados</Text>
-        </TouchableOpacity>
+        <View style={styles.pickerContainer}>
+          <Text style={styles.pickerLabel}>Movimiento:</Text>
+          <Picker
+            selectedValue={movimientoSeleccionado}
+            style={styles.picker}
+            onValueChange={(itemValue: string) => setMovimientoSeleccionado(itemValue)}
+          >
+            <Picker.Item label="Todos" value="todos" />
+            {movimientosUnicos.map((mov) => (
+              <Picker.Item key={mov} label={mov} value={mov} />
+            ))}
+          </Picker>
+        </View>
+        <View style={styles.pickerContainer}>
+          <Text style={styles.pickerLabel}>Lado:</Text>
+          <Picker
+            selectedValue={ladoSeleccionado}
+            style={styles.picker}
+            onValueChange={(itemValue: string) => setLadoSeleccionado(itemValue)}
+          >
+            <Picker.Item label="Todos" value="todos" />
+            {ladosUnicos.map((lado) => (
+              <Picker.Item key={lado} label={lado} value={lado} />
+            ))}
+          </Picker>
+        </View>
       </View>
 
       {renderGrafico()}
@@ -226,16 +242,20 @@ const styles = StyleSheet.create({
     justifyContent: 'space-around',
     marginBottom: 20,
   },
-  filtroButton: {
-    padding: 10,
-    borderRadius: 5,
+  pickerContainer: {
+    flex: 1,
+    marginHorizontal: 5,
+  },
+  pickerLabel: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  picker: {
+    height: 40,
+    width: '100%',
     backgroundColor: '#e0e0e0',
-  },
-  filtroButtonActive: {
-    backgroundColor: '#007bff',
-  },
-  filtroButtonText: {
-    color: '#333',
+    borderRadius: 5,
   },
   graficoContainer: {
     backgroundColor: '#fff',

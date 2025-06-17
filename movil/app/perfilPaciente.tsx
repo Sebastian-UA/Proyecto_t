@@ -35,6 +35,7 @@ const PerfilPacienteScreen = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showChangePassword, setShowChangePassword] = useState(false);
+  const [vista, setVista] = useState<'perfil' | 'movimientos' | 'analisis'>('perfil');
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: '',
     newPassword: '',
@@ -170,126 +171,183 @@ const PerfilPacienteScreen = () => {
   }
 
   return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.title}>Perfil del Paciente</Text>
+    <View style={styles.container}>
+      <View style={styles.tabContainer}>
+        <TouchableOpacity
+          style={[styles.tab, vista === 'perfil' && styles.activeTab]}
+          onPress={() => setVista('perfil')}
+        >
+          <Text style={[styles.tabText, vista === 'perfil' && styles.activeTabText]}>
+            Perfil
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tab, vista === 'movimientos' && styles.activeTab]}
+          onPress={() => setVista('movimientos')}
+        >
+          <Text style={[styles.tabText, vista === 'movimientos' && styles.activeTabText]}>
+            Movimientos
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tab, vista === 'analisis' && styles.activeTab]}
+          onPress={() => setVista('analisis')}
+        >
+          <Text style={[styles.tabText, vista === 'analisis' && styles.activeTabText]}>
+            Análisis
+          </Text>
+        </TouchableOpacity>
+      </View>
 
-      {isEditing ? (
-        <View style={styles.form}>
-          <TextInput
-            style={[styles.input, errors.nombre && styles.inputError]}
-            placeholder="Nombre"
-            value={form.nombre}
-            onChangeText={(text) => handleChange('nombre', text)}
-          />
-          {errors.nombre && <Text style={styles.errorText}>{errors.nombre}</Text>}
+      <ScrollView style={styles.content}>
+        {vista === 'perfil' && (
+          <>
+            <Text style={styles.title}>Perfil del Paciente</Text>
 
-          <TextInput
-            style={[styles.input, errors.edad && styles.inputError]}
-            placeholder="Edad"
-            value={form.edad}
-            onChangeText={(text) => handleChange('edad', text)}
-            keyboardType="numeric"
-          />
-          {errors.edad && <Text style={styles.errorText}>{errors.edad}</Text>}
+            {isEditing ? (
+              <View style={styles.form}>
+                <TextInput
+                  style={[styles.input, errors.nombre && styles.inputError]}
+                  placeholder="Nombre"
+                  value={form.nombre}
+                  onChangeText={(text) => handleChange('nombre', text)}
+                />
+                {errors.nombre && <Text style={styles.errorText}>{errors.nombre}</Text>}
 
-          <TextInput
-            style={[styles.input, errors.telefono && styles.inputError]}
-            placeholder="Teléfono"
-            value={form.telefono}
-            onChangeText={(text) => handleChange('telefono', text)}
-            keyboardType="phone-pad"
-            maxLength={9}
-          />
-          {errors.telefono && <Text style={styles.errorText}>{errors.telefono}</Text>}
+                <TextInput
+                  style={[styles.input, errors.edad && styles.inputError]}
+                  placeholder="Edad"
+                  value={form.edad}
+                  onChangeText={(text) => handleChange('edad', text)}
+                  keyboardType="numeric"
+                />
+                {errors.edad && <Text style={styles.errorText}>{errors.edad}</Text>}
 
-          <TextInput
-            style={styles.input}
-            placeholder="Género"
-            value={form.genero}
-            onChangeText={(text) => handleChange('genero', text)}
-          />
+                <TextInput
+                  style={[styles.input, errors.telefono && styles.inputError]}
+                  placeholder="Teléfono"
+                  value={form.telefono}
+                  onChangeText={(text) => handleChange('telefono', text)}
+                  keyboardType="phone-pad"
+                  maxLength={9}
+                />
+                {errors.telefono && <Text style={styles.errorText}>{errors.telefono}</Text>}
 
-          <View style={styles.buttonContainer}>
-            <TouchableOpacity
-              style={[styles.button, styles.cancelButton]}
-              onPress={() => setIsEditing(false)}
-            >
-              <Text style={styles.buttonText}>Cancelar</Text>
-            </TouchableOpacity>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Género"
+                  value={form.genero}
+                  onChangeText={(text) => handleChange('genero', text)}
+                />
 
-            <TouchableOpacity
-              style={[styles.button, styles.saveButton]}
-              onPress={handleSave}
-              disabled={loading}
-            >
-              {loading ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text style={styles.buttonText}>Guardar</Text>
-              )}
-            </TouchableOpacity>
-          </View>
-        </View>
-      ) : (
-        <View style={styles.infoContainer}>
-          <View style={styles.infoRow}>
-            <Text style={styles.label}>Nombre:</Text>
-            <Text style={styles.value}>{patient.nombre}</Text>
-          </View>
+                <View style={styles.buttonContainer}>
+                  <TouchableOpacity
+                    style={[styles.button, styles.cancelButton]}
+                    onPress={() => setIsEditing(false)}
+                  >
+                    <Text style={styles.buttonText}>Cancelar</Text>
+                  </TouchableOpacity>
 
-          <View style={styles.infoRow}>
-            <Text style={styles.label}>RUT:</Text>
-            <Text style={styles.value}>{patient.rut}</Text>
-          </View>
+                  <TouchableOpacity
+                    style={[styles.button, styles.saveButton]}
+                    onPress={handleSave}
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <ActivityIndicator color="#fff" />
+                    ) : (
+                      <Text style={styles.buttonText}>Guardar</Text>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ) : (
+              <View style={styles.infoContainer}>
+                <View style={styles.infoRow}>
+                  <Text style={styles.label}>Nombre:</Text>
+                  <Text style={styles.value}>{patient.nombre}</Text>
+                </View>
 
-          <View style={styles.infoRow}>
-            <Text style={styles.label}>Edad:</Text>
-            <Text style={styles.value}>{patient.edad}</Text>
-          </View>
+                <View style={styles.infoRow}>
+                  <Text style={styles.label}>RUT:</Text>
+                  <Text style={styles.value}>{patient.rut}</Text>
+                </View>
 
-          <View style={styles.infoRow}>
-            <Text style={styles.label}>Teléfono:</Text>
-            <Text style={styles.value}>{patient.telefono}</Text>
-          </View>
+                <View style={styles.infoRow}>
+                  <Text style={styles.label}>Edad:</Text>
+                  <Text style={styles.value}>{patient.edad}</Text>
+                </View>
 
-          <View style={styles.infoRow}>
-            <Text style={styles.label}>Género:</Text>
-            <Text style={styles.value}>{patient.genero}</Text>
-          </View>
+                <View style={styles.infoRow}>
+                  <Text style={styles.label}>Teléfono:</Text>
+                  <Text style={styles.value}>{patient.telefono}</Text>
+                </View>
 
-          <View style={styles.infoRow}>
-            <Text style={styles.label}>Correo:</Text>
-            <Text style={styles.value}>{patient.correo}</Text>
-          </View>
+                <View style={styles.infoRow}>
+                  <Text style={styles.label}>Género:</Text>
+                  <Text style={styles.value}>{patient.genero}</Text>
+                </View>
 
-          <View style={styles.buttonContainer}>
-            {professional && (
-              <TouchableOpacity
-                style={[styles.button, styles.editButton]}
-                onPress={() => setIsEditing(true)}
-              >
-                <Text style={styles.buttonText}>Editar Datos</Text>
-              </TouchableOpacity>
+                <View style={styles.infoRow}>
+                  <Text style={styles.label}>Correo:</Text>
+                  <Text style={styles.value}>{patient.correo}</Text>
+                </View>
+
+                <View style={styles.buttonContainer}>
+                {professional && (
+                    <TouchableOpacity
+                      style={[styles.button, styles.editButton]}
+                      onPress={() => setIsEditing(true)}
+                    >
+                      <Text style={styles.buttonText}>Editar Datos</Text>
+                    </TouchableOpacity>
+                  )}
+
+                  {!professional && (
+                    <TouchableOpacity
+                      style={[styles.button, styles.passwordButton]}
+                      onPress={() => setShowChangePassword(true)}
+                    >
+                      <Text style={styles.buttonText}>Cambiar Contraseña</Text>
+                    </TouchableOpacity>
+                  )}
+
+                  <TouchableOpacity
+                    style={[styles.button, styles.historyButton]}
+                    onPress={() => router.push('/analisis/historialMediciones' as any)}
+                  >
+                    <Text style={styles.buttonText}>Ver Historial de Mediciones</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
             )}
+          </>
+        )}
 
-            {!professional && (
-              <TouchableOpacity
-                style={[styles.button, styles.passwordButton]}
-                onPress={() => setShowChangePassword(true)}
-              >
-                <Text style={styles.buttonText}>Cambiar Contraseña</Text>
-              </TouchableOpacity>
-            )}
-
+        {vista === 'movimientos' && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Movimientos</Text>
             <TouchableOpacity
-              style={[styles.button, styles.historyButton]}
-              onPress={() => router.push('/analisis/historialMediciones' as any)}
+              style={styles.button}
+              onPress={() => router.push('/movimientos/SelecExt')}
+            >
+              <Text style={styles.buttonText}>Nuevo Movimiento</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {vista === 'analisis' && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Análisis</Text>
+            <TouchableOpacity
+              style={styles.button}
+              onPress={() => router.push('/historial' as any)}
             >
               <Text style={styles.buttonText}>Ver Historial de Mediciones</Text>
             </TouchableOpacity>
           </View>
-        </View>
-      )}
+        )}
+      </ScrollView>
 
       <Modal
         visible={showChangePassword}
@@ -354,7 +412,7 @@ const PerfilPacienteScreen = () => {
           </View>
         </View>
       </Modal>
-    </ScrollView>
+    </View>
   );
 };
 
@@ -475,6 +533,46 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 20,
     textAlign: 'center',
+  },
+  tabContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#fff',
+    padding: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ddd',
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: 10,
+    alignItems: 'center',
+  },
+  activeTab: {
+    borderBottomWidth: 2,
+    borderBottomColor: '#007bff',
+  },
+  tabText: {
+    fontSize: 16,
+    color: '#666',
+  },
+  activeTabText: {
+    color: '#007bff',
+    fontWeight: 'bold',
+  },
+  content: {
+    flex: 1,
+    padding: 20,
+  },
+  section: {
+    backgroundColor: '#fff',
+    padding: 20,
+    borderRadius: 10,
+    marginBottom: 20,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 15,
+    color: '#333',
   },
 });
 

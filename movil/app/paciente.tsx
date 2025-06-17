@@ -7,19 +7,20 @@ interface Patient {
   pacienteId: number;
   nombre: string;
   rut: string;
-  edad: number;
+  edad: string;
   telefono: string;
   correo: string;
   contrasena: string;
   rol: string;
   genero: string;
-  id_profesional: number | null;
+  id_profesional?: number | null;
 }
 
 // Tipo del contexto
 interface PatientContextType {
   patient: Patient | null;
   setPatient: (patient: Patient) => void;
+  registrarPaciente: (pacienteData: Omit<Patient, 'pacienteId'>) => Promise<void>;
 }
 
 // Crear el contexto
@@ -35,6 +36,28 @@ export const PatientProvider = ({ children }: { children: ReactNode }) => {
       await AsyncStorage.setItem('paciente', JSON.stringify(patient));
     } catch (error) {
       console.error('Error al guardar paciente en AsyncStorage:', error);
+    }
+  };
+
+  const registrarPaciente = async (pacienteData: Omit<Patient, 'pacienteId'>) => {
+    try {
+      const response = await fetch('http://192.168.1.19:8000/paciente_con_usuario/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(pacienteData),
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al registrar paciente');
+      }
+
+      const data = await response.json();
+      setPatient(data);
+    } catch (error) {
+      console.error('Error al registrar paciente:', error);
+      throw error;
     }
   };
 
@@ -56,7 +79,7 @@ export const PatientProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   return (
-    <PatientContext.Provider value={{ patient, setPatient }}>
+    <PatientContext.Provider value={{ patient, setPatient, registrarPaciente }}>
       {children}
     </PatientContext.Provider>
   );

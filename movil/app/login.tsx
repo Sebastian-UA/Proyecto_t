@@ -57,7 +57,7 @@ const LoginScreen = () => {
         rol: data.rol,
       });
 
-      router.replace('/paciente');
+      router.push('/registroPaciente');
     } catch (err) {
       setError('Correo o contraseña incorrectos');
       console.error(err);

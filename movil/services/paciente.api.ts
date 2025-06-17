@@ -12,6 +12,17 @@ interface ProfesionalData {
   rol?: string;
 }
 
+interface PacienteData {
+  nombre: string;
+  rut: string;
+  edad: string;
+  telefono: string;
+  correo: string;
+  contrasena: string;
+  genero: string;
+  id_profesional: number;
+}
+
 
 export const createProfesionalConUsuario = async (data: ProfesionalData) => {
   try {
@@ -95,7 +106,7 @@ export const getProfesionalById = async (id: number) => {
   }
 };
 
-export const createPaciente = async (data: any) => {
+export const createPaciente = async (data: PacienteData) => {
   try {
     const response = await fetch(`${API_URL}/paciente_con_usuario/`, {
       method: "POST",
@@ -117,7 +128,7 @@ export const createPaciente = async (data: any) => {
   }
 };
 
-export const getPacientesInfo = async () => {
+export const getPacientesInfo = async (profesionalId?: number) => {
   try {
     const response = await fetch(`${API_URL}/pacientes/detalle`, {
       method: "GET",
@@ -131,6 +142,12 @@ export const getPacientesInfo = async () => {
     }
 
     const data = await response.json();
+    
+    // Si se proporciona un profesionalId, filtrar los pacientes
+    if (profesionalId) {
+      return data.filter((paciente: any) => paciente.id_profesional === profesionalId);
+    }
+    
     return data;
   } catch (error) {
     console.error("Error al obtener pacientes:", error);

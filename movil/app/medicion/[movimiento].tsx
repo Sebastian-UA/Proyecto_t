@@ -113,7 +113,7 @@ export default function MedicionPage() {
         lado: lado
       });
 
-      const res = await fetch('http://192.168.1.19:8000/analizar_video/', {
+      const res = await fetch('http://172.20.10.2:8000/analizar_video/', {
         method: 'POST',
         body: formData,
         headers: {
