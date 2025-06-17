@@ -41,7 +41,7 @@ export const PatientProvider = ({ children }: { children: ReactNode }) => {
 
   const registrarPaciente = async (pacienteData: any) => {
     try {
-      const response = await fetch('http://192.168.1.19:8000/paciente_con_usuario/', {
+      const response = await fetch('http:/172.20.10.2:8000/paciente_con_usuario/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

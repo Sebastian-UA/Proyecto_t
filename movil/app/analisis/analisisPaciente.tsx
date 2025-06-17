@@ -76,7 +76,7 @@ export default function AnalisisPacientePage() {
             <View style={{ marginVertical: 10 }}>
               <Text style={styles.subtitulo}>Video procesado:</Text>
               <Image
-                source={{ uri: `http://192.168.1.19:8000/${resultado.output}` }}
+                source={{ uri: `http://172.20.10.2:8000/${resultado.output}` }}
                 style={{ width: '100%', height: 200, marginVertical: 10 }}
                 resizeMode="contain"
               />

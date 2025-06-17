@@ -44,7 +44,7 @@ const HistorialMedicionesScreen = () => {
     setLoading(true);
     try {
       const response = await fetch(
-        `http://192.168.1.19:8000/mediciones/${patient?.pacienteId}`
+        `http://172.20.10.2:8000/mediciones/${patient?.pacienteId}`
       );
       const data = await response.json();
       setMediciones(data);

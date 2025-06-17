@@ -86,79 +86,7 @@ export default function MedicionPage() {
     }
   };
 
-  const enviarVideo = async () => {
-    if (!videoUri) return Alert.alert('Selecciona un video primero.');
-    if (!movimientoData?.nombre) return Alert.alert('Error', 'No se ha cargado la información del movimiento');
-
-    try {
-      setLoading(true);
-      const formData = new FormData();
-      
-      // Obtener la extensión del archivo
-      const extension = videoUri.split('.').pop()?.toLowerCase() || 'mp4';
-      const mimeType = `video/${extension}`;
-      
-      formData.append('file', {
-        uri: videoUri,
-        name: `video.${extension}`,
-        type: mimeType,
-      } as any);
-      
-      formData.append('movimiento', movimientoData.nombre);
-      formData.append('lado', lado);
-
-      console.log('Enviando video:', {
-        uri: videoUri,
-        movimiento: movimientoData.nombre,
-        lado: lado
-      });
-
-      const res = await fetch('http://172.20.10.2:8000/analizar_video/', {
-        method: 'POST',
-        body: formData,
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-
-      if (!res.ok) {
-        const errorData = await res.text();
-        console.error('Error del servidor:', errorData);
-        throw new Error(`Error en el servidor: ${res.status}`);
-      }
-
-      const data = await res.json();
-      console.log('Respuesta del servidor:', data);
-      
-      if (!data.output) {
-        throw new Error('Respuesta incompleta del servidor');
-      }
-
-      setResultado(data);
-      // Redirigir a la pantalla de análisis
-      router.push({
-  pathname: '/analisis/analisisPaciente',
-  params: {
-    resultado: JSON.stringify(data),
-    movimiento: movimientoData.nombre,
-  },
-} as any);
-
-      setVideoUri(null); // Limpiar el video después del análisis
-      Alert.alert('Éxito', 'Video enviado y analizado correctamente');
-      
-    } catch (error) {
-      console.error('Error al enviar el video:', error);
-      Alert.alert(
-        'Error', 
-        'No se pudo analizar el video. Por favor, verifica tu conexión e intenta de nuevo.'
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const guardarSesion = async () => {
+  const guardarSesion = async (resultado: any) => {
     if (!resultado) {
       return Alert.alert('Faltan datos para guardar la sesión');
     }
@@ -167,9 +95,7 @@ export default function MedicionPage() {
       const now = new Date();
       let sesiones = [];
 
-      // Determinar los ángulos según el tipo de movimiento
       if (movimientoData.nombre.toLowerCase() === "pronación y supinación") {
-        // Crear dos sesiones para movimientos compuestos
         sesiones = [
           {
             PacienteId: patient?.pacienteId || professional?.pacienteSeleccionado?.pacienteId,
@@ -197,7 +123,6 @@ export default function MedicionPage() {
           }
         ];
       } else {
-        // Para movimientos simples
         sesiones = [{
           PacienteId: patient?.pacienteId || professional?.pacienteSeleccionado?.pacienteId,
           ProfesionalId: professional?.profesionalId || patient?.id_profesional,
@@ -212,18 +137,72 @@ export default function MedicionPage() {
         }];
       }
 
-      // Guardar todas las sesiones
       for (const sesion of sesiones) {
-        if (!sesion.PacienteId) {
-          throw new Error('No se pudo determinar el ID del paciente');
-        }
+        if (!sesion.PacienteId) throw new Error('No se pudo determinar el ID del paciente');
         await createSesionWithMedicion(sesion);
       }
 
-      Alert.alert('Éxito', 'Sesión(es) guardada(s) correctamente');
+      Alert.alert('Éxito', 'Sesión guardada correctamente');
     } catch (error) {
       console.error('Error al guardar sesión:', error);
       Alert.alert('Error', 'No se pudo guardar la sesión');
+    }
+  };
+
+  const enviarVideo = async () => {
+    if (!videoUri) return Alert.alert('Selecciona un video primero.');
+    if (!movimientoData?.nombre) return Alert.alert('Error', 'No se ha cargado la información del movimiento');
+
+    try {
+      setLoading(true);
+      const formData = new FormData();
+
+      const extension = videoUri.split('.').pop()?.toLowerCase() || 'mp4';
+      const mimeType = `video/${extension}`;
+
+      formData.append('file', {
+        uri: videoUri,
+        name: `video.${extension}`,
+        type: mimeType,
+      } as any);
+
+      formData.append('movimiento', movimientoData.nombre);
+      formData.append('lado', lado);
+
+      const res = await fetch('http:// 172.20.10.2:8000/analizar_video/', {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      if (!res.ok) {
+        const errorData = await res.text();
+        throw new Error(`Error en el servidor: ${res.status} - ${errorData}`);
+      }
+
+      const data = await res.json();
+
+      if (!data.output) throw new Error('Respuesta incompleta del servidor');
+
+      await guardarSesion(data); // ✅ GUARDAR SESIÓN ANTES DE REDIRIGIR
+
+      router.push({
+        pathname: '/analisis/analisisPaciente',
+        params: {
+          resultado: JSON.stringify(data),
+          movimiento: movimientoData.nombre,
+        },
+      } as any);
+
+      setVideoUri(null);
+      Alert.alert('Éxito', 'Video enviado y analizado correctamente');
+    } catch (error) {
+      console.error('Error al enviar el video:', error);
+      Alert.alert('Error', 'No se pudo analizar el video. Verifica tu conexión e intenta de nuevo.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -248,16 +227,8 @@ export default function MedicionPage() {
       <Text style={styles.titulo}>Medición: {movimientoData?.nombre || '...'}</Text>
 
       <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginVertical: 10 }}>
-        <Button 
-          title="Seleccionar Video" 
-          onPress={seleccionarVideo} 
-          disabled={loading} 
-        />
-        <Button 
-          title="Grabar Video" 
-          onPress={grabarVideo} 
-          disabled={loading} 
-        />
+        <Button title="Seleccionar Video" onPress={seleccionarVideo} disabled={loading} />
+        <Button title="Grabar Video" onPress={grabarVideo} disabled={loading} />
       </View>
 
       {videoUri && (
@@ -270,31 +241,17 @@ export default function MedicionPage() {
       <View style={{ marginVertical: 10, padding: 10, backgroundColor: '#f5f5f5', borderRadius: 10 }}>
         <Text style={styles.subtitulo}>Selecciona el lado a analizar:</Text>
         <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: 5 }}>
-          <Button 
-            title="Derecha" 
-            onPress={() => setLado('derecha')}
-            color={lado === 'derecha' ? '#4CAF50' : undefined}
-          />
-          <Button 
-            title="Izquierda" 
-            onPress={() => setLado('izquierda')}
-            color={lado === 'izquierda' ? '#4CAF50' : undefined}
-          />
+          <Button title="Derecha" onPress={() => setLado('derecha')} color={lado === 'derecha' ? '#4CAF50' : undefined} />
+          <Button title="Izquierda" onPress={() => setLado('izquierda')} color={lado === 'izquierda' ? '#4CAF50' : undefined} />
         </View>
       </View>
 
-      <Button 
-        title="Enviar para análisis" 
-        onPress={enviarVideo} 
-        disabled={loading || !videoUri} 
-      />
+      <Button title="Enviar para análisis" onPress={enviarVideo} disabled={loading || !videoUri} />
 
       {loading && (
         <View style={{ marginVertical: 20 }}>
           <ActivityIndicator size="large" />
-          <Text style={{ textAlign: 'center', marginTop: 10 }}>
-            Analizando video...
-          </Text>
+          <Text style={{ textAlign: 'center', marginTop: 10 }}>Analizando video...</Text>
         </View>
       )}
     </ScrollView>

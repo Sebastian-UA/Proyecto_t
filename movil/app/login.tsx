@@ -39,7 +39,7 @@ const LoginScreen = () => {
     setLoading(true);
 
     try {
-      const response = await fetch('http://192.168.1.19:8000/login', {
+      const response = await fetch('http://172.20.10.2:8000/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ correo, contrasena }),
@@ -57,7 +57,7 @@ const LoginScreen = () => {
         rol: data.rol,
       });
 
-      router.push('/registroPaciente');
+      router.push('/paciente');
     } catch (err) {
       setError('Correo o contraseña incorrectos');
       console.error(err);
@@ -67,7 +67,7 @@ const LoginScreen = () => {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={styles.container}> 
       <Text style={styles.title}>Iniciar Sesión</Text>
 
       <TextInput

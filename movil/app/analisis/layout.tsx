@@ -16,6 +16,19 @@ export default function AnalisisLayout() {
           },
         }}
       />
+      <Stack.Screen
+        name="analisisPaciente"
+        options={{
+          title: 'Análisis del Movimiento',
+          headerStyle: {
+            backgroundColor: '#007bff',
+          },
+          headerTintColor: '#fff',
+          headerTitleStyle: {
+            fontWeight: 'bold',
+          },
+        }}
+      />
     </Stack>
   );
-} 
+}
