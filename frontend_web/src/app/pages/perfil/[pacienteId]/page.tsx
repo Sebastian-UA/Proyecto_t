@@ -467,8 +467,8 @@ export default function PerfilPaciente() {
                     <th className="p-2 border">Ángulo Máximo Esperado</th>
                     <th className="p-2 border">Ángulo Minimo Esperado</th>
                     <th className="p-2 border">Fecha</th>
-                    <th className="p-2 border">Paciente</th>
-                    <th className="p-2 border">Fecha</th>
+                    <th className="p-2 border">Hora</th>
+
                   </tr>
                 </thead>
                 <tbody>
@@ -484,8 +484,7 @@ export default function PerfilPaciente() {
                         {med.movimiento.anguloMinReal ?? "N/A"}
                       </td>
                       <td className="p-2 border">{med.sesion?.fecha ?? "N/A"}</td>
-                      <td className="p-2 border">{med.paciente?.nombre ?? "N/A"}</td>
-                      <td className="p-2 border">{med.sesion?.fecha ?? "N/A"}</td>
+                      <td className="p-2 border">{med.sesion?.hora ?? "N/A"}</td>
                     </tr>
                   ))}
                 </tbody>
