@@ -120,7 +120,7 @@ const PacienteScreen = () => {
       setLoading(true);
       const pacienteData = {
         ...form,
-        profesionalId: professional?.profesionalId,
+        id_profesional: professional?.profesionalId,
         rol: 'paciente'
       };
       await registrarPaciente(pacienteData as any);
