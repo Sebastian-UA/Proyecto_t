@@ -1,4 +1,3 @@
-# procesar_video.py
 import cv2
 import numpy as np
 import mediapipe as mp
@@ -36,6 +35,11 @@ def abduccion_video(path: str, lado: str):
     max_angle = 0
     min_angle = 180
 
+    # Posición fija para mostrar texto en esquina superior izquierda
+    text_pos = (20, 50)
+    color_derecha = (0, 255, 0)
+    color_izquierda = (255, 0, 0)
+
     with mp_pose.Pose(static_image_mode=False, min_detection_confidence=0.5) as pose:
         while cap.isOpened():
             ret, frame = cap.read()
@@ -43,6 +47,9 @@ def abduccion_video(path: str, lado: str):
                 break
             image_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             results = pose.process(image_rgb)
+
+            texto_angulo = None
+            color_texto = (255, 255, 255)
 
             if results.pose_landmarks:
                 landmarks = results.pose_landmarks.landmark
@@ -55,9 +62,8 @@ def abduccion_video(path: str, lado: str):
                                 landmarks[mp_pose.PoseLandmark.RIGHT_SHOULDER.value].y]
                     elbow = [landmarks[mp_pose.PoseLandmark.RIGHT_ELBOW.value].x,
                              landmarks[mp_pose.PoseLandmark.RIGHT_ELBOW.value].y]
-                    color = (0, 255, 0)
+                    color_texto = color_derecha
                     label = 'R'
-                    cx, cy = int(shoulder[0] * width), int(shoulder[1] * height)
 
                 elif lado == "izquierda":
                     hip = [landmarks[mp_pose.PoseLandmark.LEFT_HIP.value].x,
@@ -66,9 +72,8 @@ def abduccion_video(path: str, lado: str):
                                 landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER.value].y]
                     elbow = [landmarks[mp_pose.PoseLandmark.LEFT_ELBOW.value].x,
                              landmarks[mp_pose.PoseLandmark.LEFT_ELBOW.value].y]
-                    color = (255, 0, 0)
+                    color_texto = color_izquierda
                     label = 'L'
-                    cx, cy = int(shoulder[0] * width), int(shoulder[1] * height)
 
                 else:
                     cap.release()
@@ -79,11 +84,15 @@ def abduccion_video(path: str, lado: str):
                 max_angle = max(max_angle, angle)
                 min_angle = min(min_angle, angle)
 
-                cv2.putText(frame, f'{label}: {int(angle)}', (cx, cy - 20),
-                            cv2.FONT_HERSHEY_SIMPLEX, 1, color, 2)
+                texto_angulo = f'{label}: {int(angle)}'
 
                 mp_drawing.draw_landmarks(
                     frame, results.pose_landmarks, mp_pose.POSE_CONNECTIONS)
+
+            # Mostrar el texto en la esquina superior izquierda si se detectó el ángulo
+            if texto_angulo:
+                cv2.putText(frame, texto_angulo, text_pos,
+                            cv2.FONT_HERSHEY_SIMPLEX, 1, color_texto, 2)
 
             out.write(frame)
 
