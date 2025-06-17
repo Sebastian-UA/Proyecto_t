@@ -20,7 +20,7 @@ interface PacienteData {
   correo: string;
   contrasena: string;
   genero: string;
-  id_profesional: number;
+  profesionalId: number;
 }
 
 

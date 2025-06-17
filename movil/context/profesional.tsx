@@ -23,7 +23,7 @@ type Profesional = {
     telefono: string;
     correo: string;
     genero: string;
-    id_profesional: number | null;
+    profesionalId: number | null;
   } | null;
 };
 
