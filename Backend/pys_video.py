@@ -66,6 +66,15 @@ def pys_video(path: str, lado: str):
         image_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         results = hands.process(image_rgb)
 
+        # Posiciones fijas para mostrar texto en esquina superior izquierda
+        text_angle_pos = (20, 50)
+        text_state_pos = (20, 90)
+
+        # Variables para mostrar texto de la mano válida (del lado correcto)
+        texto_angulo = None
+        texto_estado = None
+        color_estado = (255, 255, 255)  # default blanco
+
         if results.multi_hand_landmarks and results.multi_handedness:
             for hand_landmarks, handedness in zip(results.multi_hand_landmarks, results.multi_handedness):
                 label = handedness.classification[0].label
@@ -89,41 +98,49 @@ def pys_video(path: str, lado: str):
                 cv2.circle(frame, punto_virtual, 8, (0, 0, 255), -1) # Rojo - punto virtual
 
                 angle = calculate_angle(punto_virtual, punto_base, punto_punta)
-                cv2.putText(frame, f'Ángulo: {int(angle)}', (punto_base[0], punto_base[1] - 20),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
 
-                # ==========================
-                # CLASIFICACIÓN POR POSICIÓN EN EJE X
-                # ==========================
+                # Clasificación por posición en eje X
                 indice_x = landmarks[TIP_FINGER].x * width
                 base_x = landmarks[BASE_FINGER].x * width
                 dif_x = indice_x - base_x
 
                 if abs(dif_x) < NEUTRAL_X_THRESHOLD:
                     estado = "Neutral"
-                    color = (255, 255, 0)
+                    color = (255, 255, 0)  # Amarillo
                 else:
                     if lado.lower() == "derecha":
                         if dif_x > 0:
                             estado = "Pronacion"
-                            color = (0, 255, 0)
+                            color = (0, 255, 0)  # Verde
                             pronation_angles.append(angle)
                         else:
                             estado = "Supinacion"
-                            color = (0, 0, 255)
+                            color = (0, 0, 255)  # Rojo
                             supination_angles.append(angle)
                     else:  # izquierda
                         if dif_x < 0:
                             estado = "Pronacion"
-                            color = (0, 255, 0)
+                            color = (0, 255, 0)  # Verde
                             pronation_angles.append(angle)
                         else:
                             estado = "Supinacion"
-                            color = (0, 0, 255)
+                            color = (0, 0, 255)  # Rojo
                             supination_angles.append(angle)
 
-                cv2.putText(frame, estado, (punto_base[0], punto_base[1] + 30),
-                            cv2.FONT_HERSHEY_SIMPLEX, 1, color, 3)
+                # Guardar texto para mostrar en la esquina
+                texto_angulo = f'Ángulo: {int(angle)}'
+                texto_estado = estado
+                color_estado = color
+
+                # Solo procesar la primera mano válida del lado correcto
+                break
+
+        # Mostrar texto fijo en la esquina (si se detectó alguna mano del lado correcto)
+        if texto_angulo and texto_estado:
+            cv2.putText(frame, texto_angulo, text_angle_pos,
+                        cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+            cv2.putText(frame, texto_estado, text_state_pos,
+                        cv2.FONT_HERSHEY_SIMPLEX, 1, color_estado, 3)
 
         out.write(frame)
 
