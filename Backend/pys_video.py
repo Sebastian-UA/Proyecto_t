@@ -5,31 +5,43 @@ import uuid
 import os
 
 mp_hands = mp.solutions.hands
-mp_pose = mp.solutions.pose
 mp_drawing = mp.solutions.drawing_utils
 
 OUTPUT_DIR = "videos"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-# Función para calcular el ángulo entre tres puntos
+# ==========================
+# CONFIGURACIÓN
+# ==========================
+BASE_FINGER = mp_hands.HandLandmark.RING_FINGER_TIP
+TIP_FINGER = mp_hands.HandLandmark.INDEX_FINGER_TIP
+NEUTRAL_X_THRESHOLD = 10  # Margen de neutralidad en píxeles
+
+# ==========================
+# CÁLCULO DE ÁNGULO
+# ==========================
 def calculate_angle(a, b, c):
     a = np.array(a)
     b = np.array(b)
     c = np.array(c)
-    rad = np.arctan2(c[1] - b[1], c[0] - b[0]) - np.arctan2(a[1] - b[1], a[0] - b[0])
-    angle = np.abs(rad * 180.0 / np.pi)
-    if angle > 180.0:
-        angle = 360 - angle
-    return angle
+    ba = a - b
+    bc = c - b
+    cosine_angle = np.dot(ba, bc) / (np.linalg.norm(ba) * np.linalg.norm(bc) + 1e-8)
+    angle = np.arccos(np.clip(cosine_angle, -1.0, 1.0))
+    return np.degrees(angle)
 
-# Umbral para clasificar pronación y supinación
-NEUTRAL_ANGLE_THRESHOLD = 15
+# ==========================
+# PUNTO VIRTUAL FIJO VERTICAL
+# ==========================
+def punto_virtual_fijo_arriba(landmarks, width, height, desplazamiento_px=40):
+    base = landmarks[BASE_FINGER]
+    base_xy = np.array([base.x * width, base.y * height])
+    punto_virtual = base_xy + np.array([0, -desplazamiento_px])  # hacia arriba
+    return tuple(punto_virtual.astype(int))
 
-# Inicializar los módulos de MediaPipe
-hands = mp_hands.Hands(min_detection_confidence=0.5, min_tracking_confidence=0.5)
-pose = mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5)
-
-# Función principal
+# ==========================
+# FUNCIÓN PRINCIPAL
+# ==========================
 def pys_video(path: str, lado: str):
     if lado.lower() not in ["izquierda", "derecha"]:
         raise ValueError("El parámetro 'lado' debe ser 'izquierda' o 'derecha'")
@@ -44,81 +56,80 @@ def pys_video(path: str, lado: str):
     pronation_angles = []
     supination_angles = []
 
+    hands = mp_hands.Hands(min_detection_confidence=0.5, min_tracking_confidence=0.5)
+
     while cap.isOpened():
         ret, frame = cap.read()
         if not ret:
             break
 
         image_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        pose_results = pose.process(image_rgb)
-        hand_results = hands.process(image_rgb)
+        results = hands.process(image_rgb)
 
-        if pose_results.pose_landmarks:
-            mp_drawing.draw_landmarks(frame, pose_results.pose_landmarks, mp_pose.POSE_CONNECTIONS)
+        if results.multi_hand_landmarks and results.multi_handedness:
+            for hand_landmarks, handedness in zip(results.multi_hand_landmarks, results.multi_handedness):
+                label = handedness.classification[0].label
+                label = "Right" if label == "Left" else "Left" if label == "Right" else label
 
-        if hand_results.multi_hand_landmarks:
-            for hand_landmarks in hand_results.multi_hand_landmarks:
+                if (lado.lower() == "izquierda" and label != "Left") or (lado.lower() == "derecha" and label != "Right"):
+                    continue
+
                 mp_drawing.draw_landmarks(frame, hand_landmarks, mp_hands.HAND_CONNECTIONS)
                 landmarks = hand_landmarks.landmark
+                height, width, _ = frame.shape
 
-                if len(landmarks) > 4:
-                    wrist = landmarks[mp_hands.HandLandmark.WRIST]
-                    thumb = landmarks[mp_hands.HandLandmark.THUMB_CMC]
-                    index = landmarks[mp_hands.HandLandmark.INDEX_FINGER_MCP]
+                punto_base = (int(landmarks[BASE_FINGER].x * width),
+                              int(landmarks[BASE_FINGER].y * height))
+                punto_punta = (int(landmarks[TIP_FINGER].x * width),
+                               int(landmarks[TIP_FINGER].y * height))
+                punto_virtual = punto_virtual_fijo_arriba(landmarks, width, height)
 
-                    height, width, _ = frame.shape
-                    wrist_x, wrist_y = int(wrist.x * width), int(wrist.y * height)
-                    thumb_x, thumb_y = int(thumb.x * width), int(thumb.y * height)
-                    index_x, index_y = int(index.x * width), int(index.y * height)
+                cv2.circle(frame, punto_base, 8, (255, 0, 0), -1)    # Azul - base
+                cv2.circle(frame, punto_punta, 8, (0, 255, 0), -1)   # Verde - punta
+                cv2.circle(frame, punto_virtual, 8, (0, 0, 255), -1) # Rojo - punto virtual
 
-                    if lado.lower() == "izquierda" and wrist_x < width / 2:
-                        shoulder = pose_results.pose_landmarks.landmark[mp_pose.PoseLandmark.LEFT_SHOULDER]
-                        angle = calculate_angle(
-                            (shoulder.x * width, shoulder.y * height),
-                            (thumb_x, thumb_y),
-                            (index_x, index_y)
-                        )
-                        cv2.putText(frame, f'Left Angle: {int(angle)}', (20, 70),
-                                    cv2.FONT_HERSHEY_PLAIN, 2, (0, 0, 255), 2)
+                angle = calculate_angle(punto_virtual, punto_base, punto_punta)
+                cv2.putText(frame, f'Ángulo: {int(angle)}', (punto_base[0], punto_base[1] - 20),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
 
-                        if angle < (90 - NEUTRAL_ANGLE_THRESHOLD):
+                # ==========================
+                # CLASIFICACIÓN POR POSICIÓN EN EJE X
+                # ==========================
+                indice_x = landmarks[TIP_FINGER].x * width
+                base_x = landmarks[BASE_FINGER].x * width
+                dif_x = indice_x - base_x
+
+                if abs(dif_x) < NEUTRAL_X_THRESHOLD:
+                    estado = "Neutral"
+                    color = (255, 255, 0)
+                else:
+                    if lado.lower() == "derecha":
+                        if dif_x > 0:
+                            estado = "Pronacion"
+                            color = (0, 255, 0)
                             pronation_angles.append(angle)
-                            cv2.putText(frame, 'Pronacion Left', (20, 120),
-                                        cv2.FONT_HERSHEY_PLAIN, 2, (0, 255, 0), 2)
-                        elif angle > (90 + NEUTRAL_ANGLE_THRESHOLD):
-                            supination_angles.append(angle)
-                            cv2.putText(frame, 'Supinacion Left', (20, 120),
-                                        cv2.FONT_HERSHEY_PLAIN, 2, (0, 0, 255), 2)
                         else:
-                            cv2.putText(frame, 'Neutral Left', (20, 120),
-                                        cv2.FONT_HERSHEY_PLAIN, 2, (255, 255, 0), 2)
-
-                    elif lado.lower() == "derecha" and wrist_x >= width / 2:
-                        shoulder = pose_results.pose_landmarks.landmark[mp_pose.PoseLandmark.RIGHT_SHOULDER]
-                        angle = calculate_angle(
-                            (shoulder.x * width, shoulder.y * height),
-                            (thumb_x, thumb_y),
-                            (index_x, index_y)
-                        )
-                        cv2.putText(frame, f'Right Angle: {int(angle)}', (20, 170),
-                                    cv2.FONT_HERSHEY_PLAIN, 2, (0, 0, 255), 2)
-
-                        if angle < (90 - NEUTRAL_ANGLE_THRESHOLD):
+                            estado = "Supinacion"
+                            color = (0, 0, 255)
+                            supination_angles.append(angle)
+                    else:  # izquierda
+                        if dif_x < 0:
+                            estado = "Pronacion"
+                            color = (0, 255, 0)
                             pronation_angles.append(angle)
-                            cv2.putText(frame, 'Pronacion Right', (20, 180),
-                                        cv2.FONT_HERSHEY_PLAIN, 2, (0, 255, 0), 2)
-                        elif angle > (90 + NEUTRAL_ANGLE_THRESHOLD):
-                            supination_angles.append(angle)
-                            cv2.putText(frame, 'Supinacion Right', (20, 180),
-                                        cv2.FONT_HERSHEY_PLAIN, 2, (0, 0, 255), 2)
                         else:
-                            cv2.putText(frame, 'Neutral Right', (20, 180),
-                                        cv2.FONT_HERSHEY_PLAIN, 2, (255, 255, 0), 2)
+                            estado = "Supinacion"
+                            color = (0, 0, 255)
+                            supination_angles.append(angle)
+
+                cv2.putText(frame, estado, (punto_base[0], punto_base[1] + 30),
+                            cv2.FONT_HERSHEY_SIMPLEX, 1, color, 3)
 
         out.write(frame)
 
     cap.release()
     out.release()
+    hands.close()
 
     resultado = {
         "message": "Video procesado y guardado correctamente.",
