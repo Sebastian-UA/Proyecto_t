@@ -9,11 +9,14 @@ import {
   Alert
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useProfessional } from '@/context/profesional';
+import { usePatient } from '@/context/paciente'; // Agregado
 
 const LoginScreen = () => {
   const router = useRouter();
   const { setProfessional } = useProfessional();
+  const { setPatient } = usePatient(); // Agregado
 
   const [correo, setCorreo] = useState('');
   const [contrasena, setContrasena] = useState('');
@@ -39,7 +42,7 @@ const LoginScreen = () => {
     setLoading(true);
 
     try {
-      const response = await fetch('http://172.20.10.2:8000/login', {
+      const response = await fetch('http://192.168.1.14:8000/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ correo, contrasena }),
@@ -49,15 +52,38 @@ const LoginScreen = () => {
 
       const data = await response.json();
 
-      setProfessional({
-        profesionalId: data.id,
-        nombre: data.nombre,
-        correo: data.correo,
-        rut: data.rut,
-        rol: data.rol,
-      });
+      // Limpia ambos contextos del almacenamiento
+      await AsyncStorage.removeItem('profesional');
+      await AsyncStorage.removeItem('paciente');
 
-      router.push('/paciente');
+      if (data.rol === 'profesional') {
+        setProfessional({
+          profesionalId: data.profesionalId,
+          nombre: data.nombre,
+          correo: data.correo,
+          rut: data.rut,
+          rol: data.rol,
+        });
+        console.log("Profesional guardado:", data);
+        router.replace('/paciente'); // o la ruta que uses
+      } else if (data.rol === 'paciente') {
+        setPatient({
+          pacienteId: data.pacienteId,
+          nombre: data.nombre,
+          correo: data.correo,
+          rut: data.rut,
+          edad: data.edad,
+          telefono: data.telefono,
+          contrasena: data.contrasena,
+          rol: data.rol,
+          genero: data.genero,
+          profesionalId: data.profesionalId,
+        });
+        console.log("Paciente guardado:", data);
+        router.replace('/perfilPaciente'); // o la ruta que uses
+      } else {
+        throw new Error('Rol desconocido');
+      }
     } catch (err) {
       setError('Correo o contraseña incorrectos');
       console.error(err);

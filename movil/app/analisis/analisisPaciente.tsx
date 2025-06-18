@@ -1,12 +1,31 @@
 import React from 'react';
-import { useLocalSearchParams } from 'expo-router';
-import { View, Text, ScrollView, StyleSheet, Image } from 'react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { View, Text, ScrollView, StyleSheet, Button, TouchableOpacity } from 'react-native';
+import { Video, ResizeMode } from 'expo-av';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { usePatient } from '@/context/paciente';
+import { useProfessional } from '@/context/profesional';
 
 export default function AnalisisPacientePage() {
+  const router = useRouter();
   const params = useLocalSearchParams();
   const resultado = params.resultado ? JSON.parse(params.resultado as string) : null;
-  // Asegurarse de que movimiento sea string
   const movimiento = Array.isArray(params.movimiento) ? params.movimiento[0] : params.movimiento;
+
+  const { setPatient } = usePatient();
+  const { setProfessional } = useProfessional();
+
+  const cerrarSesion = async () => {
+    try {
+      await AsyncStorage.removeItem('paciente');
+      await AsyncStorage.removeItem('profesional');
+      setPatient(null);
+      setProfessional(null);
+      router.replace('/'); // Redirige al login
+    } catch (error) {
+      console.error('Error al cerrar sesión:', error);
+    }
+  };
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -75,13 +94,37 @@ export default function AnalisisPacientePage() {
           {resultado.output && (
             <View style={{ marginVertical: 10 }}>
               <Text style={styles.subtitulo}>Video procesado:</Text>
-              <Image
-                source={{ uri: `http://172.20.10.2:8000/${resultado.output}` }}
+              <Video
+                source={{ uri: `http://192.168.1.14:8000/${resultado.output}` }}
+                rate={1.0}
+                volume={1.0}
+                isMuted={false}
+                resizeMode={ResizeMode.CONTAIN}
+                shouldPlay
+                useNativeControls
                 style={{ width: '100%', height: 200, marginVertical: 10 }}
-                resizeMode="contain"
               />
             </View>
           )}
+
+          <Button
+            title="Ver Historial de Mediciones"
+            onPress={() => router.push('/analisis/historialMediciones')}
+            color="#007bff"
+          />
+
+          <TouchableOpacity
+            onPress={cerrarSesion}
+            style={{
+              backgroundColor: '#d9534f',
+              padding: 12,
+              borderRadius: 8,
+              alignItems: 'center',
+              marginTop: 20,
+            }}
+          >
+            <Text style={{ color: '#fff', fontWeight: 'bold' }}>Cerrar sesión</Text>
+          </TouchableOpacity>
         </View>
       ) : (
         <Text style={styles.error}>No hay resultados disponibles</Text>
@@ -146,4 +189,4 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 20,
   },
-}); 
+});

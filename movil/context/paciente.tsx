@@ -1,6 +1,7 @@
 // context/PatientContext.tsx
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useProfessional } from './profesional';
 
 // Tipo del paciente
 interface Patient {
@@ -13,13 +14,13 @@ interface Patient {
   contrasena: string;
   rol: string;
   genero: string;
-  id_profesional?: number | null;
+  profesionalId?: number | null;
 }
 
 // Tipo del contexto
 interface PatientContextType {
   patient: Patient | null;
-  setPatient: (patient: Patient) => void;
+  setPatient: (patient: Patient | null) => void;
   registrarPaciente: (pacienteData: any) => Promise<void>;
 }
 
@@ -29,24 +30,34 @@ const PatientContext = createContext<PatientContextType | undefined>(undefined);
 // Provider
 export const PatientProvider = ({ children }: { children: ReactNode }) => {
   const [patient, setPatientState] = useState<Patient | null>(null);
+  const { professional } = useProfessional();
 
-  const setPatient = async (patient: Patient) => {
+  const setPatient = async (patient: Patient | null) => {
     setPatientState(patient);
     try {
-      await AsyncStorage.setItem('paciente', JSON.stringify(patient));
+      if (patient) {
+        await AsyncStorage.setItem('paciente', JSON.stringify(patient));
+      } else {
+        await AsyncStorage.removeItem('paciente'); // Limpia al cerrar sesión
+      }
     } catch (error) {
-      console.error('Error al guardar paciente en AsyncStorage:', error);
+      console.error('Error al guardar/eliminar paciente en AsyncStorage:', error);
     }
   };
 
   const registrarPaciente = async (pacienteData: any) => {
     try {
-      const response = await fetch('http:/172.20.10.2:8000/paciente_con_usuario/', {
+      const pacienteConProfesional = {
+        ...pacienteData,
+        profesionalId: professional?.profesionalId ?? 1,
+      };
+
+      const response = await fetch('http://192.168.1.14:8000/paciente_con_usuario/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(pacienteData),
+        body: JSON.stringify(pacienteConProfesional),
       });
 
       if (!response.ok) {

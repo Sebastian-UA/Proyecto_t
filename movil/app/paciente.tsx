@@ -68,6 +68,12 @@ const PacientesScreen = () => {
     setPatient(paciente);
     router.push('/movimientos/SelecExt');
   };
+useEffect(() => {
+  if (!professional) {
+    Alert.alert('Acceso denegado', 'Debes iniciar sesión como profesional');
+    router.replace('/login');
+  }
+}, []);
 
   return (
     <View style={styles.container}>

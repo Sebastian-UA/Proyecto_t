@@ -1,6 +1,6 @@
 import Constants from 'expo-constants';
 
-const API_URL = 'http://172.20.10.2:8000';
+const API_URL = 'http://192.168.1.14:8000';
 
 interface ProfesionalData {
   nombre: string;
@@ -13,8 +13,7 @@ interface ProfesionalData {
 
 export const createProfesionalConUsuario = async (data: ProfesionalData) => {
   try {
-    const response = await fetch(`${API_URL}/profesional_con_usuario/`, {
-      method: 'POST',
+    const response = await fetch(`${API_URL}/profesional_con_usuario/`, { 
       headers: {
         'Content-Type': 'application/json',
       },

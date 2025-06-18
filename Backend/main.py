@@ -40,7 +40,7 @@ app.mount("/videos", StaticFiles(directory=os.path.join(os.getcwd(), "videos")),
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000",
-                    "http://172.20.10.2"],  # Permitir solicitudes desde el frontend
+                    "http://192.168.1.14"],  # Permitir solicitudes desde el frontend
     allow_credentials=True,
     allow_methods=["*"],  # Permitir todos los métodos (GET, POST, etc.)
     allow_headers=["*"],  # Permitir todos los encabezados
@@ -128,7 +128,7 @@ async def analizar_video(
         except subprocess.CalledProcessError:
             raise HTTPException(status_code=400, detail="Error al convertir el video procesado.")
     else:
-        os.remove(mp4_path,lado=lado)
+        os.remove(mp4_path) 
         raise HTTPException(status_code=400, detail="Movimiento no reconocido")
 
     #os.remove(mp4_path)

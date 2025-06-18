@@ -1,24 +1,20 @@
 import { useState, useEffect } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
-import { View, Text, Button, ActivityIndicator, Image, Alert, ScrollView } from 'react-native';
+import { View, Text, Button, ActivityIndicator, Alert, ScrollView } from 'react-native';
+import { Video, ResizeMode } from 'expo-av';
 import { usePatient } from '../../context/paciente';
 import { useProfessional } from '../../context/profesional';
 import { getMovimientoById } from '../../services/movimiento';
 import { createSesionWithMedicion } from '../../services/sesion';
 import styles from '../../estilos/styles';
 
-// Función para solicitar permisos
 const requestPermissions = async () => {
   const cameraPermission = await ImagePicker.requestCameraPermissionsAsync();
   const mediaLibraryPermission = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
   if (cameraPermission.status !== 'granted' || mediaLibraryPermission.status !== 'granted') {
-    Alert.alert(
-      'Permisos necesarios',
-      'Se requieren permisos de cámara y galería para usar esta función.',
-      [{ text: 'OK' }]
-    );
+    Alert.alert('Permisos necesarios', 'Se requieren permisos de cámara y galería para usar esta función.');
     return false;
   }
   return true;
@@ -27,11 +23,9 @@ const requestPermissions = async () => {
 export default function MedicionPage() {
   const { movimiento } = useLocalSearchParams() as { movimiento: string };
   const [videoUri, setVideoUri] = useState<string | null>(null);
-  const [resultado, setResultado] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [movimientoData, setMovimientoData] = useState<any>(null);
   const [lado, setLado] = useState<'derecha' | 'izquierda'>('derecha');
-
   const { patient } = usePatient();
   const { professional } = useProfessional();
   const router = useRouter();
@@ -41,65 +35,72 @@ export default function MedicionPage() {
   }, []);
 
   const seleccionarVideo = async () => {
-    try {
-      const hasPermission = await requestPermissions();
-      if (!hasPermission) return;
+    const hasPermission = await requestPermissions();
+    if (!hasPermission) return;
 
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Videos,
-        allowsEditing: true,
-        quality: 0.7,
-        videoMaxDuration: 30,
-        videoExportPreset: ImagePicker.VideoExportPreset.LowQuality,
-        videoQuality: ImagePicker.UIImagePickerControllerQualityType.Medium,
-      });
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Videos,
+      allowsEditing: true,
+      quality: 0.7,
+      videoMaxDuration: 30,
+    });
 
-      if (!result.canceled && result.assets.length > 0) {
-        setVideoUri(result.assets[0].uri);
-      }
-    } catch (error) {
-      console.error('Error al seleccionar video:', error);
-      Alert.alert('Error', 'No se pudo seleccionar el video');
+    if (!result.canceled && result.assets.length > 0) {
+      const uri = result.assets[0].uri;
+      setTimeout(() => {
+        setVideoUri(uri);
+      }, 300);
     }
   };
 
   const grabarVideo = async () => {
-    try {
-      const hasPermission = await requestPermissions();
-      if (!hasPermission) return;
+    const hasPermission = await requestPermissions();
+    if (!hasPermission) return;
 
-      const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Videos,
-        allowsEditing: true,
-        quality: 0.7,
-        videoMaxDuration: 30,
-        videoExportPreset: ImagePicker.VideoExportPreset.LowQuality,
-        videoQuality: ImagePicker.UIImagePickerControllerQualityType.Medium,
-      });
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Videos,
+      allowsEditing: true,
+      quality: 0.7,
+      videoMaxDuration: 30,
+    });
 
-      if (!result.canceled && result.assets.length > 0) {
-        setVideoUri(result.assets[0].uri);
-      }
-    } catch (error) {
-      console.error('Error al grabar video:', error);
-      Alert.alert('Error', 'No se pudo grabar el video');
+    if (!result.canceled && result.assets.length > 0) {
+      const uri = result.assets[0].uri;
+      setTimeout(() => {
+        setVideoUri(uri);
+      }, 300);
     }
   };
 
+  const normalizarNombreMovimiento = (nombre: string): string => {
+    const nombreLower = nombre.toLowerCase();
+    if (nombreLower.includes('abducción')) return 'Abducción';
+    if (nombreLower.includes('flexión')) return 'Flexión';
+    if (nombreLower.includes('pronación') || nombreLower.includes('supinación')) return 'Pronación y Supinación';
+    return nombre;
+  };
+
   const guardarSesion = async (resultado: any) => {
-    if (!resultado) {
-      return Alert.alert('Faltan datos para guardar la sesión');
-    }
+    if (!resultado) return Alert.alert('Faltan datos para guardar la sesión');
 
     try {
       const now = new Date();
       let sesiones = [];
 
-      if (movimientoData.nombre.toLowerCase() === "pronación y supinación") {
+      const pacienteId = patient?.pacienteId || professional?.pacienteSeleccionado?.pacienteId;
+      const profesionalId = professional?.profesionalId || patient?.profesionalId;
+
+      if (!pacienteId || !profesionalId) {
+        throw new Error('Falta información de paciente o profesional');
+      }
+
+      const nombreNormalizado = normalizarNombreMovimiento(movimientoData?.nombre || '');
+
+      if (nombreNormalizado === "Pronación y Supinación") {
         sesiones = [
           {
-            PacienteId: patient?.pacienteId || professional?.pacienteSeleccionado?.pacienteId,
-            ProfesionalId: professional?.profesionalId || patient?.id_profesional,
+            PacienteId: pacienteId,
+            ProfesionalId: profesionalId,
             fecha: now.toISOString().split('T')[0],
             hora: now.toTimeString().split(' ')[0],
             notas: '',
@@ -110,8 +111,8 @@ export default function MedicionPage() {
             lado: `${lado} - pronación`,
           },
           {
-            PacienteId: patient?.pacienteId || professional?.pacienteSeleccionado?.pacienteId,
-            ProfesionalId: professional?.profesionalId || patient?.id_profesional,
+            PacienteId: pacienteId,
+            ProfesionalId: profesionalId,
             fecha: now.toISOString().split('T')[0],
             hora: now.toTimeString().split(' ')[0],
             notas: '',
@@ -124,8 +125,8 @@ export default function MedicionPage() {
         ];
       } else {
         sesiones = [{
-          PacienteId: patient?.pacienteId || professional?.pacienteSeleccionado?.pacienteId,
-          ProfesionalId: professional?.profesionalId || patient?.id_profesional,
+          PacienteId: pacienteId,
+          ProfesionalId: profesionalId,
           fecha: now.toISOString().split('T')[0],
           hora: now.toTimeString().split(' ')[0],
           notas: '',
@@ -138,7 +139,6 @@ export default function MedicionPage() {
       }
 
       for (const sesion of sesiones) {
-        if (!sesion.PacienteId) throw new Error('No se pudo determinar el ID del paciente');
         await createSesionWithMedicion(sesion);
       }
 
@@ -156,7 +156,6 @@ export default function MedicionPage() {
     try {
       setLoading(true);
       const formData = new FormData();
-
       const extension = videoUri.split('.').pop()?.toLowerCase() || 'mp4';
       const mimeType = `video/${extension}`;
 
@@ -166,10 +165,10 @@ export default function MedicionPage() {
         type: mimeType,
       } as any);
 
-      formData.append('movimiento', movimientoData.nombre);
+      formData.append('movimiento', normalizarNombreMovimiento(movimientoData.nombre));
       formData.append('lado', lado);
 
-      const res = await fetch('http:// 172.20.10.2:8000/analizar_video/', {
+      const res = await fetch('http://192.168.1.14:8000/analizar_video/', {
         method: 'POST',
         body: formData,
         headers: {
@@ -183,10 +182,9 @@ export default function MedicionPage() {
       }
 
       const data = await res.json();
-
       if (!data.output) throw new Error('Respuesta incompleta del servidor');
 
-      await guardarSesion(data); // ✅ GUARDAR SESIÓN ANTES DE REDIRIGIR
+      await guardarSesion(data);
 
       router.push({
         pathname: '/analisis/analisisPaciente',
@@ -220,10 +218,7 @@ export default function MedicionPage() {
   }, [movimiento]);
 
   return (
-    <ScrollView
-      style={{ flex: 1, backgroundColor: '#B3F0FF' }}
-      contentContainerStyle={styles.container}
-    >
+    <ScrollView style={{ flex: 1, backgroundColor: '#B3F0FF' }} contentContainerStyle={styles.container}>
       <Text style={styles.titulo}>Medición: {movimientoData?.nombre || '...'}</Text>
 
       <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginVertical: 10 }}>
@@ -234,7 +229,15 @@ export default function MedicionPage() {
       {videoUri && (
         <View style={{ marginVertical: 10, padding: 10, backgroundColor: '#f5f5f5', borderRadius: 10 }}>
           <Text style={styles.subtitulo}>Video seleccionado:</Text>
-          <Text style={{ fontSize: 12, color: '#666', marginTop: 5 }}>{videoUri}</Text>
+          <Video
+            key={videoUri}
+            source={{ uri: videoUri }}
+            style={{ width: '100%', height: 200, marginVertical: 10 }}
+            useNativeControls
+            resizeMode={ResizeMode.CONTAIN}
+            shouldPlay={false}
+          />
+          <Button title="Repetir video" onPress={() => setVideoUri(null)} color="#FF5252" />
         </View>
       )}
 

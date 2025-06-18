@@ -86,7 +86,7 @@ const PerfilPacienteScreen = () => {
 
     setLoading(true);
     try {
-      const response = await fetch(`http://172.20.10.2:8000/pacientes/${patient.pacienteId}`, {
+      const response = await fetch(`http://192.168.1.14:8000/pacientes/${patient.pacienteId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

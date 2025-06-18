@@ -62,7 +62,7 @@ export default function SeleccionMovimientos() {
           >
             {mov.imagen_path && (
               <Image
-                source={{ uri: `http://172.20.10.2:8000${mov.imagen_path}` }}
+                source={{ uri: `http://192.168.1.14:8000${mov.imagen_path}` }}
                 style={styles.imagen}
               />
             )}

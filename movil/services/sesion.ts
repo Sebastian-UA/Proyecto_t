@@ -1,8 +1,8 @@
-const API_URL = 'http:// 172.20.10.2:8000'; // O la URL que uses en el móvil
+const API_URL = 'http://192.168.1.14:8000';
 
 export const createSesionWithMedicion = async (data: any) => {
   try {
-    const response = await fetch(`${API_URL}/sesion_con_medicion`, {
+    const response = await fetch(`${API_URL}/sesiones_con_medicion/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

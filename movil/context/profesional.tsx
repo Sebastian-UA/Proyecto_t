@@ -41,19 +41,28 @@ export const ProfessionalProvider = ({ children }: { children: ReactNode }) => {
   const [professional, setProfessionalState] = useState<Profesional | null>(null);
 
   const setProfessional = async (professional: Profesional | null) => {
-    setProfessionalState(professional);
-    try {
-      if (professional) {
-        await AsyncStorage.setItem('profesional', JSON.stringify(professional));
-        console.log('✅ Profesional guardado:', professional);
-      } else {
-        await AsyncStorage.removeItem('profesional');
-        console.log('✅ Profesional eliminado');
+  const profesionalConId = professional
+    ? {
+        ...professional,
+        profesionalId: (professional as any).profesionalId ?? (professional as any).id,
       }
-    } catch (error) {
-      console.error('❌ Error al guardar/eliminar profesional:', error);
+    : null;
+
+  setProfessionalState(profesionalConId);
+
+  try {
+    if (profesionalConId) {
+      await AsyncStorage.setItem('profesional', JSON.stringify(profesionalConId));
+      console.log('✅ Profesional guardado:', profesionalConId);
+    } else {
+      await AsyncStorage.removeItem('profesional');
+      console.log('✅ Profesional eliminado');
     }
-  };
+  } catch (error) {
+    console.error('❌ Error al guardar/eliminar profesional:', error);
+  }
+};
+
 
   // Función para actualizar el paciente seleccionado
   const setPacienteSeleccionado = async (paciente: Profesional['pacienteSeleccionado']) => {
