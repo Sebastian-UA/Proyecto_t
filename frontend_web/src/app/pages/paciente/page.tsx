@@ -221,27 +221,6 @@ export default function PacientePage() {
   };
 
 
-
-
-  const handleContinuarClick = () => {
-    if (selectedIndex !== null && pacientes[selectedIndex]) {
-      const pacienteSeleccionado = pacientes[selectedIndex];
-      setPatient(pacienteSeleccionado);  // Almacenar el paciente en el contexto global
-      console.log("Paciente ID:", pacienteSeleccionado.pacienteId);
-
-      if (professional) {  // Verifica si professional está disponible
-        console.log("Profesional ID:", professional.id);  // Debería mostrar el ID correctamente
-        router.push(`/pages/articulacion/${pacienteSeleccionado.pacienteId}`);  // Navegar solo si professional existe
-      } else {
-        console.error("El contexto del profesional no está disponible. No se puede continuar.");
-        // Mostrar un mensaje de error o manejar el flujo de manera diferente
-      }
-    } else {
-      console.log("Por favor, selecciona un paciente");
-    }
-  };
-
-
   return (
     <div className="p-8">
       <h1 className="text-3xl font-bold mb-6">Paciente</h1>
@@ -263,7 +242,7 @@ export default function PacientePage() {
               <th className="px-6 py-3 border-b">Edad</th>
               <th className="px-6 py-3 border-b">Teléfono</th>
               <th className="px-6 py-3 border-b">Género</th>
-
+              <th className="px-6 py-3 border-b">Editar</th>
             </tr>
           </thead>
           <tbody>
@@ -311,12 +290,7 @@ export default function PacientePage() {
         >
           Registrar
         </button>
-        <button
-          className="px-6 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-md"
-          onClick={handleContinuarClick}
-        >
-          Continuar
-        </button>
+        
       </div>
 
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>

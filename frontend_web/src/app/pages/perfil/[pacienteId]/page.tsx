@@ -8,7 +8,6 @@ import { getPacientesInfo, updatePacienteConUsuario } from "@/app/services/pacie
 import { getMedicionesCompletasPorPaciente } from "@/app/services/sesion.api";
 import type { ScriptableContext } from "chart.js";
 import { useAuth } from "@/app/context/entro";
-
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -75,12 +74,15 @@ export default function PerfilPaciente() {
   const [confirmarPassword, setConfirmarPassword] = useState("");
   const [errorPassword, setErrorPassword] = useState("");
 
+  const [paginaActual, setPaginaActual] = useState(1);
+  const filasPorPagina = 6;
+
+
   // Opciones para lado cuando NO es pron/sup
   const opcionesLadoSimple = [
     { value: "derecha", label: "Derecha" },
     { value: "izquierda", label: "Izquierda" },
   ];
-
 
   // Opciones para lado cuando SÍ es pron/sup
   const opcionesLadoPronSup = [
@@ -90,13 +92,9 @@ export default function PerfilPaciente() {
     { value: "izquierda - supinación", label: "Izquierda - Supinación" },
   ];
 
-
   const [movimientoSeleccionado, setMovimientoSeleccionado] = useState<string>("");
   const esPronacionSupinacion = movimientoSeleccionado === "Pronación y Supinación";
-
   const opcionesLadoActual = esPronacionSupinacion ? opcionesLadoPronSup : opcionesLadoSimple;
-
-
   const [ladoSeleccionado, setLadoSeleccionado] = useState<string>(opcionesLadoActual[0].value);
   const movimientosUnicos = Array.from(
     new Map(
@@ -112,8 +110,6 @@ export default function PerfilPaciente() {
     ).values()
   );
 
-
-
   useEffect(() => {
     const opcionesLadoActual = movimientoSeleccionado === "Pronación y Supinación" ? opcionesLadoPronSup : opcionesLadoSimple;
     setLadoSeleccionado(opcionesLadoActual[0].value);
@@ -124,6 +120,11 @@ export default function PerfilPaciente() {
       setMovimientoSeleccionado(movimientosUnicos[0].value);
     }
   }, [movimientosUnicos, movimientoSeleccionado]);
+
+  useEffect(() => {
+    setPaginaActual(1);
+  }, [movimientoSeleccionado, ladoSeleccionado]);
+
 
   useEffect(() => {
     const fetchData = async () => {
@@ -160,11 +161,10 @@ export default function PerfilPaciente() {
     }
   }, [pacienteId]);
 
-
-
   if (!paciente) return <div className="p-4">Cargando perfil...</div>;
 
   const medicionesFiltradas = medicionesCompletas.filter((med) => {
+
     const movimientoNombre = med.movimiento?.nombre?.toLowerCase().trim();
     const coincideMovimiento =
       movimientoNombre === movimientoSeleccionado.toLowerCase().trim();
@@ -186,34 +186,32 @@ export default function PerfilPaciente() {
 
     return coincideMovimiento && coincideLado;
   });
-
+  const indexInicio = (paginaActual - 1) * filasPorPagina;
+  const indexFinal = indexInicio + filasPorPagina;
+  const medicionesPaginadas = medicionesFiltradas.slice(indexInicio, indexFinal);
+  const totalPaginas = Math.ceil(medicionesFiltradas.length / filasPorPagina);
+  
   // Ordenar mediciones por fecha ascendente para mostrar en el gráfico
   const medicionesOrdenadas = [...medicionesFiltradas].sort((a, b) => {
     const fechaA = a.sesion?.fecha ? new Date(a.sesion.fecha).getTime() : 0;
     const fechaB = b.sesion?.fecha ? new Date(b.sesion.fecha).getTime() : 0;
     return fechaA - fechaB;
   });
-
-
   // Preparar datos para el gráfico
   const labels = medicionesOrdenadas.map((_, index) => `Análisis ${index + 1}`);
   // Todos los valores del ángulo mínimo en un solo array
   const anguloMinData = medicionesOrdenadas.map(med =>
     med.anguloMin ?? null
   );
-
   // Colores de cada punto (para los círculos)
   const coloresPuntos = medicionesOrdenadas.map(med =>
     med.profesional?.profesionalId
       ? "rgba(75,192,192,1)"        // azul cuando hay profesional
       : "rgba(255,165,0,1)"         // naranja cuando no hay profesional
   );
-
   const anguloMaxData = medicionesOrdenadas.map((med) =>
     med.anguloMax !== null && med.anguloMax !== undefined ? med.anguloMax : 0
   );
-
-
   // PARA EL GRAFICO
   const data = {
     labels,
@@ -264,7 +262,6 @@ export default function PerfilPaciente() {
       }
     ],
   };
-
   // TITULO GRAFICO
   const options = {
     responsive: true,
@@ -319,9 +316,7 @@ export default function PerfilPaciente() {
       },
     },
   };
-
   return (
-    
     <div className="p-6 space-y-8">
       {/* Info del Paciente */}
       <div className="bg-white shadow-md rounded-2xl p-6">
@@ -472,7 +467,7 @@ export default function PerfilPaciente() {
                   </tr>
                 </thead>
                 <tbody>
-                  {medicionesFiltradas.map((med) => (
+                  {medicionesPaginadas.map((med) => (
                     <tr key={med.medicionId}>
                       <td className="p-2 border">{med.movimiento?.nombre}</td>
                       <td className="p-2 border">{med.anguloMax ?? "N/A"}</td>
@@ -489,6 +484,31 @@ export default function PerfilPaciente() {
                   ))}
                 </tbody>
               </table>
+              <div className="flex justify-center mt-4 space-x-2">
+                <button
+                  onClick={() => setPaginaActual((prev) => Math.max(prev - 1, 1))}
+                  disabled={paginaActual === 1}
+                  className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50"
+                >
+                  Anterior
+                </button>
+                {[...Array(totalPaginas)].map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setPaginaActual(i + 1)}
+                    className={`px-3 py-1 rounded ${paginaActual === i + 1 ? "bg-blue-500 text-white" : "bg-gray-200"}`}
+                  >
+                    {i + 1}
+                  </button>
+                ))}
+                <button
+                  onClick={() => setPaginaActual((prev) => Math.min(prev + 1, totalPaginas))}
+                  disabled={paginaActual === totalPaginas}
+                  className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50"
+                >
+                  Siguiente
+                </button>
+              </div>
 
               {/* Gráfico línea con evolución de ángulo mínimo */}
               <div className="mt-6">
