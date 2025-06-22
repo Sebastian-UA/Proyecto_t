@@ -73,6 +73,17 @@ export default function PacientePage() {
     if (!paciente.nombre) return false;
     return paciente.nombre.toLowerCase().includes(safeSearchTerm);
   });
+  const [paginaActual, setPaginaActual] = useState(1);
+  const filasPorPagina = 6;
+
+  const totalPaginas = Math.ceil(pacientesFiltrados.length / filasPorPagina);
+  const indexInicio = (paginaActual - 1) * filasPorPagina;
+  const indexFinal = indexInicio + filasPorPagina;
+  const pacientesPaginados = pacientesFiltrados.slice(indexInicio, indexFinal);
+  useEffect(() => {
+    setPaginaActual(1);
+  }, [searchTerm]);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
@@ -204,7 +215,8 @@ export default function PacientePage() {
 
   const handleRowClick = (index: number) => {
     if (index !== null && pacientes[index]) {
-      const pacienteSeleccionado = pacientes[index];
+      const realIndex = (paginaActual - 1) * filasPorPagina + index;
+      const pacienteSeleccionado = pacientesFiltrados[realIndex];
       const pacienteFormateado = {
         id: pacienteSeleccionado.pacienteId,
         nombre: pacienteSeleccionado.nombre,
@@ -246,7 +258,7 @@ export default function PacientePage() {
             </tr>
           </thead>
           <tbody>
-            {pacientesFiltrados.map((paciente, index) => (
+            {pacientesPaginados.map((paciente, index) => (
               <tr
                 key={index}
                 className={`hover:bg-gray-50 ${selectedIndex === index ? "bg-blue-100" : ""}`}
@@ -282,6 +294,34 @@ export default function PacientePage() {
           </tbody>
         </table>
       </div>
+      {totalPaginas > 1 && (
+        <div className="flex justify-center mt-4 space-x-2">
+          <button
+            onClick={() => setPaginaActual((prev) => Math.max(prev - 1, 1))}
+            disabled={paginaActual === 1}
+            className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50"
+          >
+            Anterior
+          </button>
+          {[...Array(totalPaginas)].map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setPaginaActual(i + 1)}
+              className={`px-3 py-1 rounded ${paginaActual === i + 1 ? "bg-blue-500 text-white" : "bg-gray-200"
+                }`}
+            >
+              {i + 1}
+            </button>
+          ))}
+          <button
+            onClick={() => setPaginaActual((prev) => Math.min(prev + 1, totalPaginas))}
+            disabled={paginaActual === totalPaginas}
+            className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50"
+          >
+            Siguiente
+          </button>
+        </div>
+      )}
 
       <div className="mt-6 flex justify-between">
         <button
@@ -290,7 +330,7 @@ export default function PacientePage() {
         >
           Registrar
         </button>
-        
+
       </div>
 
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
