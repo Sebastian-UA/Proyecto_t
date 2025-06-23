@@ -56,7 +56,9 @@ async def analizar_video(
     print(f"Movimiento: {movimiento}")
     
     # Guardar el video temporal
-    original_path = f"videos/{file.filename}"
+    nombre_unico = f"{uuid.uuid4()}_{file.filename}"
+    original_path = os.path.join("videos", nombre_unico)
+
     with open(original_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
 
@@ -72,7 +74,6 @@ async def analizar_video(
                 shell=True,
                 check=True,
             )
-
             os.remove(original_path)  # Eliminar el archivo original después de la conversión
         except subprocess.CalledProcessError:
             raise HTTPException(status_code=400, detail="Error al convertir el video.")
@@ -132,6 +133,11 @@ async def analizar_video(
         raise HTTPException(status_code=400, detail="Movimiento no reconocido")
 
     #os.remove(mp4_path)
+    # Eliminar archivos temporales
+    if os.path.exists(mp4_path) and mp4_path != final_output:
+        os.remove(mp4_path)
+    if os.path.exists(original_output) and original_output != final_output:
+        os.remove(original_output)
     return resultado
 
 # Función para obtener una sesión de base de datos
