@@ -49,7 +49,7 @@ export default function CameraRecorder() {
     }
   }, [movimientoId]);
 
-  
+
 
   const handleStartCamera = async () => {
     try {
@@ -153,7 +153,7 @@ export default function CameraRecorder() {
       pacienteId: patient?.id,
       profesionalId: professional?.id ?? null,
       fecha: now.toISOString().slice(0, 10),
-      hora: now.toISOString().slice(11, 19),
+      hora: now.toLocaleTimeString('es-CL', { hour12: false }),
       notas: "",
     };
 
