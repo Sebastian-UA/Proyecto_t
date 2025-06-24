@@ -107,58 +107,52 @@ export default function MedicionPage() {
     if (!resultado) return Alert.alert('Faltan datos para guardar la sesión');
 
     try {
-      const now = new Date();
       let sesiones = [];
 
       const pacienteId = patient?.pacienteId || professional?.pacienteSeleccionado?.pacienteId;
       const profesionalId = professional?.profesionalId || patient?.profesionalId;
 
-      if (!pacienteId || !profesionalId) {
-        throw new Error('Falta información de paciente o profesional');
+      if (!pacienteId) {
+        throw new Error('Falta información del paciente');
       }
 
+      const now = new Date();
       const nombreNormalizado = normalizarNombreMovimiento(movimientoData?.nombre || '');
+
+      const sesionBase = {
+        pacienteId: pacienteId,
+        profesionalId: profesionalId ?? null, // Esto lo hace opcional
+        fecha: now.toISOString().split('T')[0],
+        hora: now.toTimeString().split(' ')[0],
+        notas: '',
+        ejercicioId: null,
+        movimientoId: Number(movimiento),
+      };
 
       if (nombreNormalizado === "Pronación y Supinación") {
         sesiones = [
           {
-            pacienteId: pacienteId,
-            profesionalId: profesionalId,
-            fecha: now.toISOString().split('T')[0],
-            hora: now.toTimeString().split(' ')[0],
-            notas: '',
-            ejercicioId: null,
-            movimientoId: Number(movimiento),
+            ...sesionBase,
             anguloMin: resultado.pronacion?.min_angle || 0,
             anguloMax: resultado.pronacion?.max_angle || 0,
             lado: `${lado} - pronación`,
           },
           {
-            pacienteId: pacienteId,
-            profesionalId: profesionalId,
-            fecha: now.toISOString().split('T')[0],
-            hora: now.toTimeString().split(' ')[0],
-            notas: '',
-            ejercicioId: null,
-            movimientoId: Number(movimiento),
+            ...sesionBase,
             anguloMin: resultado.supinacion?.min_angle || 0,
             anguloMax: resultado.supinacion?.max_angle || 0,
             lado: `${lado} - supinación`,
-          }
+          },
         ];
       } else {
-        sesiones = [{
-          pacienteId: pacienteId,
-          profesionalId: profesionalId,
-          fecha: now.toISOString().split('T')[0],
-          hora: now.toTimeString().split(' ')[0],
-          notas: '',
-          ejercicioId: null,
-          movimientoId: Number(movimiento),
-          anguloMin: resultado.min_angle || 0,
-          anguloMax: resultado.max_angle || 0,
-          lado: lado,
-        }];
+        sesiones = [
+          {
+            ...sesionBase,
+            anguloMin: resultado.min_angle || 0,
+            anguloMax: resultado.max_angle || 0,
+            lado: lado,
+          },
+        ];
       }
 
       console.log('✅ Datos que se van a guardar:', sesiones);

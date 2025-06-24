@@ -7,6 +7,7 @@ import { usePatient } from '@/context/paciente';
 import { useProfessional } from '@/context/profesional';
 import styles from '@/estilos/styles';
 import { API_CONFIG } from '@/config/api';
+import { cerrarSesion } from '@/services/sesion'; // ← ya debe estar importado
 
 export default function AnalisisPacientePage() {
   const router = useRouter();
@@ -18,10 +19,20 @@ export default function AnalisisPacientePage() {
   const { setProfessional, professional } = useProfessional();
 
   useEffect(() => {
-    if (!patient || !professional) {
-      router.replace('/');
-    }
-  }, [patient, professional]);
+    console.log('📦 Params recibidos en /analisisPaciente:', params);
+  }, []);
+
+
+  if (!patient) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <Text style={{ color: 'red', fontSize: 16, textAlign: 'center' }}>
+          No hay paciente en contexto. Por favor, vuelve a seleccionar uno.
+        </Text>
+      </View>
+    );
+  }
+
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -105,23 +116,19 @@ export default function AnalisisPacientePage() {
 
           <Button
             title="Ver Historial de Mediciones"
-            onPress={() => router.push('/analisis/historialMediciones')}
+            onPress={() =>
+              router.push({
+                pathname: '/analisis/historialMediciones',
+                params: { movimientoId: params.movimientoId },
+              })
+            }
             color="#007bff"
           />
 
+
           <TouchableOpacity
-            onPress={() => {
-              setTimeout(async () => {
-                try {
-                  await AsyncStorage.removeItem('paciente');
-                  await AsyncStorage.removeItem('profesional');
-                  setPatient(null);
-                  setProfessional(null);
-                  router.replace('/'); // ← vuelve a la pantalla de inicio
-                } catch (error) {
-                  console.error('Error al cerrar sesión:', error);
-                }
-              }, 100);
+            onPress={async () => {
+              await cerrarSesion(setPatient, setProfessional, () => router.replace('/'));
             }}
             style={{
               backgroundColor: '#dc3545',
@@ -133,6 +140,7 @@ export default function AnalisisPacientePage() {
           >
             <Text style={{ color: '#fff', fontWeight: 'bold' }}>Cerrar sesión</Text>
           </TouchableOpacity>
+
         </View>
       ) : (
         <Text style={styles.error}>No hay resultados disponibles</Text>

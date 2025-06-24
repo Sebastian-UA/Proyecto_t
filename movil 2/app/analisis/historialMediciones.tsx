@@ -2,294 +2,292 @@ import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
-  TouchableOpacity,
   StyleSheet,
-  Alert,
-  ActivityIndicator,
-  Platform,
   ScrollView,
+  Dimensions,
+  ActivityIndicator,
   Button,
 } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Camera, CameraType } from 'expo-camera';
-import { Video, ResizeMode } from 'expo-av';
-import * as ImagePicker from 'expo-image-picker';
+import { Picker } from '@react-native-picker/picker';
 import { usePatient } from '@/context/paciente';
 import { useProfessional } from '@/context/profesional';
-import { getMovimientoById } from '@/services/movimiento';
-import { createSesionWithMedicion } from '@/services/sesion';
-import styles from '@/estilos/styles';
+import { LineChart } from 'react-native-chart-kit';
+import { useRouter } from 'expo-router';
+import { cerrarSesion } from '@/services/sesion';
+import { useNavigation } from '@/hooks/useNavigation';
 import { API_CONFIG } from '@/config/api';
+import styles from '@/estilos/styles';
 
-const requestPermissions = async () => {
-  const cameraPermission = await ImagePicker.requestCameraPermissionsAsync();
-  const mediaLibraryPermission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+interface Medicion {
+  medicionId: number;
+  sesion: {
+    fecha: string;
+  };
+  movimiento: {
+    nombre: string;
+    anguloMaxReal: number;
+    anguloMinReal: number;
+  };
+  lado: string;
+  anguloMax: number;
+  anguloMin: number;
+}
 
-  if (cameraPermission.status !== 'granted' || mediaLibraryPermission.status !== 'granted') {
-    Alert.alert('Permisos necesarios', 'Se requieren permisos de cámara y galería para usar esta función.');
-    return false;
-  }
-  return true;
-};
-
-export default function MedicionPage() {
-  const { movimiento } = useLocalSearchParams() as { movimiento: string };
-  const [videoUri, setVideoUri] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [movimientoData, setMovimientoData] = useState<any>(null);
-  const [lado, setLado] = useState<'derecha' | 'izquierda'>('derecha');
-  const { patient } = usePatient();
-  const { professional } = useProfessional();
+const HistorialMedicionesScreen = () => {
   const router = useRouter();
-  const [enviando, setEnviando] = useState(false);
+  const { navigateToLogin } = useNavigation();
+  const { patient, setPatient } = usePatient();
+  const { professional, setProfessional } = useProfessional();
+  const [loading, setLoading] = useState(true);
+  const [mediciones, setMediciones] = useState<Medicion[]>([]);
+  const [cerrandoSesion, setCerrandoSesion] = useState(false);
 
-  if (!patient) {
+  // Inicializamos vacíos, luego en useEffect los seteamos al primer valor disponible
+  const [movimientoSeleccionado, setMovimientoSeleccionado] = useState<string>('');
+  const [ladoSeleccionado, setLadoSeleccionado] = useState<string>('');
+  const [movimientosUnicos, setMovimientosUnicos] = useState<string[]>([]);
+  const [ladosUnicos, setLadosUnicos] = useState<string[]>([]);
+
+  useEffect(() => {
+    cargarMediciones();
+  }, []);
+
+  useEffect(() => {
+    if (movimientosUnicos.length > 0) {
+      setMovimientoSeleccionado(movimientosUnicos[0]);
+    }
+  }, [movimientosUnicos]);
+
+  useEffect(() => {
+    if (ladosUnicos.length > 0) {
+      setLadoSeleccionado(ladosUnicos[0]);
+    }
+  }, [ladosUnicos]);
+
+  const normalizarLado = (lado: string) => {
+    if (lado.toLowerCase().includes('izquierda')) return 'izquierda';
+    if (lado.toLowerCase().includes('derecha')) return 'derecha';
+    return lado;
+  };
+
+  const cargarMediciones = async () => {
+    setLoading(true);
+    try {
+      const idPaciente = patient?.pacienteId || professional?.pacienteSeleccionado?.pacienteId;
+
+      if (!idPaciente) {
+        setMediciones([]);
+        return;
+      }
+
+      const url = `${API_CONFIG.BASE_URL}/mediciones_completas_paciente/${idPaciente}`;
+      const response = await fetch(url);
+      const data = await response.json();
+
+      if (!Array.isArray(data)) throw new Error('Respuesta inválida del servidor');
+
+      const normalizadas = data.map((m: Medicion) => ({
+        ...m,
+        lado: normalizarLado(m.lado),
+        movimiento: {
+          ...m.movimiento,
+          nombre: m.movimiento.nombre === 'Pronación y Supinación' ? 'Pronación/Supinación' : m.movimiento.nombre,
+        },
+      }));
+
+      setMediciones(normalizadas);
+
+      const movimientos = Array.from(new Set(normalizadas.map((m: Medicion) => m.movimiento.nombre)));
+      setMovimientosUnicos(movimientos);
+
+      const lados = Array.from(new Set(normalizadas.map((m: Medicion) => m.lado)));
+      setLadosUnicos(lados);
+
+    } catch (error) {
+      setMediciones([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filtrarMediciones = () => {
+    // Filtro estricto sin 'todos'
+    return mediciones.filter(m => m.movimiento.nombre === movimientoSeleccionado && m.lado === ladoSeleccionado);
+  };
+
+  const prepararDatosGrafico = () => {
+    const filtradas = filtrarMediciones();
+
+    const sanitize = (value: any) =>
+      typeof value === 'number' && isFinite(value) ? value : 0;
+
+    return {
+      labels: filtradas.map((_, i) => `Análisis ${i + 1}`),
+      datasets: [
+        {
+          data: filtradas.map(m => sanitize(m.movimiento.anguloMaxReal)),
+          color: () => '#4CAF50',
+          strokeWidth: 2
+        },
+        {
+          data: filtradas.map(m => sanitize(m.movimiento.anguloMinReal)),
+          color: () => '#FF9800',
+          strokeWidth: 2
+        },
+        {
+          data: filtradas.map(m => sanitize(m.anguloMax)),
+          color: () => '#03A9F4',
+          strokeWidth: 2
+        },
+        {
+          data: filtradas.map(m => sanitize(m.anguloMin)),
+          color: () => '#795548',
+          strokeWidth: 2
+        }
+      ]
+    };
+  };
+
+  const handleCerrarSesion = async () => {
+    if (cerrandoSesion) return;
+
+    setCerrandoSesion(true);
+    try {
+      await cerrarSesion(setPatient, setProfessional, navigateToLogin);
+    } finally {
+      setCerrandoSesion(false);
+    }
+  };
+
+  const renderTabla = () => {
+    const filtradas = filtrarMediciones();
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <Text style={{ color: 'red', fontSize: 18, textAlign: 'center' }}>
-          No hay paciente seleccionado. Por favor, vuelve a la lista y selecciona un paciente.
-        </Text>
+      <ScrollView horizontal style={styles.tablaContainer}>
+        <View>
+          <View style={styles.tablaHeader}>
+            {['Fecha', 'Movimiento', 'Lado', 'Ángulo Máx.', 'Ángulo Mín.', 'Máx. Esperado', 'Mín. Esperado'].map(t => (
+              <Text key={t} style={styles.headerCell}>{t}</Text>
+            ))}
+          </View>
+          <ScrollView>
+            {filtradas.map(m => (
+              <View key={m.medicionId} style={styles.tablaRow}>
+                <Text style={styles.cell}>{m.sesion.fecha}</Text>
+                <Text style={styles.cell}>{m.movimiento.nombre}</Text>
+                <Text style={styles.cell}>{m.lado}</Text>
+                <Text style={styles.cell}>{m.anguloMax}°</Text>
+                <Text style={styles.cell}>{m.anguloMin}°</Text>
+                <Text style={styles.cell}>{m.movimiento.anguloMaxReal}°</Text>
+                <Text style={styles.cell}>{m.movimiento.anguloMinReal}°</Text>
+              </View>
+            ))}
+          </ScrollView>
+        </View>
+      </ScrollView>
+    );
+  };
+
+  const renderGrafico = () => {
+    const data = prepararDatosGrafico();
+
+    if (data.labels.length === 0 || data.datasets.some(ds => ds.data.length === 0)) {
+      return (
+        <View style={styles.graficoContainer}>
+          <Text style={styles.graficoTitle}>No hay mediciones disponibles para mostrar.</Text>
+        </View>
+      );
+    }
+
+    return (
+      <View style={styles.graficoContainer}>
+        <Text style={styles.graficoTitle}>Evolución de Ángulos</Text>
+        <LineChart
+          data={data}
+          width={Dimensions.get('window').width - 40}
+          height={220}
+          chartConfig={{
+            backgroundColor: '#fff',
+            backgroundGradientFrom: '#fff',
+            backgroundGradientTo: '#fff',
+            decimalPlaces: 0,
+            color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+          }}
+          bezier
+          style={styles.grafico}
+        />
+        <View style={styles.leyenda}>
+          {[
+            { color: '#4CAF50', label: 'Máx. Esperado' },
+            { color: '#FF9800', label: 'Mín. Esperado' },
+            { color: '#03A9F4', label: 'Máx. Obtenido' },
+            { color: '#795548', label: 'Mín. Obtenido' },
+          ].map((item) => (
+            <View key={item.label} style={styles.leyendaItem}>
+              <View style={[styles.leyendaColor, { backgroundColor: item.color }]} />
+              <Text>{item.label}</Text>
+            </View>
+          ))}
+        </View>
+      </View>
+    );
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#007bff" />
       </View>
     );
   }
 
-  useEffect(() => {
-    requestPermissions();
-  }, []);
-
-  useEffect(() => {
-    if (!patient || !professional) {
-      router.replace('/');
-    }
-  }, [patient, professional]);
-
-  const seleccionarVideo = async () => {
-    const hasPermission = await requestPermissions();
-    if (!hasPermission) return;
-
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Videos,
-      allowsEditing: true,
-      quality: 0.7,
-      videoMaxDuration: 30,
-    });
-
-    if (!result.canceled && result.assets.length > 0) {
-      const uri = result.assets[0].uri;
-      setTimeout(() => {
-        setVideoUri(uri);
-      }, 300);
-    }
-  };
-
-  const grabarVideo = async () => {
-    const hasPermission = await requestPermissions();
-    if (!hasPermission) return;
-
-    const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Videos,
-      allowsEditing: true,
-      quality: 0.7,
-      videoMaxDuration: 30,
-    });
-
-    if (!result.canceled && result.assets.length > 0) {
-      const uri = result.assets[0].uri;
-      setTimeout(() => {
-        setVideoUri(uri);
-      }, 300);
-    }
-  };
-
-  const normalizarNombreMovimiento = (nombre: string): string => {
-    const nombreLower = nombre.toLowerCase();
-    if (nombreLower.includes('abducción')) return 'Abducción';
-    if (nombreLower.includes('flexión')) return 'Flexión';
-    if (nombreLower.includes('pronación') || nombreLower.includes('supinación')) return 'Pronación y Supinación';
-    return nombre;
-  };
-
-  const guardarSesion = async (resultado: any) => {
-    if (!resultado) return Alert.alert('Faltan datos para guardar la sesión');
-
-    try {
-      const now = new Date();
-      let sesiones = [];
-
-      const pacienteId = patient?.pacienteId || professional?.pacienteSeleccionado?.pacienteId;
-      const profesionalId = professional?.profesionalId || patient?.profesionalId;
-
-      if (!pacienteId || !profesionalId) {
-        throw new Error('Falta información de paciente o profesional');
-      }
-
-      const nombreNormalizado = normalizarNombreMovimiento(movimientoData?.nombre || '');
-
-      if (nombreNormalizado === "Pronación y Supinación") {
-        sesiones = [
-          {
-            PacienteId: pacienteId,
-            ProfesionalId: profesionalId,
-            fecha: now.toISOString().split('T')[0],
-            hora: now.toTimeString().split(' ')[0],
-            notas: '',
-            EjercicioId: null,
-            MovimientoId: Number(movimiento),
-            anguloMin: resultado.pronacion?.min_angle || 0,
-            anguloMax: resultado.pronacion?.max_angle || 0,
-            lado: `${lado} - pronación`,
-          },
-          {
-            PacienteId: pacienteId,
-            ProfesionalId: profesionalId,
-            fecha: now.toISOString().split('T')[0],
-            hora: now.toTimeString().split(' ')[0],
-            notas: '',
-            EjercicioId: null,
-            MovimientoId: Number(movimiento),
-            anguloMin: resultado.supinacion?.min_angle || 0,
-            anguloMax: resultado.supinacion?.max_angle || 0,
-            lado: `${lado} - supinación`,
-          }
-        ];
-      } else {
-        sesiones = [{
-          PacienteId: pacienteId,
-          ProfesionalId: profesionalId,
-          fecha: now.toISOString().split('T')[0],
-          hora: now.toTimeString().split(' ')[0],
-          notas: '',
-          EjercicioId: null,
-          MovimientoId: Number(movimiento),
-          anguloMin: resultado.min_angle || 0,
-          anguloMax: resultado.max_angle || 0,
-          lado: lado,
-        }];
-      }
-
-      console.log('✅ Datos que se van a guardar:', sesiones);
-
-      for (const sesion of sesiones) {
-        await createSesionWithMedicion(sesion);
-      }
-
-      Alert.alert('Éxito', 'Sesión guardada correctamente');
-    } catch (error) {
-      console.error('Error al guardar sesión:', error);
-      Alert.alert('Error', 'No se pudo guardar la sesión');
-    }
-  };
-
-  const enviarVideo = async () => {
-    if (!videoUri) {
-      Alert.alert('Error', 'No hay video para enviar');
-      return;
-    }
-
-    setEnviando(true);
-    try {
-      const formData = new FormData();
-      formData.append('file', {
-        uri: videoUri,
-        type: 'video/mp4',
-        name: 'video.mp4',
-      } as any);
-      formData.append('movimiento', movimientoData?.nombre || '');
-      formData.append('lado', lado);
-
-      const urlAnalisis = `${API_CONFIG.BASE_URL}/analizar_video/`;
-      const res = await fetch(urlAnalisis, {
-        method: 'POST',
-        body: formData,
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-
-      if (!res.ok) {
-        const errorText = await res.text();
-        console.error('Error del backend (analizar_video):', res.status, errorText);
-        throw new Error('Error al analizar el video');
-      }
-
-      const resultado = await res.json();
-      console.log('Resultado del análisis:', resultado);
-
-      if (resultado) {
-        await guardarSesion(resultado);
-      }
-
-      router.push({
-        pathname: '/analisis/analisisPaciente',
-        params: {
-          resultado: JSON.stringify(resultado),
-          movimiento: movimientoData?.nombre || 'Movimiento',
-          movimientoId: String(movimiento),
-        },
-      });
-    } catch (error) {
-      console.error('Error enviando video:', error);
-      Alert.alert('Error', 'No se pudo analizar el video');
-    } finally {
-      setEnviando(false);
-    }
-  };
-
-  useEffect(() => {
-    const cargarMovimiento = async () => {
-      try {
-        const data = await getMovimientoById(Number(movimiento));
-        setMovimientoData(data);
-      } catch (error) {
-        console.error('Error al cargar movimiento:', error);
-        Alert.alert('Error', 'No se pudo cargar la información del movimiento');
-      }
-    };
-    cargarMovimiento();
-  }, [movimiento]);
-
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: '#B3F0FF' }} contentContainerStyle={styles.container}>
-      <Text style={styles.titulo}>Medición: {movimientoData?.nombre || '...'}</Text>
-
-      <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginVertical: 10 }}>
-        <Button title="Seleccionar Video" onPress={seleccionarVideo} disabled={loading} />
-        <Button title="Grabar Video" onPress={grabarVideo} disabled={loading} />
+    <ScrollView
+      style={{ flex: 1, backgroundColor: '#B3F0FF' }}
+      contentContainerStyle={styles.container}
+    >
+      <Text style={styles.titulo}>Historial de Mediciones</Text>
+      <View style={styles.filtros}>
+        <View style={styles.pickerContainer}>
+          <Text style={styles.pickerLabel}>Movimiento:</Text>
+          <Picker
+            selectedValue={movimientoSeleccionado}
+            onValueChange={setMovimientoSeleccionado}
+            style={styles.picker}
+          >
+            {/* Quitamos opción "Todos" */}
+            {movimientosUnicos.map(m => (
+              <Picker.Item key={m} label={m} value={m} />
+            ))}
+          </Picker>
+        </View>
+        <View style={styles.pickerContainer}>
+          <Text style={styles.pickerLabel}>Lado:</Text>
+          <Picker
+            selectedValue={ladoSeleccionado}
+            onValueChange={setLadoSeleccionado}
+            style={styles.picker}
+          >
+            {/* Quitamos opción "Todos" */}
+            {ladosUnicos.map(l => (
+              <Picker.Item key={l} label={l} value={l} />
+            ))}
+          </Picker>
+        </View>
       </View>
 
-      {videoUri && (
-        <View style={{ marginVertical: 10, padding: 10, backgroundColor: '#f5f5f5', borderRadius: 10 }}>
-          <Text style={styles.subtitulo}>Video seleccionado:</Text>
-          <Video
-            key={videoUri}
-            source={{ uri: videoUri }}
-            style={{ width: '100%', height: 200, marginVertical: 10 }}
-            useNativeControls
-            resizeMode={ResizeMode.CONTAIN}
-            shouldPlay={false}
-          />
-          <Button title="Repetir video" onPress={() => setVideoUri(null)} color="#FF5252" />
-        </View>
-      )}
+      {renderGrafico()}
+      {renderTabla()}
 
-      <View style={{ marginVertical: 10, padding: 10, backgroundColor: '#f5f5f5', borderRadius: 10 }}>
-        <Text style={styles.subtitulo}>Selecciona el lado a analizar:</Text>
-        <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: 5 }}>
-          <Button title="Derecha" onPress={() => setLado('derecha')} color={lado === 'derecha' ? '#4CAF50' : undefined} />
-          <Button title="Izquierda" onPress={() => setLado('izquierda')} color={lado === 'izquierda' ? '#4CAF50' : undefined} />
-        </View>
+      <View style={{ marginTop: 30, marginBottom: 20 }}>
+        <Button
+          title={cerrandoSesion ? "Cerrando sesión..." : "Cerrar Sesión"}
+          color="#d9534f"
+          onPress={handleCerrarSesion}
+          disabled={cerrandoSesion}
+        />
       </View>
-
-      <Button title="Enviar para análisis" onPress={enviarVideo} disabled={loading || !videoUri || enviando} />
-
-      {(loading || enviando) && (
-        <View style={{ marginVertical: 20 }}>
-          <ActivityIndicator size="large" color="#007bff" />
-          <Text style={{ textAlign: 'center', marginTop: 10 }}>
-            {enviando ? 'Enviando video para análisis...' : 'Analizando video...'}
-          </Text>
-        </View>
-      )}
     </ScrollView>
   );
-}
+};
+
+export default HistorialMedicionesScreen;
