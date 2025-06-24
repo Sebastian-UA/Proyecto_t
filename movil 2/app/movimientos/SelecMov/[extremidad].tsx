@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { getMovimientosByArticulacion } from '@/services/movimiento';
+import { fetchArticulaciones } from '@/config/api';  // IMPORTA esta función
 import { View, Text, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
 import styles from '@/estilos/styles';
 
@@ -11,11 +12,10 @@ interface Movimiento {
   imagen_path?: string;
 }
 
-const articulacionMap: Record<string, number> = {
-  codo: 1,
-  hombro: 2,
-  // Agrega más si tienes otras articulaciones
-};
+interface Articulacion {
+  articulacionId: number; // o "id" según la API, ajústalo aquí
+  nombre: string;
+}
 
 export default function SeleccionMovimientos() {
   const { extremidad } = useLocalSearchParams() as { extremidad: string };
@@ -26,19 +26,39 @@ export default function SeleccionMovimientos() {
   useEffect(() => {
     const fetchMovimientos = async () => {
       try {
-        const id = articulacionMap[extremidad.toLowerCase()];
-        if (!id) return;
+        setLoading(true);
 
-        const data = await getMovimientosByArticulacion(id);
+        // 1. Obtener articulaciones desde la API
+        const articulaciones: Articulacion[] = await fetchArticulaciones();
+
+        // 2. Buscar la articulación que coincida con el parámetro extremidad (ignore case)
+        const articulacion = articulaciones.find(
+          (a) => a.nombre.toLowerCase() === extremidad.toLowerCase()
+        );
+
+        if (!articulacion) {
+          console.warn(`No se encontró articulación para: ${extremidad}`);
+          setMovimientos([]);
+          return;
+        }
+
+        // 3. Usar el id real que devuelve la API para pedir movimientos
+        const articulacionId = articulacion.articulacionId || (articulacion as any).id; // Ajusta según API
+
+        // 4. Pedir movimientos de esa articulación
+        const data = await getMovimientosByArticulacion(articulacionId);
         setMovimientos(data);
       } catch (error) {
         console.error('Error al obtener movimientos:', error);
+        setMovimientos([]);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchMovimientos();
+    if (extremidad) {
+      fetchMovimientos();
+    }
   }, [extremidad]);
 
   if (loading) {
@@ -63,7 +83,7 @@ export default function SeleccionMovimientos() {
           >
             {mov.imagen_path && (
               <Image
-                source={{ uri: `${process.env.EXPO_PUBLIC_API_URL || 'http://192.168.1.14:8000'}${mov.imagen_path}` }}
+                source={{ uri: `${process.env.EXPO_PUBLIC_API_URL || 'http://192.168.1.93:8000'}${mov.imagen_path}`}}
                 style={styles.imagen}
               />
             )}

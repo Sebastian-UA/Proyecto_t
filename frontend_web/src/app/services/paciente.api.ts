@@ -44,7 +44,6 @@ export const updatePacienteConUsuario = async (pacienteId: number, data: any) =>
   }
 };
 
-
 export const getPacientesInfo = async () => {
   try {
     const response = await fetch(`${API_URL}/pacientes/detalle`, {

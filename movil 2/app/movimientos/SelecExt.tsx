@@ -16,7 +16,7 @@ export default function SeleccionExtremidades() {
           onPress={() =>
             router.push({
               pathname: '/movimientos/SelecMov/[extremidad]',
-              params: { extremidad: 'codo' },
+              params: { extremidad: 'Codo' },
             })
           }
         >
@@ -33,7 +33,7 @@ export default function SeleccionExtremidades() {
           onPress={() =>
             router.push({
               pathname: '/movimientos/SelecMov/[extremidad]',
-              params: { extremidad: 'hombro' },
+              params: { extremidad: 'Hombro' },
             })
           }
         >

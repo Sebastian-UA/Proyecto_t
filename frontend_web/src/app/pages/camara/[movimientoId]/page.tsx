@@ -150,8 +150,8 @@ export default function CameraRecorder() {
 
     // Datos comunes a cualquier medición
     const sesionData = {
-      PacienteId: patient?.id,
-      ProfesionalId: professional?.id ?? null,
+      pacienteId: patient?.id,
+      profesionalId: professional?.id ?? null,
       fecha: now.toISOString().slice(0, 10),
       hora: now.toISOString().slice(11, 19),
       notas: "",
@@ -161,8 +161,8 @@ export default function CameraRecorder() {
       if (resultadoAnalisis.tipo === 'simple') {
         const dataToSend = {
           ...sesionData,
-          EjercicioId: null,
-          MovimientoId: Number(movimientoId),
+          ejercicioId: null,
+          movimientoId: Number(movimientoId),
           anguloMin: resultadoAnalisis.min_angle,
           anguloMax: resultadoAnalisis.max_angle,
           lado: resultadoAnalisis.lado, // "derecha" o "izquierda"
@@ -175,16 +175,16 @@ export default function CameraRecorder() {
         const mediciones = [
           {
             ...sesionData,
-            EjercicioId: null,
-            MovimientoId: Number(movimientoId),
+            ejercicioId: null,
+            movimientoId: Number(movimientoId),
             anguloMin: resultadoAnalisis.pronacion.min_angle,
             anguloMax: resultadoAnalisis.pronacion.max_angle,
             lado: `${resultadoAnalisis.lado} - pronación`,
           },
           {
             ...sesionData,
-            EjercicioId: null,
-            MovimientoId: Number(movimientoId),
+            ejercicioId: null,
+            movimientoId: Number(movimientoId),
             anguloMin: resultadoAnalisis.supinacion.min_angle,
             anguloMax: resultadoAnalisis.supinacion.max_angle,
             lado: `${resultadoAnalisis.lado} - supinación`,

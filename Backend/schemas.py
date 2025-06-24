@@ -1,6 +1,8 @@
 from pydantic import BaseModel, field_validator
 from typing import Optional
 from datetime import date, time
+from datetime import datetime
+
 import re
 
 # ===========================
@@ -317,18 +319,32 @@ class LoginResponse(BaseModel):
         orm_mode = True
 
 class SesionWithMedicion(BaseModel):
-    PacienteId: int
-    ProfesionalId:Optional[int] = None
+    pacienteId: int
+    profesionalId:Optional[int] = None
     fecha: date
     hora: time
     notas: Optional[str] = None
 
     # Datos de la medición
-    EjercicioId: Optional[int] = None
-    MovimientoId: int
+    ejercicioId: Optional[int] = None
+    movimientoId: int
     anguloMin: float
     anguloMax: float
     lado: str
+
+    @field_validator("fecha", mode='before')
+    @classmethod
+    def parse_fecha(cls, v):
+        if isinstance(v, str):
+            return datetime.strptime(v, '%Y-%m-%d').date()
+        return v
+
+    @field_validator("hora", mode='before')
+    @classmethod
+    def parse_hora(cls, v):
+        if isinstance(v, str):
+            return datetime.strptime(v, '%H:%M:%S').time()
+        return v
 
 class SesionConMedicionResponse(BaseModel):
     sesion: Sesion

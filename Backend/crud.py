@@ -290,6 +290,30 @@ def get_pacientes_con_datos_usuario(db: Session):
         .all()
     )
 
+def get_paciente_con_datos_usuario_por_id(db: Session, paciente_id: int):
+    result = (
+        db.query(
+            models.paciente.pacienteId.label("pacienteId"),
+            models.usuario.nombre.label("nombre"),
+            models.usuario.rut.label("rut"),
+            models.usuario.correo.label("correo"),
+            models.paciente.edad.label("edad"),
+            models.paciente.telefono.label("telefono"),
+            models.paciente.genero.label("genero"),
+            models.paciente.profesionalId.label("profesionalId"),
+        )
+        .join(models.usuario, models.usuario.usuarioId == models.paciente.usuarioId)
+        .filter(models.paciente.pacienteId == paciente_id)
+        .first()
+    )
+
+    if result is None:
+        return None
+
+    return dict(result._mapping)
+
+
+
 # ===========================
 # ARTICULACION
 # ===========================
@@ -475,8 +499,8 @@ def verificar_login_con_rol(correo: str, contrasena: str, db: Session) -> Option
 def create_sesion_with_medicion(db: Session, data: SesionWithMedicion):
     # 1. Crear sesión
     nueva_sesion = SesionDB(
-        PacienteId=data.PacienteId,
-        ProfesionalId=data.ProfesionalId,
+        PacienteId=data.pacienteId,
+        ProfesionalId=data.profesionalId,
         fecha=data.fecha,
         hora=data.hora,
         notas=data.notas,
@@ -488,8 +512,8 @@ def create_sesion_with_medicion(db: Session, data: SesionWithMedicion):
     # 2. Crear medición asociada
     nueva_medicion = MedicionDB(
         SesionId=nueva_sesion.sesionId,
-        EjercicioId=data.EjercicioId,
-        MovimientoId=data.MovimientoId,
+        EjercicioId=data.ejercicioId,
+        MovimientoId=data.movimientoId,
         anguloMin=data.anguloMin,
         anguloMax=data.anguloMax,
         lado=data.lado,

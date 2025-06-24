@@ -16,6 +16,7 @@ import { useProfessional } from '@/context/profesional';
 import { cerrarSesion } from '@/services/sesion';
 import { useNavigation } from '@/hooks/useNavigation';
 import { API_CONFIG, apiPut } from '@/config/api';
+import { fetchDetallePacientePorId } from '@/config/api';
 
 // Funciones de validación
 const validarNombre = (nombre: string) => {
@@ -41,6 +42,9 @@ const PerfilPacienteScreen = () => {
   const { patient, setPatient } = usePatient();
   const { setProfessional } = useProfessional();
   const [isEditing, setIsEditing] = useState(false);
+  const [loadingDatos, setLoadingDatos] = useState(false); // <- nuevo loading para cargar datos paciente
+  const [detallePaciente, setDetallePaciente] = useState<any | null>(null);
+  const [loadingDetalle, setLoadingDetalle] = useState(true);
   const [loading, setLoading] = useState(false);
   const [showChangePassword, setShowChangePassword] = useState(false);
   const [cerrandoSesion, setCerrandoSesion] = useState(false);
@@ -69,6 +73,25 @@ const PerfilPacienteScreen = () => {
       });
     }
   }, [patient]);
+
+  useEffect(() => {
+    console.log('Paciente ID desde contexto:', patient?.pacienteId);
+    const obtenerDetalle = async () => {
+      if (patient?.pacienteId) {
+        setLoadingDetalle(true);
+        try {
+          const data = await fetchDetallePacientePorId(patient.pacienteId);
+          setDetallePaciente(data);
+        } catch (error) {
+          console.error('Error al cargar detalle del paciente', error);
+        } finally {
+          setLoadingDetalle(false);
+        }
+      }
+    };
+
+    obtenerDetalle();
+  }, [patient?.pacienteId]);
 
   // Redirigir si no hay paciente autenticado
   useEffect(() => {
@@ -195,7 +218,7 @@ const PerfilPacienteScreen = () => {
 
   const handleCerrarSesion = async () => {
     if (cerrandoSesion) return;
-    
+
     setCerrandoSesion(true);
     try {
       await cerrarSesion(setPatient, setProfessional, navigateToLogin);
@@ -224,35 +247,35 @@ const PerfilPacienteScreen = () => {
 
       <View style={styles.profileSection}>
         <Text style={styles.sectionTitle}>Información Personal</Text>
-        
+
         <View style={styles.infoRow}>
           <Text style={styles.label}>Nombre:</Text>
           <Text style={styles.value}>{patient.nombre}</Text>
         </View>
-        
+
         <View style={styles.infoRow}>
           <Text style={styles.label}>RUT:</Text>
           <Text style={styles.value}>{patient.rut}</Text>
         </View>
-        
+
         <View style={styles.infoRow}>
           <Text style={styles.label}>Edad:</Text>
-          <Text style={styles.value}>{patient.edad} años</Text>
+          <Text style={styles.value}>{detallePaciente?.edad} años</Text>
         </View>
-        
+
         <View style={styles.infoRow}>
           <Text style={styles.label}>Teléfono:</Text>
-          <Text style={styles.value}>{patient.telefono}</Text>
+          <Text style={styles.value}>{detallePaciente?.telefono}</Text>
         </View>
-        
+
         <View style={styles.infoRow}>
           <Text style={styles.label}>Correo:</Text>
           <Text style={styles.value}>{patient.correo}</Text>
         </View>
-        
+
         <View style={styles.infoRow}>
           <Text style={styles.label}>Género:</Text>
-          <Text style={styles.value}>{patient.genero}</Text>
+          <Text style={styles.value}>{detallePaciente?.genero}</Text>
         </View>
       </View>
 
@@ -299,7 +322,7 @@ const PerfilPacienteScreen = () => {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Cambiar Contraseña</Text>
-            
+
             <TextInput
               style={[styles.modalInput, errors.currentPassword && styles.inputError]}
               placeholder="Contraseña actual"
@@ -308,7 +331,7 @@ const PerfilPacienteScreen = () => {
               secureTextEntry
             />
             {errors.currentPassword && <Text style={styles.errorText}>{errors.currentPassword}</Text>}
-            
+
             <TextInput
               style={[styles.modalInput, errors.newPassword && styles.inputError]}
               placeholder="Nueva contraseña"
@@ -317,7 +340,7 @@ const PerfilPacienteScreen = () => {
               secureTextEntry
             />
             {errors.newPassword && <Text style={styles.errorText}>{errors.newPassword}</Text>}
-            
+
             <TextInput
               style={[styles.modalInput, errors.confirmPassword && styles.inputError]}
               placeholder="Confirmar nueva contraseña"
@@ -326,7 +349,7 @@ const PerfilPacienteScreen = () => {
               secureTextEntry
             />
             {errors.confirmPassword && <Text style={styles.errorText}>{errors.confirmPassword}</Text>}
-            
+
             <View style={styles.modalButtons}>
               <TouchableOpacity
                 style={[styles.modalButton, styles.cancelButton]}
@@ -342,7 +365,7 @@ const PerfilPacienteScreen = () => {
               >
                 <Text style={styles.cancelButtonText}>Cancelar</Text>
               </TouchableOpacity>
-              
+
               <TouchableOpacity
                 style={[styles.modalButton, styles.saveButton]}
                 onPress={handleChangePassword}

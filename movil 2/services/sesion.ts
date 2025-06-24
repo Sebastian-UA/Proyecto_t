@@ -63,12 +63,12 @@ export const limpiarDatosSesion = async () => {
 
 export const createSesionWithMedicion = async (data: any) => {
   try {
-    const response = await apiPost('/sesiones_con_medicion/', data);
-    
+    // Aquí uso el ENDPOINTS para centralizar las rutas
+    const response = await apiPost(API_CONFIG.ENDPOINTS.SESIONES_MEDICION, data);
     if (!response.ok) {
       throw new Error('Error al crear sesión con medición');
     }
-    
+
     const responseData = await response.json();
     return responseData;
   } catch (error) {
@@ -76,3 +76,4 @@ export const createSesionWithMedicion = async (data: any) => {
     throw error;
   }
 };
+

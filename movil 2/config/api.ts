@@ -19,7 +19,8 @@ export const API_CONFIG = {
     PACIENTES: '/pacientes/',
     PACIENTE_CON_USUARIO: '/paciente_con_usuario/',
     PACIENTES_DETALLE: '/pacientes/detalle',
-    
+    PACIENTE_DETALLE_POR_ID: (id: number) => `/pacientes/detalles/${id}`,
+
     // Articulaciones
     ARTICULACIONES: '/articulaciones/',
     
@@ -65,6 +66,14 @@ export const apiRequest = async (
   return fetch(url, config);
 };
 
+export const fetchArticulaciones = async () => {
+  const response = await apiGet(API_CONFIG.ENDPOINTS.ARTICULACIONES);
+  if (!response.ok) {
+    throw new Error('Error al obtener las articulaciones');
+  }
+  return response.json(); // devuelve un arreglo con las articulaciones
+};
+
 // Función helper para requests GET
 export const apiGet = async (endpoint: string): Promise<Response> => {
   return apiRequest(endpoint, { method: 'GET' });
@@ -77,6 +86,14 @@ export const apiPost = async (endpoint: string, data: any): Promise<Response> =>
     body: JSON.stringify(data),
   });
 };
+
+// Función para obtener detalle de paciente por ID
+export const fetchDetallePacientePorId = async (pacienteId: number) => {
+  const response = await apiGet(`${API_CONFIG.ENDPOINTS.PACIENTE_DETALLE_POR_ID(pacienteId)}`);
+  if (!response.ok) throw new Error('Error al obtener el detalle del paciente');
+  return response.json();
+};
+
 
 // Función helper para requests PUT
 export const apiPut = async (endpoint: string, data: any): Promise<Response> => {
