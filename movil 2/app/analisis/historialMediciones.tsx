@@ -252,8 +252,7 @@ const HistorialMedicionesScreen = () => {
           <Picker
             selectedValue={movimientoSeleccionado}
             onValueChange={setMovimientoSeleccionado}
-            style={styles.picker}
-          >
+            itemStyle={{ fontSize: 12 }}          >
             {/* Quitamos opción "Todos" */}
             {movimientosUnicos.map(m => (
               <Picker.Item key={m} label={m} value={m} />
@@ -265,7 +264,7 @@ const HistorialMedicionesScreen = () => {
           <Picker
             selectedValue={ladoSeleccionado}
             onValueChange={setLadoSeleccionado}
-            style={styles.picker}
+            itemStyle={{ fontSize: 12 }}          
           >
             {/* Quitamos opción "Todos" */}
             {ladosUnicos.map(l => (
