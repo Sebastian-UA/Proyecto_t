@@ -1,0 +1,54 @@
+{
+  "expo": {
+    "extra": {
+      "API_URL": "http://192.168.1.14:8000"
+    },
+    "name": "movil",
+    "slug": "movil",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/codo.png",
+    "scheme": "movil",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSCameraUsageDescription": "Esta app necesita acceso a la cámara para grabar videos.",
+        "NSPhotoLibraryUsageDescription": "Esta app necesita acceso a tu galería para seleccionar videos.",
+        "NSMicrophoneUsageDescription": "Esta app necesita acceder al micrófono para grabar videos."
+      }
+    },
+    "android": {
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
+      ],
+      "adaptiveIcon": {
+        "backgroundColor": "#ffffff"
+      },
+      "edgeToEdgeEnabled": true
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static",
+      "favicon": "./assets/images/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/splash-icon.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#ffffff"
+        }
+      ],
+      "expo-video"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
