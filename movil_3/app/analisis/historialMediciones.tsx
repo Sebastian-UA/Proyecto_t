@@ -7,6 +7,7 @@ import {
   Dimensions,
   ActivityIndicator,
   TouchableOpacity,
+  FlatList,
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { usePatient } from '@/context/paciente';
@@ -17,8 +18,8 @@ import { cerrarSesion } from '@/services/sesion';
 import { useNavigation } from '@/hooks/useNavigation';
 import { API_CONFIG } from '@/config/api';
 import { theme } from '@/estilos/themes';
-// @ts-ignore
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import DropDownPicker from 'react-native-dropdown-picker';
 
 interface Medicion {
   medicionId: number;
@@ -44,27 +45,32 @@ const HistorialMedicionesScreen = () => {
   const [mediciones, setMediciones] = useState<Medicion[]>([]);
   const [cerrandoSesion, setCerrandoSesion] = useState(false);
 
-  // Inicializamos vacíos, luego en useEffect los seteamos al primer valor disponible
-  const [movimientoSeleccionado, setMovimientoSeleccionado] = useState<string>('');
-  const [ladoSeleccionado, setLadoSeleccionado] = useState<string>('');
-  const [movimientosUnicos, setMovimientosUnicos] = useState<string[]>([]);
-  const [ladosUnicos, setLadosUnicos] = useState<string[]>([]);
+  // Estados para Movimiento y Lado (DropDownPicker)
+  const [movimiento, setMovimiento] = useState<string>('Todos');
+  const [openMovimiento, setOpenMovimiento] = useState(false);
+  const [itemsMovimiento, setItemsMovimiento] = useState([
+    { label: 'Todos', value: 'Todos' },
+    { label: 'Abducción', value: 'Abducción' },
+    { label: 'Flexión', value: 'Flexión' },
+    { label: 'Pronación y Supinación', value: 'Pronación y Supinación' },
+  ]);
+
+  const [lado, setLado] = useState<string>('Todos');
+  const [openLado, setOpenLado] = useState(false);
+  const [itemsLado, setItemsLado] = useState([
+    { label: 'Todos', value: 'Todos' },
+    { label: 'Derecha', value: 'derecha' },
+    { label: 'Izquierda', value: 'izquierda' },
+  ]);
+
+  // Estados para filtros
+  const [filtrosAplicados, setFiltrosAplicados] = useState(false);
+  const [movimientoFiltrado, setMovimientoFiltrado] = useState<string>('Todos');
+  const [ladoFiltrado, setLadoFiltrado] = useState<string>('Todos');
 
   useEffect(() => {
     cargarMediciones();
   }, []);
-
-  useEffect(() => {
-    if (movimientosUnicos.length > 0) {
-      setMovimientoSeleccionado(movimientosUnicos[0]);
-    }
-  }, [movimientosUnicos]);
-
-  useEffect(() => {
-    if (ladosUnicos.length > 0) {
-      setLadoSeleccionado(ladosUnicos[0]);
-    }
-  }, [ladosUnicos]);
 
   const normalizarLado = (lado: string) => {
     if (lado.toLowerCase().includes('izquierda')) return 'izquierda';
@@ -93,17 +99,11 @@ const HistorialMedicionesScreen = () => {
         lado: normalizarLado(m.lado),
         movimiento: {
           ...m.movimiento,
-          nombre: m.movimiento.nombre === 'Pronación y Supinación' ? 'Pronación/Supinación' : m.movimiento.nombre,
+          nombre: m.movimiento.nombre === 'Pronación y Supinación' ? 'Pronación y Supinación' : m.movimiento.nombre,
         },
       }));
 
       setMediciones(normalizadas);
-
-      const movimientos = Array.from(new Set(normalizadas.map((m: Medicion) => m.movimiento.nombre)));
-      setMovimientosUnicos(movimientos);
-
-      const lados = Array.from(new Set(normalizadas.map((m: Medicion) => m.lado)));
-      setLadosUnicos(lados);
 
     } catch (error) {
       setMediciones([]);
@@ -113,8 +113,14 @@ const HistorialMedicionesScreen = () => {
   };
 
   const filtrarMediciones = () => {
-    // Filtro estricto sin 'todos'
-    return mediciones.filter(m => m.movimiento.nombre === movimientoSeleccionado && m.lado === ladoSeleccionado);
+    let filtradas = mediciones;
+    if (movimientoFiltrado !== 'Todos') {
+      filtradas = filtradas.filter(m => m.movimiento.nombre === movimientoFiltrado);
+    }
+    if (ladoFiltrado !== 'Todos') {
+      filtradas = filtradas.filter(m => m.lado === ladoFiltrado);
+    }
+    return filtradas;
   };
 
   const prepararDatosGrafico = () => {
@@ -163,25 +169,32 @@ const HistorialMedicionesScreen = () => {
 
   const renderTabla = () => {
     const filtradas = filtrarMediciones();
+    const screenWidth = Dimensions.get('window').width;
+    const cellWidth = Math.max(120, screenWidth / 7);
     return (
       <View style={styles.tablaContainer}>
-        <View style={styles.tablaHeader}>
-          {['Fecha', 'Movimiento', 'Lado', 'Ángulo Máx.', 'Ángulo Mín.', 'Máx. Esperado', 'Mín. Esperado'].map(t => (
-            <Text key={t} style={styles.headerCell}>{t}</Text>
-          ))}
-        </View>
-        <ScrollView>
-          {filtradas.map(m => (
-            <View key={m.medicionId} style={styles.tablaRow}>
-              <Text style={styles.cell}>{m.sesion.fecha}</Text>
-              <Text style={styles.cell}>{m.movimiento.nombre}</Text>
-              <Text style={styles.cell}>{m.lado}</Text>
-              <Text style={styles.cell}>{m.anguloMax}°</Text>
-              <Text style={styles.cell}>{m.anguloMin}°</Text>
-              <Text style={styles.cell}>{m.movimiento.anguloMaxReal}°</Text>
-              <Text style={styles.cell}>{m.movimiento.anguloMinReal}°</Text>
+        <Text style={styles.tablaTitle}>Detalle de Mediciones</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} nestedScrollEnabled={true}>
+          <View style={{ minWidth: cellWidth * 7 }}>
+            <View style={styles.tablaHeader}>
+              {['Fecha', 'Movimiento', 'Lado', 'Ángulo Máx.', 'Ángulo Mín.', 'Máx. Esperado', 'Mín. Esperado'].map(t => (
+                <Text key={t} style={[styles.headerCell, { width: cellWidth, textAlign: 'center', paddingHorizontal: 8 }]}>{t}</Text>
+              ))}
             </View>
-          ))}
+            <View>
+              {filtradas.map(m => (
+                <View key={m.medicionId} style={styles.tablaRow}>
+                  <Text style={[styles.cell, { width: cellWidth, textAlign: 'center', paddingHorizontal: 8 }]}>{m.sesion.fecha}</Text>
+                  <Text style={[styles.cell, { width: cellWidth, textAlign: 'center', paddingHorizontal: 8 }]}>{m.movimiento.nombre}</Text>
+                  <Text style={[styles.cell, { width: cellWidth, textAlign: 'center', paddingHorizontal: 8 }]}>{m.lado}</Text>
+                  <Text style={[styles.cell, { width: cellWidth, textAlign: 'center', paddingHorizontal: 8 }]}>{m.anguloMax}°</Text>
+                  <Text style={[styles.cell, { width: cellWidth, textAlign: 'center', paddingHorizontal: 8 }]}>{m.anguloMin}°</Text>
+                  <Text style={[styles.cell, { width: cellWidth, textAlign: 'center', paddingHorizontal: 8 }]}>{m.movimiento.anguloMaxReal}°</Text>
+                  <Text style={[styles.cell, { width: cellWidth, textAlign: 'center', paddingHorizontal: 8 }]}>{m.movimiento.anguloMinReal}°</Text>
+                </View>
+              ))}
+            </View>
+          </View>
         </ScrollView>
       </View>
     );
@@ -193,7 +206,7 @@ const HistorialMedicionesScreen = () => {
     if (data.labels.length === 0 || data.datasets.some(ds => ds.data.length === 0)) {
       return (
         <View style={styles.graficoContainer}>
-          <Icon name="chart-line" size={60} color={theme.colors.placeholder} />
+          <MaterialCommunityIcons name="chart-line" size={60} color={theme.colors.placeholder} />
           <Text style={styles.graficoTitle}>No hay mediciones disponibles para mostrar</Text>
           <Text style={styles.graficoSubtitle}>
             Selecciona un movimiento y lado para ver el historial
@@ -205,23 +218,25 @@ const HistorialMedicionesScreen = () => {
     return (
       <View style={styles.graficoContainer}>
         <View style={styles.graficoHeader}>
-          <Icon name="chart-line" size={24} color={theme.colors.primary} />
+          <MaterialCommunityIcons name="chart-line" size={24} color={theme.colors.primary} />
           <Text style={styles.graficoTitle}>Evolución de Ángulos</Text>
         </View>
-        <LineChart
-          data={data}
-          width={Dimensions.get('window').width - 40}
-          height={220}
-          chartConfig={{
-            backgroundColor: theme.colors.background,
-            backgroundGradientFrom: theme.colors.background,
-            backgroundGradientTo: theme.colors.background,
-            decimalPlaces: 0,
-            color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-          }}
-          bezier
-          style={styles.grafico}
-        />
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          <LineChart
+            data={data}
+            width={Math.max(Dimensions.get('window').width - 40, data.labels.length * 90)}
+            height={220}
+            chartConfig={{
+              backgroundColor: theme.colors.background,
+              backgroundGradientFrom: theme.colors.background,
+              backgroundGradientTo: theme.colors.background,
+              decimalPlaces: 0,
+              color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+            }}
+            bezier
+            style={styles.grafico}
+          />
+        </ScrollView>
         <View style={styles.leyenda}>
           {[
             { color: '#4CAF50', label: 'Máx. Esperado' },
@@ -249,72 +264,111 @@ const HistorialMedicionesScreen = () => {
   }
 
   return (
-    <ScrollView
-      style={styles.container}
+    <FlatList
+      data={[{ key: 'main' }]}
+      renderItem={null}
+      ListHeaderComponent={
+        <>
+          <View style={styles.header}>
+            <MaterialCommunityIcons name="history" size={60} color={theme.colors.primary} />
+            <Text style={styles.titulo}>Historial de Mediciones</Text>
+            <Text style={styles.subtitulo}>Seguimiento de la evolución del paciente</Text>
+          </View>
+
+          <View style={styles.filtrosContainer}>
+            <Text style={styles.filtrosTitle}>Filtros</Text>
+            <View style={styles.filtrosDropdowns}>
+              <View style={{ zIndex: 1000, flex: 1, marginRight: 8 }}>
+                <DropDownPicker
+                  open={openMovimiento}
+                  value={movimiento}
+                  items={itemsMovimiento}
+                  setOpen={setOpenMovimiento}
+                  setValue={setMovimiento}
+                  setItems={setItemsMovimiento}
+                  placeholder="Selecciona un movimiento"
+                  style={{ borderColor: theme.colors.border, borderRadius: theme.borderRadius.md, minHeight: 44 }}
+                  dropDownContainerStyle={{ borderColor: theme.colors.border, borderRadius: theme.borderRadius.md }}
+                  textStyle={{ color: theme.colors.text }}
+                  placeholderStyle={{ color: theme.colors.placeholder }}
+                  listItemLabelStyle={{ color: theme.colors.text }}
+                  zIndex={1000}
+                />
+              </View>
+              <View style={{ zIndex: 999, flex: 1, marginLeft: 8 }}>
+                <DropDownPicker
+                  open={openLado}
+                  value={lado}
+                  items={itemsLado}
+                  setOpen={setOpenLado}
+                  setValue={setLado}
+                  setItems={setItemsLado}
+                  placeholder="Selecciona el lado"
+                  style={{ borderColor: theme.colors.border, borderRadius: theme.borderRadius.md, minHeight: 44 }}
+                  dropDownContainerStyle={{ borderColor: theme.colors.border, borderRadius: theme.borderRadius.md }}
+                  textStyle={{ color: theme.colors.text }}
+                  placeholderStyle={{ color: theme.colors.placeholder }}
+                  listItemLabelStyle={{ color: theme.colors.text }}
+                  zIndex={999}
+                />
+              </View>
+            </View>
+            <View style={styles.filtrosButtons}>
+              <TouchableOpacity
+                style={styles.aplicarButton}
+                onPress={() => {
+                  setMovimientoFiltrado(movimiento);
+                  setLadoFiltrado(lado);
+                  setFiltrosAplicados(true);
+                }}
+              >
+                <MaterialCommunityIcons name="filter-check" size={20} color={theme.colors.buttonText} />
+                <Text style={styles.aplicarButtonText}>Aplicar Filtros</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.resetButton}
+                onPress={() => {
+                  setMovimiento('Todos');
+                  setLado('Todos');
+                  setMovimientoFiltrado('Todos');
+                  setLadoFiltrado('Todos');
+                  setFiltrosAplicados(false);
+                }}
+              >
+                <MaterialCommunityIcons name="refresh" size={20} color={theme.colors.primary} />
+                <Text style={styles.resetButtonText}>Restablecer</Text>
+              </TouchableOpacity>
+            </View>
+            {filtrosAplicados && (
+              <View style={styles.filtrosInfo}>
+                <MaterialCommunityIcons name="information-outline" size={16} color={theme.colors.primary} />
+                <Text style={styles.filtrosInfoText}>
+                  Filtros aplicados: {movimientoFiltrado} - {ladoFiltrado}
+                </Text>
+              </View>
+            )}
+          </View>
+
+          {renderGrafico()}
+          {renderTabla()}
+
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity
+              style={styles.dangerButton}
+              onPress={handleCerrarSesion}
+              disabled={cerrandoSesion}
+            >
+              <MaterialCommunityIcons name="logout" size={20} color={theme.colors.buttonText} />
+              <Text style={styles.dangerButtonText}>
+                {cerrandoSesion ? "Cerrando sesión..." : "Cerrar Sesión"}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </>
+      }
       contentContainerStyle={styles.contentContainer}
       showsVerticalScrollIndicator={false}
-    >
-      <View style={styles.header}>
-        <Icon name="history" size={60} color={theme.colors.primary} />
-        <Text style={styles.titulo}>Historial de Mediciones</Text>
-        <Text style={styles.subtitulo}>Seguimiento de la evolución del paciente</Text>
-      </View>
-
-      <View style={styles.filtrosContainer}>
-        <View style={styles.filtros}>
-          <View style={styles.pickerContainer}>
-            <View style={styles.pickerLabelContainer}>
-              <Icon name="arm-flex" size={16} color={theme.colors.primary} />
-              <Text style={styles.pickerLabel}>Movimiento:</Text>
-            </View>
-            <View style={styles.pickerWrapper}>
-              <Picker
-                selectedValue={movimientoSeleccionado}
-                onValueChange={setMovimientoSeleccionado}
-                style={styles.picker}
-              >
-                {movimientosUnicos.map(m => (
-                  <Picker.Item key={m} label={m} value={m} />
-                ))}
-              </Picker>
-            </View>
-          </View>
-          <View style={styles.pickerContainer}>
-            <View style={styles.pickerLabelContainer}>
-              <Icon name="human-male" size={16} color={theme.colors.primary} />
-              <Text style={styles.pickerLabel}>Lado:</Text>
-            </View>
-            <View style={styles.pickerWrapper}>
-              <Picker
-                selectedValue={ladoSeleccionado}
-                onValueChange={setLadoSeleccionado}
-                style={styles.picker}
-              >
-                {ladosUnicos.map(l => (
-                  <Picker.Item key={l} label={l} value={l} />
-                ))}
-              </Picker>
-            </View>
-          </View>
-        </View>
-      </View>
-
-      {renderGrafico()}
-      {renderTabla()}
-
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity
-          style={styles.dangerButton}
-          onPress={handleCerrarSesion}
-          disabled={cerrandoSesion}
-        >
-          <Icon name="logout" size={20} color={theme.colors.buttonText} />
-          <Text style={styles.dangerButtonText}>
-            {cerrandoSesion ? "Cerrando sesión..." : "Cerrar Sesión"}
-          </Text>
-        </TouchableOpacity>
-      </View>
-    </ScrollView>
+    />
   );
 };
 
@@ -371,34 +425,79 @@ const styles = StyleSheet.create({
     shadowRadius: 3.84,
     elevation: 5,
   },
-  filtros: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    gap: theme.spacing.md,
-  },
-  pickerContainer: {
-    flex: 1,
-  },
-  pickerLabelContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: theme.spacing.sm,
-  },
-  pickerLabel: {
-    fontSize: theme.fontSize.sm,
+  filtrosTitle: {
+    fontSize: theme.fontSize.lg,
     fontWeight: 'bold',
     color: theme.colors.text,
+    marginBottom: theme.spacing.md,
+  },
+  filtrosDropdowns: {
+    flexDirection: 'row',
+    marginBottom: theme.spacing.md,
+    zIndex: 1000,
+  },
+  filtrosButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginTop: theme.spacing.md,
+  },
+  aplicarButton: {
+    backgroundColor: theme.colors.primary,
+    borderRadius: theme.borderRadius.md,
+    paddingVertical: theme.spacing.md,
+    paddingHorizontal: theme.spacing.lg,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flex: 0.45,
+    shadowColor: theme.colors.primary,
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 4.65,
+    elevation: 8,
+  },
+  aplicarButtonText: {
+    color: theme.colors.buttonText,
+    fontSize: theme.fontSize.md,
+    fontWeight: 'bold',
     marginLeft: theme.spacing.sm,
   },
-  pickerWrapper: {
-    backgroundColor: theme.colors.input,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
+  resetButton: {
+    backgroundColor: theme.colors.background,
+    borderWidth: 2,
+    borderColor: theme.colors.primary,
     borderRadius: theme.borderRadius.md,
+    paddingVertical: theme.spacing.md,
+    paddingHorizontal: theme.spacing.lg,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flex: 0.45,
   },
-  picker: {
-    height: 40,
-    width: '100%',
+  resetButtonText: {
+    color: theme.colors.primary,
+    fontSize: theme.fontSize.md,
+    fontWeight: 'bold',
+    marginLeft: theme.spacing.sm,
+  },
+  filtrosInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: `${theme.colors.primary}10`,
+    borderWidth: 1,
+    borderColor: `${theme.colors.primary}30`,
+    borderRadius: theme.borderRadius.md,
+    padding: theme.spacing.md,
+    marginTop: theme.spacing.md,
+  },
+  filtrosInfoText: {
+    color: theme.colors.text,
+    fontSize: theme.fontSize.sm,
+    marginLeft: theme.spacing.sm,
+    flex: 1,
   },
   graficoContainer: {
     backgroundColor: theme.colors.background,
@@ -471,6 +570,12 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 3.84,
     elevation: 5,
+  },
+  tablaTitle: {
+    fontSize: theme.fontSize.lg,
+    fontWeight: 'bold',
+    color: theme.colors.text,
+    marginBottom: theme.spacing.md,
   },
   tablaHeader: {
     flexDirection: 'row',

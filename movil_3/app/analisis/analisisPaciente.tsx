@@ -10,6 +10,7 @@ import { cerrarSesion } from '@/services/sesion';
 import { theme } from '@/estilos/themes';
 // @ts-ignore
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
 
 export default function AnalisisPacientePage() {
   const router = useRouter();
@@ -96,7 +97,6 @@ export default function AnalisisPacientePage() {
           ) : (
             <View style={styles.resultadoCard}>
               <View style={styles.cardHeader}>
-                <Icon name="goniometer" size={24} color={theme.colors.primary} />
                 <Text style={styles.cardTitle}>Ángulos</Text>
               </View>
               <View style={styles.anguloContainer}>

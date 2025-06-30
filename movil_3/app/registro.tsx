@@ -13,6 +13,8 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { createProfesionalConUsuario } from '@/services/profesional.api';
+import { theme } from '@/estilos/themes';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 // Funciones de validación
 const validarNombre = (nombre: string) => {
@@ -124,65 +126,153 @@ const RegistroScreen = () => {
 
   return (
     <KeyboardAvoidingView
-      style={{ flex: 1 }}
+      style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 0}
     >
-      <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }} keyboardShouldPersistTaps="handled">
-        <View style={styles.container}>
-          <Text style={styles.title}>Registro Profesional</Text>
-          <TextInput
-            style={[styles.input, errors.nombre && styles.inputError]}
-            placeholder="Nombre"
-            value={form.nombre}
-            onChangeText={(text) => handleChange('nombre', text)}
-          />
-          {errors.nombre && <Text style={styles.errorText}>{errors.nombre}</Text>}
-          <TextInput
-            style={[styles.input, errors.rut && styles.inputError]}
-            placeholder="RUT (12345678-9)"
-            value={form.rut}
-            onChangeText={(text) => handleChange('rut', text)}
-            keyboardType="default"
-            maxLength={10}
-            autoCapitalize="characters"
-          />
-          {errors.rut && <Text style={styles.errorText}>{errors.rut}</Text>}
-          <TextInput
-            style={[styles.input, errors.correo && styles.inputError]}
-            placeholder="Correo electrónico"
-            value={form.correo}
-            onChangeText={(text) => handleChange('correo', text)}
-            keyboardType="email-address"
-            autoCapitalize="none"
-          />
-          {errors.correo && <Text style={styles.errorText}>{errors.correo}</Text>}
-          <TextInput
-            style={[styles.input, errors.contrasena && styles.inputError]}
-            placeholder="Contraseña"
-            value={form.contrasena}
-            onChangeText={(text) => handleChange('contrasena', text)}
-            secureTextEntry
-          />
-          {errors.contrasena && <Text style={styles.errorText}>{errors.contrasena}</Text>}
-          <TextInput
-            style={[styles.input, errors.especialidad && styles.inputError]}
-            placeholder="Especialidad"
-            value={form.especialidad}
-            onChangeText={(text) => handleChange('especialidad', text)}
-          />
-          {errors.especialidad && <Text style={styles.errorText}>{errors.especialidad}</Text>}
-          <TouchableOpacity
-            style={[styles.submitButton, loading && styles.submitButtonDisabled]}
-            onPress={handleSubmit}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={styles.submitButtonText}>Registrar</Text>
-            )}
-          </TouchableOpacity>
+      <ScrollView
+        contentContainerStyle={styles.scrollContainer}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.header}>
+          <MaterialCommunityIcons name="doctor" size={60} color={theme.colors.primary} />
+          <Text style={styles.title}>Registro de Profesional</Text>
+          <Text style={styles.subtitle}>Completa la información del profesional</Text>
+        </View>
+
+        <View style={styles.formContainer}>
+          <View style={styles.inputContainer}>
+            <MaterialCommunityIcons 
+              name="account-outline" 
+              size={20} 
+              color={errors.nombre ? theme.colors.error : theme.colors.placeholder} 
+              style={styles.inputIcon} 
+            />
+            <TextInput
+              style={[styles.input, errors.nombre && styles.inputError]}
+              placeholder="Nombre completo"
+              placeholderTextColor={theme.colors.placeholder}
+              value={form.nombre}
+              onChangeText={(text) => handleChange('nombre', text)}
+            />
+          </View>
+          {errors.nombre && (
+            <View style={styles.errorContainer}>
+              <MaterialCommunityIcons name="alert-circle-outline" size={14} color={theme.colors.error} />
+              <Text style={styles.errorText}>{errors.nombre}</Text>
+            </View>
+          )}
+
+          <View style={styles.inputContainer}>
+            <MaterialCommunityIcons 
+              name="card-account-details-outline" 
+              size={20} 
+              color={errors.rut ? theme.colors.error : theme.colors.placeholder} 
+              style={styles.inputIcon} 
+            />
+            <TextInput
+              style={[styles.input, errors.rut && styles.inputError]}
+              placeholder="RUT (12345678-9)"
+              placeholderTextColor={theme.colors.placeholder}
+              value={form.rut}
+              onChangeText={(text) => handleChange('rut', text)}
+              keyboardType="default"
+              maxLength={10}
+              autoCapitalize="characters"
+            />
+          </View>
+          {errors.rut && (
+            <View style={styles.errorContainer}>
+              <MaterialCommunityIcons name="alert-circle-outline" size={14} color={theme.colors.error} />
+              <Text style={styles.errorText}>{errors.rut}</Text>
+            </View>
+          )}
+
+          <View style={styles.inputContainer}>
+            <MaterialCommunityIcons 
+              name="email-outline" 
+              size={20} 
+              color={errors.correo ? theme.colors.error : theme.colors.placeholder} 
+              style={styles.inputIcon} 
+            />
+            <TextInput
+              style={[styles.input, errors.correo && styles.inputError]}
+              placeholder="Correo electrónico"
+              placeholderTextColor={theme.colors.placeholder}
+              value={form.correo}
+              onChangeText={(text) => handleChange('correo', text)}
+              keyboardType="email-address"
+              autoCapitalize="none"
+            />
+          </View>
+          {errors.correo && (
+            <View style={styles.errorContainer}>
+              <MaterialCommunityIcons name="alert-circle-outline" size={14} color={theme.colors.error} />
+              <Text style={styles.errorText}>{errors.correo}</Text>
+            </View>
+          )}
+
+          <View style={styles.inputContainer}>
+            <MaterialCommunityIcons 
+              name="lock-outline" 
+              size={20} 
+              color={errors.contrasena ? theme.colors.error : theme.colors.placeholder} 
+              style={styles.inputIcon} 
+            />
+            <TextInput
+              style={[styles.input, errors.contrasena && styles.inputError]}
+              placeholder="Contraseña"
+              placeholderTextColor={theme.colors.placeholder}
+              value={form.contrasena}
+              onChangeText={(text) => handleChange('contrasena', text)}
+              secureTextEntry
+            />
+          </View>
+          {errors.contrasena && (
+            <View style={styles.errorContainer}>
+              <MaterialCommunityIcons name="alert-circle-outline" size={14} color={theme.colors.error} />
+              <Text style={styles.errorText}>{errors.contrasena}</Text>
+            </View>
+          )}
+
+          <View style={styles.inputContainer}>
+            <MaterialCommunityIcons 
+              name="medical-bag" 
+              size={20} 
+              color={errors.especialidad ? theme.colors.error : theme.colors.placeholder} 
+              style={styles.inputIcon} 
+            />
+            <TextInput
+              style={[styles.input, errors.especialidad && styles.inputError]}
+              placeholder="Especialidad"
+              placeholderTextColor={theme.colors.placeholder}
+              value={form.especialidad}
+              onChangeText={(text) => handleChange('especialidad', text)}
+            />
+          </View>
+          {errors.especialidad && (
+            <View style={styles.errorContainer}>
+              <MaterialCommunityIcons name="alert-circle-outline" size={14} color={theme.colors.error} />
+              <Text style={styles.errorText}>{errors.especialidad}</Text>
+            </View>
+          )}
+
+          {loading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={theme.colors.primary} />
+              <Text style={styles.loadingText}>Registrando profesional...</Text>
+            </View>
+          ) : (
+            <TouchableOpacity
+              style={styles.submitButton}
+              onPress={handleSubmit}
+              disabled={loading}
+            >
+              <Text style={styles.submitButtonText}>Registrar Profesional</Text>
+              <MaterialCommunityIcons name="doctor" size={20} color={theme.colors.buttonText} />
+            </TouchableOpacity>
+          )}
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -192,47 +282,113 @@ const RegistroScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    padding: 20,
-    backgroundColor: '#f7f9fc',
+    backgroundColor: theme.colors.secondary,
+  },
+  scrollContainer: {
+    flexGrow: 1,
+    padding: theme.spacing.lg,
+  },
+  header: {
+    alignItems: 'center',
+    marginBottom: theme.spacing.xl,
+    marginTop: theme.spacing.lg,
   },
   title: {
-    fontSize: 24,
+    fontSize: theme.fontSize.xl,
     fontWeight: 'bold',
-    marginBottom: 20,
+    color: theme.colors.text,
+    marginTop: theme.spacing.md,
+    marginBottom: theme.spacing.sm,
+  },
+  subtitle: {
+    fontSize: theme.fontSize.md,
+    color: theme.colors.placeholder,
     textAlign: 'center',
-    color: '#333',
+  },
+  formContainer: {
+    backgroundColor: theme.colors.background,
+    borderRadius: theme.borderRadius.lg,
+    padding: theme.spacing.lg,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.colors.input,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: theme.borderRadius.md,
+    marginBottom: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.md,
+  },
+  inputIcon: {
+    marginRight: theme.spacing.sm,
   },
   input: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 15,
-    fontSize: 16,
+    flex: 1,
+    paddingVertical: theme.spacing.md,
+    fontSize: theme.fontSize.md,
+    color: theme.colors.text,
   },
   inputError: {
-    borderColor: 'red',
+    borderColor: theme.colors.error,
+    borderWidth: 2,
+  },
+  errorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: `${theme.colors.error}10`,
+    borderWidth: 1,
+    borderColor: `${theme.colors.error}30`,
+    borderRadius: theme.borderRadius.sm,
+    padding: theme.spacing.sm,
+    marginBottom: theme.spacing.md,
   },
   errorText: {
-    color: 'red',
-    fontSize: 12,
-    marginBottom: 10,
+    color: theme.colors.error,
+    fontSize: theme.fontSize.sm,
+    marginLeft: theme.spacing.sm,
+    flex: 1,
+  },
+  loadingContainer: {
+    alignItems: 'center',
+    marginVertical: theme.spacing.lg,
+  },
+  loadingText: {
+    color: theme.colors.placeholder,
+    fontSize: theme.fontSize.md,
+    marginTop: theme.spacing.sm,
   },
   submitButton: {
-    backgroundColor: '#28a745',
-    padding: 15,
-    borderRadius: 8,
+    backgroundColor: theme.colors.primary,
+    borderRadius: theme.borderRadius.md,
+    paddingVertical: theme.spacing.md,
+    paddingHorizontal: theme.spacing.lg,
+    flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 10,
-  },
-  submitButtonDisabled: {
-    backgroundColor: '#6c757d',
+    justifyContent: 'center',
+    marginTop: theme.spacing.lg,
+    shadowColor: theme.colors.primary,
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 4.65,
+    elevation: 8,
   },
   submitButtonText: {
-    color: '#fff',
-    fontSize: 16,
+    color: theme.colors.buttonText,
+    fontSize: theme.fontSize.md,
     fontWeight: 'bold',
+    marginRight: theme.spacing.sm,
   },
 });
 

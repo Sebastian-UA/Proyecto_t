@@ -18,7 +18,6 @@ import { usePatient } from '@/context/paciente';
 import { useProfessional } from '@/context/profesional';
 import { getMovimientoById } from '@/services/movimiento';
 import { createSesionWithMedicion } from '@/services/sesion';
-import styles from '@/estilos/styles';
 import { API_CONFIG } from '@/config/api';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { theme } from '@/estilos/themes';
@@ -239,61 +238,359 @@ export default function MedicionPage() {
   }, [movimiento]);
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: '#B3F0FF' }} contentContainerStyle={styles.container}>
-      <Text style={styles.titulo}>Medición: {movimientoData?.nombre || '...'}</Text>
-
-      <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginVertical: 10 }}>
-        <Button title="Seleccionar Video" onPress={seleccionarVideo} disabled={loading} />
-        <Button title="Grabar Video" onPress={grabarVideo} disabled={loading} />
+    <ScrollView 
+      style={styles.container} 
+      contentContainerStyle={styles.scrollContent}
+      showsVerticalScrollIndicator={false}
+    >
+      <View style={styles.header}>
+        <MaterialCommunityIcons name="video-plus" size={60} color={theme.colors.primary} />
+        <Text style={styles.titulo}>Medición: {movimientoData?.nombre || '...'}</Text>
+        <Text style={styles.subtitulo}>Selecciona o graba un video para analizar</Text>
       </View>
 
-      {!videoUri && (
-        <View style={styles.previewPlaceholder}>
-          <MaterialCommunityIcons
-            name="video-outline"
-            size={40}
-            color={theme.colors.primary}
-            style={{ marginBottom: 10 }}
-          />
-          <Text style={styles.previewText}>
-            El video se cargará aquí cuando selecciones o grabes uno.
-          </Text>
+      <View style={styles.formContainer}>
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity 
+            style={[styles.actionButton, loading && styles.buttonDisabled]} 
+            onPress={seleccionarVideo} 
+            disabled={loading}
+          >
+            <MaterialCommunityIcons name="file-video" size={24} color={theme.colors.buttonText} />
+            <Text style={styles.buttonText}>Seleccionar Video</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={[styles.actionButton, loading && styles.buttonDisabled]} 
+            onPress={grabarVideo} 
+            disabled={loading}
+          >
+            <MaterialCommunityIcons name="video" size={24} color={theme.colors.buttonText} />
+            <Text style={styles.buttonText}>Grabar Video</Text>
+          </TouchableOpacity>
         </View>
-      )}
 
-      {videoUri && (
-        <View style={{ marginVertical: 10, padding: 10, backgroundColor: '#f5f5f5', borderRadius: 10 }}>
-          <Text style={styles.subtitulo}>Video seleccionado:</Text>
-          <Video
-            key={videoUri}
-            source={{ uri: videoUri }}
-            style={{ width: '100%', height: 200, marginVertical: 10 }}
-            useNativeControls
-            resizeMode={ResizeMode.CONTAIN}
-            shouldPlay={false}
-          />
-          <Button title="Repetir video" onPress={() => setVideoUri(null)} color="#FF5252" />
-        </View>
-      )}
+        {!videoUri && (
+          <View style={styles.previewPlaceholder}>
+            <MaterialCommunityIcons
+              name="video-outline"
+              size={80}
+              color={theme.colors.placeholder}
+              style={{ marginBottom: theme.spacing.lg }}
+            />
+            <Text style={styles.previewText}>
+              Video aún no seleccionado
+            </Text>
+          </View>
+        )}
 
-      <View style={{ marginVertical: 10, padding: 10, backgroundColor: '#f5f5f5', borderRadius: 10 }}>
-        <Text style={styles.subtitulo}>Selecciona el lado a analizar:</Text>
-        <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: 5 }}>
-          <Button title="Derecha" onPress={() => setLado('derecha')} color={lado === 'derecha' ? '#4CAF50' : undefined} />
-          <Button title="Izquierda" onPress={() => setLado('izquierda')} color={lado === 'izquierda' ? '#4CAF50' : undefined} />
+        {videoUri && (
+          <View style={styles.videoContainer}>
+            <Text style={styles.sectionTitle}>Video seleccionado:</Text>
+            <Video
+              key={videoUri}
+              source={{ uri: videoUri }}
+              style={styles.videoPlayer}
+              useNativeControls
+              resizeMode={ResizeMode.CONTAIN}
+              shouldPlay={false}
+            />
+            <TouchableOpacity 
+              style={styles.repeatButton} 
+              onPress={() => setVideoUri(null)}
+            >
+              <MaterialCommunityIcons name="refresh" size={20} color={theme.colors.error} />
+              <Text style={styles.repeatButtonText}>Repetir video</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        <View style={styles.sideSelectionContainer}>
+          <Text style={styles.sectionTitle}>Selecciona el lado a analizar:</Text>
+          <View style={styles.sideButtonsContainer}>
+            <TouchableOpacity 
+              style={[styles.sideButton, lado === 'derecha' && styles.sideButtonActive]} 
+              onPress={() => setLado('derecha')}
+            >
+              <MaterialCommunityIcons 
+                name="hand-pointing-right" 
+                size={24} 
+                color={lado === 'derecha' ? theme.colors.buttonText : theme.colors.primary} 
+              />
+              <Text style={[styles.sideButtonText, lado === 'derecha' && styles.sideButtonTextActive]}>
+                Derecha
+              </Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={[styles.sideButton, lado === 'izquierda' && styles.sideButtonActive]} 
+              onPress={() => setLado('izquierda')}
+            >
+              <MaterialCommunityIcons 
+                name="hand-pointing-left" 
+                size={24} 
+                color={lado === 'izquierda' ? theme.colors.buttonText : theme.colors.primary} 
+              />
+              <Text style={[styles.sideButtonText, lado === 'izquierda' && styles.sideButtonTextActive]}>
+                Izquierda
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
+
+        {!videoUri && (
+          <View style={styles.helpContainer}>
+            <MaterialCommunityIcons name="information-outline" size={20} color={theme.colors.placeholder} />
+            <Text style={styles.helpText}>
+              Selecciona o graba un video para habilitar el análisis
+            </Text>
+          </View>
+        )}
+
+        <TouchableOpacity
+          style={[
+            styles.submitButton, 
+            (loading || !videoUri || enviando) && styles.submitButtonDisabled
+          ]}
+          onPress={enviarVideo}
+          disabled={loading || !videoUri || enviando}
+        >
+          <MaterialCommunityIcons name="send" size={20} color={theme.colors.buttonText} />
+          <Text style={styles.submitButtonText}>Enviar para análisis</Text>
+        </TouchableOpacity>
+
+        {(loading || enviando) && (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={theme.colors.primary} />
+            <Text style={styles.loadingText}>
+              {enviando ? 'Enviando video para análisis...' : 'Analizando video...'}
+            </Text>
+          </View>
+        )}
       </View>
-
-      <Button title="Enviar para análisis" onPress={enviarVideo} disabled={loading || !videoUri || enviando} />
-
-      {(loading || enviando) && (
-        <View style={{ marginVertical: 20 }}>
-          <ActivityIndicator size="large" color="#007bff" />
-          <Text style={{ textAlign: 'center', marginTop: 10 }}>
-            {enviando ? 'Enviando video para análisis...' : 'Analizando video...'}
-          </Text>
-        </View>
-      )}
     </ScrollView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: theme.colors.secondary,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    padding: theme.spacing.lg,
+  },
+  header: {
+    alignItems: 'center',
+    marginBottom: theme.spacing.xl,
+    marginTop: theme.spacing.lg,
+  },
+  titulo: {
+    fontSize: theme.fontSize.xl,
+    fontWeight: 'bold',
+    color: theme.colors.text,
+    marginTop: theme.spacing.md,
+    marginBottom: theme.spacing.sm,
+    textAlign: 'center',
+  },
+  subtitulo: {
+    fontSize: theme.fontSize.md,
+    color: theme.colors.placeholder,
+    textAlign: 'center',
+  },
+  formContainer: {
+    backgroundColor: theme.colors.background,
+    borderRadius: theme.borderRadius.lg,
+    padding: theme.spacing.lg,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginBottom: theme.spacing.lg,
+  },
+  actionButton: {
+    backgroundColor: theme.colors.primary,
+    borderRadius: theme.borderRadius.md,
+    paddingVertical: theme.spacing.md,
+    paddingHorizontal: theme.spacing.lg,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flex: 0.45,
+    shadowColor: theme.colors.primary,
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  buttonDisabled: {
+    backgroundColor: theme.colors.placeholder,
+  },
+  buttonText: {
+    color: theme.colors.buttonText,
+    fontSize: theme.fontSize.md,
+    fontWeight: 'bold',
+    marginLeft: theme.spacing.sm,
+  },
+  previewPlaceholder: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: theme.spacing.xl,
+    borderWidth: 2,
+    borderColor: theme.colors.placeholder,
+    borderStyle: 'dashed',
+    borderRadius: theme.borderRadius.lg,
+    backgroundColor: theme.colors.background,
+    marginVertical: theme.spacing.lg,
+    minHeight: 200,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  previewText: {
+    fontSize: theme.fontSize.md,
+    color: theme.colors.placeholder,
+    textAlign: 'center',
+    fontWeight: '500',
+  },
+  videoContainer: {
+    marginVertical: theme.spacing.md,
+    padding: theme.spacing.md,
+    backgroundColor: theme.colors.background,
+    borderRadius: theme.borderRadius.md,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  sectionTitle: {
+    fontSize: theme.fontSize.lg,
+    fontWeight: 'bold',
+    color: theme.colors.text,
+    marginBottom: theme.spacing.md,
+  },
+  videoPlayer: {
+    width: '100%',
+    height: 200,
+    marginVertical: theme.spacing.md,
+    borderRadius: theme.borderRadius.md,
+  },
+  repeatButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: theme.spacing.sm,
+    marginTop: theme.spacing.sm,
+  },
+  repeatButtonText: {
+    color: theme.colors.error,
+    fontSize: theme.fontSize.md,
+    fontWeight: 'bold',
+    marginLeft: theme.spacing.sm,
+  },
+  sideSelectionContainer: {
+    marginVertical: theme.spacing.md,
+    padding: theme.spacing.md,
+    backgroundColor: theme.colors.background,
+    borderRadius: theme.borderRadius.md,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  sideButtonsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginTop: theme.spacing.sm,
+  },
+  sideButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: theme.spacing.md,
+    paddingHorizontal: theme.spacing.lg,
+    borderRadius: theme.borderRadius.md,
+    borderWidth: 2,
+    borderColor: theme.colors.primary,
+    backgroundColor: theme.colors.background,
+    flex: 0.45,
+  },
+  sideButtonActive: {
+    backgroundColor: theme.colors.primary,
+  },
+  sideButtonText: {
+    fontSize: theme.fontSize.md,
+    fontWeight: 'bold',
+    color: theme.colors.primary,
+    marginLeft: theme.spacing.sm,
+  },
+  sideButtonTextActive: {
+    color: theme.colors.buttonText,
+  },
+  helpContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: `${theme.colors.primary}10`,
+    borderWidth: 1,
+    borderColor: `${theme.colors.primary}30`,
+    borderRadius: theme.borderRadius.md,
+    padding: theme.spacing.md,
+    marginVertical: theme.spacing.md,
+  },
+  helpText: {
+    color: theme.colors.placeholder,
+    fontSize: theme.fontSize.sm,
+    marginLeft: theme.spacing.sm,
+    flex: 1,
+  },
+  submitButton: {
+    backgroundColor: theme.colors.primary,
+    borderRadius: theme.borderRadius.md,
+    paddingVertical: theme.spacing.md,
+    paddingHorizontal: theme.spacing.lg,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: theme.spacing.lg,
+    shadowColor: theme.colors.primary,
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 4.65,
+    elevation: 8,
+  },
+  submitButtonDisabled: {
+    backgroundColor: theme.colors.placeholder,
+  },
+  submitButtonText: {
+    color: theme.colors.buttonText,
+    fontSize: theme.fontSize.md,
+    fontWeight: 'bold',
+    marginLeft: theme.spacing.sm,
+  },
+  loadingContainer: {
+    alignItems: 'center',
+    marginVertical: theme.spacing.lg,
+  },
+  loadingText: {
+    color: theme.colors.placeholder,
+    fontSize: theme.fontSize.md,
+    marginTop: theme.spacing.sm,
+    textAlign: 'center',
+  },
+});

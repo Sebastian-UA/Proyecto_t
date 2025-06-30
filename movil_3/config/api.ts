@@ -1,7 +1,7 @@
 // Configuración centralizada de la API
 export const API_CONFIG = {
   // URL base de la API
-  BASE_URL: 'http://192.168.1.14:8000',
+  BASE_URL: 'http://192.168.1.7:8000',
   
   // Endpoints específicos
   ENDPOINTS: {

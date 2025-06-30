@@ -20,6 +20,7 @@ import { fetchDetallePacientePorId } from '@/config/api';
 import { theme } from '../estilos/themes';
 // @ts-ignore
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
 
 // Funciones de validación
 const validarNombre = (nombre: string) => {
@@ -317,7 +318,6 @@ const PerfilPacienteScreen = () => {
           style={[styles.actionButton, styles.primaryButton]}
           onPress={() => router.push('/movimientos/SelecExt')}
         >
-          <Icon name="goniometer" size={20} color={theme.colors.buttonText} />
           <Text style={styles.primaryButtonText}>Medir Movimientos</Text>
         </TouchableOpacity>
 

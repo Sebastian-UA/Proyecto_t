@@ -1,9 +1,9 @@
 {
   "expo": {
     "extra": {
-      "API_URL": "http://192.168.1.14:8000"
+      "API_URL": "http://192.168.1.7:8000"
     },
-    "name": "movil",
+    "name": "Goniotrack",
     "slug": "movil",
     "version": "1.0.0",
     "orientation": "portrait",

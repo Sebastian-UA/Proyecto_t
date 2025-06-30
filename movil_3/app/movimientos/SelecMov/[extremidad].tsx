@@ -4,8 +4,7 @@ import { getMovimientosByArticulacion } from '@/services/movimiento';
 import { fetchArticulaciones } from '@/config/api';
 import { View, Text, TouchableOpacity, ActivityIndicator, ScrollView, StyleSheet } from 'react-native';
 import { theme } from '@/estilos/themes';
-// @ts-ignore
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 
 interface Movimiento {
   movimientoId: number;
@@ -67,18 +66,30 @@ export default function SeleccionMovimientos() {
     const name = movementName.toLowerCase();
     
     if (name.includes('flexión') || name.includes('flexion')) {
-      return 'run';
+      return { name: 'arm-flex', family: 'MaterialCommunityIcons' };
     } else if (name.includes('abducción') || name.includes('abduccion')) {
-      return 'arrow-expand';
+      return { name: 'arrow-expand', family: 'MaterialCommunityIcons' };
     } else if (name.includes('pronación') || name.includes('pronacion') || 
                name.includes('supinación') || name.includes('supinacion')) {
-      return 'rotate-3d-variant';
+      return { name: 'rotate-right', family: 'MaterialIcons' };
     } else if (name.includes('extensión') || name.includes('extension')) {
-      return 'arrow-collapse';
+      return { name: 'arrow-collapse', family: 'MaterialCommunityIcons' };
     } else if (name.includes('rotación') || name.includes('rotacion')) {
-      return 'rotate-orbit';
+      return { name: 'rotate-orbit', family: 'MaterialCommunityIcons' };
     } else {
-      return 'arm-flex'; // ícono por defecto
+      return { name: 'arm-flex', family: 'MaterialCommunityIcons' }; // ícono por defecto
+    }
+  };
+
+  const getIconForExtremity = (extremityName: string) => {
+    const name = extremityName.toLowerCase();
+    
+    if (name.includes('codo')) {
+      return { name: 'arm-flex', family: 'MaterialCommunityIcons' };
+    } else if (name.includes('hombro')) {
+      return { name: 'human-male', family: 'MaterialCommunityIcons' };
+    } else {
+      return { name: 'arm-flex', family: 'MaterialCommunityIcons' }; // ícono por defecto
     }
   };
 
@@ -94,7 +105,14 @@ export default function SeleccionMovimientos() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Icon name="arm-flex" size={60} color={theme.colors.primary} />
+        {(() => {
+          const icon = getIconForExtremity(extremidad);
+          if (icon.family === 'MaterialCommunityIcons') {
+            return <MaterialCommunityIcons name={icon.name as any} size={60} color={theme.colors.primary} />;
+          } else {
+            return <MaterialIcons name={icon.name as any} size={60} color={theme.colors.primary} />;
+          }
+        })()}
         <Text style={styles.titulo}>Movimientos para: {extremidad}</Text>
         <Text style={styles.subtitulo}>Selecciona el movimiento a evaluar</Text>
       </View>
@@ -112,11 +130,14 @@ export default function SeleccionMovimientos() {
               onPress={() => router.push(`/medicion/${mov.movimientoId}` as const)}
             >
               <View style={styles.iconContainer}>
-                <Icon 
-                  name={getIconForMovement(mov.nombre)} 
-                  size={48} 
-                  color={theme.colors.primary} 
-                />
+                {(() => {
+                  const icon = getIconForMovement(mov.nombre);
+                  if (icon.family === 'MaterialCommunityIcons') {
+                    return <MaterialCommunityIcons name={icon.name as any} size={48} color={theme.colors.primary} />;
+                  } else {
+                    return <MaterialIcons name={icon.name as any} size={48} color={theme.colors.primary} />;
+                  }
+                })()}
               </View>
               <Text style={styles.movimientoNombre}>{mov.nombre}</Text>
               {mov.descripcion && (
@@ -128,7 +149,7 @@ export default function SeleccionMovimientos() {
 
         {movimientos.length === 0 && !loading && (
           <View style={styles.emptyContainer}>
-            <Icon name="arm-flex-outline" size={80} color={theme.colors.placeholder} />
+            <MaterialCommunityIcons name="arm-flex-outline" size={80} color={theme.colors.placeholder} />
             <Text style={styles.emptyTitle}>No hay movimientos disponibles</Text>
             <Text style={styles.emptySubtitle}>
               No se encontraron movimientos para {extremidad}
