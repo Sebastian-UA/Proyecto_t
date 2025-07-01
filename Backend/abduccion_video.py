@@ -63,7 +63,7 @@ def abduccion_video(path: str, lado: str):
                     elbow = [landmarks[mp_pose.PoseLandmark.RIGHT_ELBOW.value].x,
                              landmarks[mp_pose.PoseLandmark.RIGHT_ELBOW.value].y]
                     color_texto = color_derecha
-                    label = 'R'
+                    label = 'Derecha'
 
                 elif lado == "izquierda":
                     hip = [landmarks[mp_pose.PoseLandmark.LEFT_HIP.value].x,
@@ -73,21 +73,45 @@ def abduccion_video(path: str, lado: str):
                     elbow = [landmarks[mp_pose.PoseLandmark.LEFT_ELBOW.value].x,
                              landmarks[mp_pose.PoseLandmark.LEFT_ELBOW.value].y]
                     color_texto = color_izquierda
-                    label = 'L'
+                    label = 'Isquierda'
 
                 else:
                     cap.release()
                     out.release()
                     raise ValueError("Lado inválido. Debe ser 'derecha' o 'izquierda'.")
 
-                angle = calculate_angle(hip, shoulder, elbow)
+                # Crear punto virtual debajo del hombro
+                offset_virtual = 0.1  # Ajustable: cuanto más abajo, mayor valor (en proporción a la altura)
+                punto_virtual = [shoulder[0], shoulder[1] + offset_virtual]
+
+                # Calcular el ángulo con el punto virtual
+                angle = calculate_angle(punto_virtual, shoulder, elbow)
+
                 max_angle = max(max_angle, angle)
                 min_angle = min(min_angle, angle)
 
                 texto_angulo = f'{label}: {int(angle)}'
 
-                mp_drawing.draw_landmarks(
-                    frame, results.pose_landmarks, mp_pose.POSE_CONNECTIONS)
+                # Dibujar manualmente solo los puntos de interés
+            # Dibujar solo puntos de interés (incluyendo el punto virtual en vez de la cadera real)
+            puntos_interes = [shoulder, elbow, punto_virtual]
+            for punto in puntos_interes:
+                x = int(punto[0] * width)
+                y = int(punto[1] * height)
+                cv2.circle(frame, (x, y), 8, color_texto, -1)
+
+            # Dibujar líneas entre los puntos
+            cv2.line(frame,
+                    (int(punto_virtual[0] * width), int(punto_virtual[1] * height)),
+                    (int(shoulder[0] * width), int(shoulder[1] * height)),
+                    color_texto, 2)
+
+            cv2.line(frame,
+                    (int(shoulder[0] * width), int(shoulder[1] * height)),
+                    (int(elbow[0] * width), int(elbow[1] * height)),
+                    color_texto, 2)
+
+
 
             # Mostrar el texto en la esquina superior izquierda si se detectó el ángulo
             if texto_angulo:
