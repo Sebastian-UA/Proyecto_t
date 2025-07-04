@@ -16,7 +16,7 @@ import { useRouter, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { getPacientesInfo } from '@/services/paciente.api';
 import { usePatient } from '@/context/paciente';
 import { useProfessional } from '@/context/profesional';
-import { theme } from '../estilos/themes';
+import { theme } from '../../estilos/themes';
 // @ts-ignore
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
@@ -127,7 +127,7 @@ const PacienteScreen = () => {
       await registrarPaciente(pacienteData as any);
       Alert.alert('Éxito', 'Paciente registrado correctamente');
       // Volver a la pantalla de pacientes y forzar recarga
-      router.replace({ pathname: '/paciente', params: { actualizado: Date.now() } });
+      router.replace({ pathname: '/paginas/paciente', params: { actualizado: Date.now() } });
     } catch (error) {
       console.error('Error al registrar paciente:', error);
       Alert.alert('Error', 'No se pudo registrar el paciente');

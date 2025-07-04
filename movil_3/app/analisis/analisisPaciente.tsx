@@ -152,7 +152,7 @@ export default function AnalisisPacientePage() {
             <TouchableOpacity
               style={styles.dangerButton}
               onPress={async () => {
-                await cerrarSesion(setPatient, setProfessional, () => router.replace('/'));
+                await cerrarSesion(setPatient, setProfessional, () => router.replace('/paginas'));
               }}
             >
               <Icon name="logout" size={20} color={theme.colors.buttonText} />

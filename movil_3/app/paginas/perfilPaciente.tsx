@@ -17,7 +17,7 @@ import { cerrarSesion } from '@/services/sesion';
 import { useNavigation } from '@/hooks/useNavigation';
 import { API_CONFIG, apiPut } from '@/config/api';
 import { fetchDetallePacientePorId } from '@/config/api';
-import { theme } from '../estilos/themes';
+import { theme } from '../../estilos/themes';
 // @ts-ignore
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
@@ -100,7 +100,7 @@ const PerfilPacienteScreen = () => {
   // Redirigir si no hay paciente autenticado
   useEffect(() => {
     if (!patient) {
-      router.replace('/login');
+      router.replace('/paginas/login');
     }
   }, [patient, router]);
 

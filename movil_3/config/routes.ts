@@ -1,13 +1,13 @@
 // Configuración de rutas para Expo Router
 export const ROUTES = {
   // Rutas principales
-  HOME: '/',
-  LOGIN: '/login',
-  REGISTRO: '/registro',
+  HOME: '/paginas',
+  LOGIN: '/paginas/login',
+  REGISTRO: '/paginas/registro',
   
   // Rutas de paciente
-  PACIENTE: '/paciente',
-  PERFIL_PACIENTE: '/perfilPaciente',
+  PACIENTE: '/paginas/paciente',
+  PERFIL_PACIENTE: '/paginas/perfilPaciente',
   
   // Rutas de movimientos
   SELECCION_EXTREMIDAD: '/movimientos/SelecExt',
