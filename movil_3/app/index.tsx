@@ -11,16 +11,16 @@ export default function HomeScreen() {
       <Text style={styles.subtitle}>Medición precisa de movilidad</Text>
 
       <Image
-        source={require("../../assets/images/goniometro.png")}
+        source={require("../assets/images/goniometro.png")}
         style={styles.image}
         resizeMode="contain"
       />
 
-      <TouchableOpacity style={styles.button} onPress={() => router.push("/paginas/registro")}>
+      <TouchableOpacity style={styles.button} onPress={() => router.push("/registro")}>
         <Text style={styles.buttonText}>Registrarse</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.buttonOutline} onPress={() => router.push("/paginas/login")}>
+      <TouchableOpacity style={styles.buttonOutline} onPress={() => router.push("/login")}>
         <Text style={styles.buttonOutlineText}>Iniciar Sesión</Text>
       </TouchableOpacity>
     </View>

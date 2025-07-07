@@ -13,7 +13,7 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import { getPacientesInfo } from '@/services/paciente.api';
 import { usePatient } from '@/context/paciente';
 import { useProfessional } from '@/context/profesional';
-import { theme } from '../../estilos/themes';
+import { theme } from '../estilos/themes';
 // @ts-ignore
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
@@ -75,7 +75,7 @@ const PacientesScreen = () => {
     useCallback(() => {
       if (!professional) {
         Alert.alert('Acceso denegado', 'Debes iniciar sesión como profesional');
-        router.replace('/paginas/login');
+        router.replace('/login');
       }
     }, [professional])
   );
@@ -174,7 +174,7 @@ const PacientesScreen = () => {
 
         <TouchableOpacity
           style={[styles.button, styles.secondaryButton]}
-          onPress={() => router.push('/paginas/registroPaciente')}
+          onPress={() => router.push('/registroPaciente')}
         >
           <Icon name="account-plus" size={20} color={theme.colors.buttonText} />
           <Text style={styles.buttonText}>Registrar nuevo paciente</Text>

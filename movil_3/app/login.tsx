@@ -16,7 +16,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useProfessional } from '@/context/profesional';
 import { usePatient } from '@/context/paciente';
 import { API_CONFIG, apiPost } from '@/config/api';
-import { theme } from '../../estilos/themes';
+import { theme } from '../estilos/themes';
 // @ts-ignore
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
@@ -68,7 +68,7 @@ const LoginScreen = () => {
           rol: data.rol,
         });
         console.log("✅ Profesional guardado:", data);
-        router.replace('/paginas/paciente');
+        router.replace('/paciente');
       } else if (data.rol === 'paciente') {
         setPatient({
           pacienteId: data.id,
@@ -83,7 +83,7 @@ const LoginScreen = () => {
           profesionalId: data.profesionalId,
         });
         console.log("Paciente guardado:", data);
-        router.replace('/paginas/perfilPaciente');
+        router.replace('/perfilPaciente');
       } else {
         throw new Error('Rol desconocido');
       }
@@ -167,7 +167,7 @@ const LoginScreen = () => {
 
               <TouchableOpacity 
                 style={styles.registerButton} 
-                onPress={() => router.push('/paginas/registro')}
+                onPress={() => router.push('/registro')}
               >
                 <Text style={styles.registerButtonText}>¿No tienes cuenta? Regístrate</Text>
               </TouchableOpacity>

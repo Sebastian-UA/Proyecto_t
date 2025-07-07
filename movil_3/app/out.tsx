@@ -15,7 +15,7 @@ export default function LogoutScreen() {
 
     // Esperar un poco para evitar conflictos con otros hooks aún activos
     const timeout = setTimeout(() => {
-      router.replace('/paginas/login');
+      router.replace('/login');
     }, 100);
 
     return () => clearTimeout(timeout);
