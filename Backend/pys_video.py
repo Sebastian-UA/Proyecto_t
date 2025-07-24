@@ -132,7 +132,7 @@ def pys_video(path: str, lado: str):
                             supination_angles.append(angle)
 
                 # Guardar texto para mostrar en la esquina
-                texto_angulo = f'Ángulo: {int(angle)}'
+                texto_angulo = f'Angulo: {int(angle)}'
                 texto_estado = estado
                 color_estado = color
 

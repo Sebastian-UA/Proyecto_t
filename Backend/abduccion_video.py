@@ -63,7 +63,7 @@ def abduccion_video(path: str, lado: str):
                     elbow = [landmarks[mp_pose.PoseLandmark.RIGHT_ELBOW.value].x,
                              landmarks[mp_pose.PoseLandmark.RIGHT_ELBOW.value].y]
                     color_texto = color_derecha
-                    label = 'Derecha'
+                    label = 'Angulo Derecha'
 
                 elif lado == "izquierda":
                     hip = [landmarks[mp_pose.PoseLandmark.LEFT_HIP.value].x,
@@ -73,7 +73,7 @@ def abduccion_video(path: str, lado: str):
                     elbow = [landmarks[mp_pose.PoseLandmark.LEFT_ELBOW.value].x,
                              landmarks[mp_pose.PoseLandmark.LEFT_ELBOW.value].y]
                     color_texto = color_izquierda
-                    label = 'Isquierda'
+                    label = 'Angulo Isquierda'
 
                 else:
                     cap.release()
