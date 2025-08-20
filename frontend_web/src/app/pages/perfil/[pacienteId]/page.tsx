@@ -190,7 +190,7 @@ export default function PerfilPaciente() {
   const indexFinal = indexInicio + filasPorPagina;
   const medicionesPaginadas = medicionesFiltradas.slice(indexInicio, indexFinal);
   const totalPaginas = Math.ceil(medicionesFiltradas.length / filasPorPagina);
-  
+
   // Ordenar mediciones por fecha ascendente para mostrar en el gráfico
   const medicionesOrdenadas = [...medicionesFiltradas].sort((a, b) => {
     const fechaA = a.sesion?.fecha ? new Date(a.sesion.fecha).getTime() : 0;
@@ -259,9 +259,32 @@ export default function PerfilPaciente() {
               : "rgba(255,165,0,1)";
           }
         }
-      }
+      },
+      {
+        label: "Ángulo Mínimo Esperado",
+        data: medicionesOrdenadas.map((med) =>
+          med.movimiento?.anguloMinReal ?? null
+        ),
+        borderColor: "rgba(0, 0, 255, 0.7)",
+        borderDash: [5, 5],
+        pointRadius: 0,
+        fill: false,
+        tension: 0,
+      },
+      {
+        label: "Ángulo Máximo Esperado",
+        data: medicionesOrdenadas.map((med) =>
+          med.movimiento?.anguloMaxReal ?? null
+        ),
+        borderColor: "rgba(255, 0, 0, 0.7)",
+        borderDash: [5, 5],
+        pointRadius: 0,
+        fill: false,
+        tension: 0,
+      },
     ],
   };
+
   // TITULO GRAFICO
   const options = {
     responsive: true,
@@ -302,6 +325,22 @@ export default function PerfilPaciente() {
                 lineWidth: 3,
                 hidden: false,
                 datasetIndex: 1,
+              },
+              {
+                text: "Ángulo Mínimo Esperado",
+                fillStyle: "rgba(0, 0, 255, 0.7)",  // Azul
+                strokeStyle: "rgba(0, 0, 255, 0.7)",
+                lineWidth: 2,
+                hidden: false,
+                datasetIndex: 2,
+              },
+              {
+                text: "Ángulo Máximo Esperado",
+                fillStyle: "rgba(255, 0, 0, 0.7)",  // Rojo
+                strokeStyle: "rgba(255, 0, 0, 0.7)",
+                lineWidth: 2,
+                hidden: false,
+                datasetIndex: 3,
               },
             ];
           },

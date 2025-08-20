@@ -147,12 +147,14 @@ export default function CameraRecorder() {
     }
 
     const now = new Date();
+    const fechaLocal = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
     // Datos comunes a cualquier medición
     const sesionData = {
       pacienteId: patient?.id,
       profesionalId: professional?.id ?? null,
-      fecha: now.toISOString().slice(0, 10),
+      fecha: fechaLocal,
+      //fecha: now.toISOString().slice(0, 10),
       hora: now.toLocaleTimeString('es-CL', { hour12: false }),
       notas: "",
     };
